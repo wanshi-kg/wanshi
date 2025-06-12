@@ -1,11 +1,27 @@
-{{#if filePath}}**Path**: {{filePath}}{{/if}}
-{{!-- {{#when totalChunks ">" 1}}**Chunk**: {{chunkIndex}} of {{totalChunks}}{{/when}} --}}
+## File Information
+
+{{#if filePath}}Path: {{filePath}}{{/if}}
+{{#if totalChunks}}Chunk: {{chunkIndex}} of {{totalChunks}}{{/if}}
+{{#if fileOutline}}
+
+{{#if metadata}}
+## File Metadata
+
+
+{{/if}}
+
+## Document Outline
+
+```
+{{fileOutline}}
+```
+{{/if}}
 
 {{#if retrievedEntities}}
 ## Previously Identified Context
 
 {{#each retrievedEntities}}
-- **{{name}}** ({{entityType}}): {{truncate (join observations "; ") 200}}
+- {{name}} ({{entityType}}): {{truncate (join observations "; ") 200}}
 {{/each}}
 {{/if}}
 

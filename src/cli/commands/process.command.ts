@@ -1,14 +1,14 @@
-import { ContainerFactory, DIContainer } from '../../core/di';
-import { DirectoryProcessor } from '../../core/DirectoryProcessor';
+import { ContainerFactory, DIContainer, TYPES } from '../../core/di';
 import { logger } from '../../shared/logger';
-import { ProcessingOptions } from '../../types';
+import { IDirectoryProcessor, ProcessingOptions } from '../../types';
 
 /**
  * Process command - handles one-time directory processing
  */
 export async function processCommand(options: ProcessingOptions): Promise<void> {
   try {
-    const processor = new DirectoryProcessor(ContainerFactory.createContainer({ processingOptions: options }));
+    const container = ContainerFactory.createContainer({ processingOptions: options });
+    const processor = await container.resolve<IDirectoryProcessor>(TYPES.DirectoryProcessor);
     await processor.processDirectory(options);
   } catch (error) {
     logger.error(`Process command failed: ${error}`);

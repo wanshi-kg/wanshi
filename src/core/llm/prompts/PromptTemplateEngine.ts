@@ -3,11 +3,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { DirectoryTreeGenerator } from '../../../shared/utils/directoryTree';
 import { logger } from '../../../shared/logger';
+import { DocumentOutlineGenerator } from '../../../shared/utils/documentOutline';
 
 export interface TemplateContext {
   // File-specific context
   fileName?: string;
   fileContent?: string;
+  fileOutline?: string;
   fileExtension?: string;
   filePath?: string;
   
@@ -215,6 +217,15 @@ export class PromptTemplateEngine {
     // Extract file extension
     if (enhanced.fileName && !enhanced.fileExtension) {
       enhanced.fileExtension = path.extname(enhanced.fileName).toLowerCase();
+    }
+
+    // Extract document outline
+    if (enhanced.fileContent && enhanced.fileExtension) {
+      try {
+        enhanced.fileOutline = await DocumentOutlineGenerator.generateOutlineFromContent(enhanced.fileContent, enhanced.fileExtension.slice(1));
+      } catch (error: any) {
+        logger.warn(`Cannot generate document outline from file content: ${error.message}`);
+      }
     }
 
     return enhanced;

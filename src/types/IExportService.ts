@@ -1,4 +1,4 @@
-import { KnowledgeGraph } from '.';
+import { ExportFormat, KnowledgeGraph } from '.';
 
 /**
  * Interface for Knowledge Graph Export services
@@ -19,11 +19,6 @@ export interface IKnowledgeGraphExporter {
    */
   getSupportedFormats(): ExportFormat[];
 }
-
-/**
- * Supported export formats
- */
-export type ExportFormat = 'json' | 'jsonl' | 'mcp-jsonl';
 
 /**
  * Interface for Knowledge Graph Converter (static methods wrapper)

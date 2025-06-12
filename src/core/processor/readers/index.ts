@@ -3,3 +3,7 @@ export * from './TextReader';
 export * from './ImageReader';
 export * from './PdfReader';
 export * from './FileReaderFactory';
+export * from './DoclingReader';
+export * from './AudioReader';
+export * from './HtmlReader';
+export * from './OfficeReader';

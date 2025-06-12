@@ -50,7 +50,7 @@ export class TextChunker {
 
     return chunks.map((chunk, index) => ({
       content: chunk,
-      index: index,
+      index: index + 1,
       totalChunks: chunks.length,
       startOffset: this.calculateStartPosition(chunks, index, options.overlapSize),
       endOffset: this.calculateEndPosition(chunks, index, options.overlapSize)

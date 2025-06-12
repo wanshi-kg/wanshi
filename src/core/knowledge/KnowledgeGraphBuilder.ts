@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { OllamaService, LLMMessage } from '../llm/OllamaService';
 import { PromptManager, PromptContext } from '../llm/prompts/PromptManager';
-import { ProcessedFile, KnowledgeGraph, ProcessedImage } from '../../types';
+import { ProcessedFile, KnowledgeGraph, ProcessedImage, IKnowledgeGraphBuilder } from '../../types';
 import { logger } from '../../shared/logger';
 
 // Define the schema for knowledge graph extraction
@@ -32,7 +32,7 @@ export interface BuilderOptions {
 /**
  * Builds knowledge graphs from processed files using LLM
  */
-export class KnowledgeGraphBuilder {
+export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
   private ollamaService: OllamaService;
   private promptManager: PromptManager;
 
@@ -59,6 +59,7 @@ export class KnowledgeGraphBuilder {
         const kg = await this.buildFromChunk(
           processedFile.path,
           chunk.content,
+          processedFile.content,
           systemPrompt,
           chunk.index,
           chunk.totalChunks,
@@ -102,6 +103,7 @@ export class KnowledgeGraphBuilder {
   private async buildFromChunk(
     filePath: string,
     content: string,
+    fullContent: string,
     systemPrompt: string,
     chunkIndex: number,
     totalChunks: number,
@@ -114,7 +116,8 @@ export class KnowledgeGraphBuilder {
       input: '',
       filter: '',
       fileName: filePath,
-      fileContent: { content },
+      fileContent: fullContent,
+      chunkContent: content,
       chunkIndex,
       totalChunks,
       retrievedContext
@@ -139,7 +142,8 @@ export class KnowledgeGraphBuilder {
       input: '',
       filter: '',
       fileName: filePath,
-      fileContent: { content },
+      fileContent: content,
+      chunkContent: content,
       retrievedContext
     });
 

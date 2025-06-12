@@ -3,23 +3,21 @@ import { TextReader } from './TextReader';
 import { ImageReader } from './ImageReader';
 import { PdfReader } from './PdfReader';
 import { logger } from '../../../shared/logger';
+import { HtmlReader } from './HtmlReader';
+import { OfficeReader } from './OfficeReader';
 
 /**
  * Factory for creating appropriate file readers based on file type
  */
 export class FileReaderFactory {
-  private static readers: FileReader[] = [
-    new TextReader(),
-    new ImageReader(),
-    new PdfReader()
-  ];
+  private readers: FileReader[] = [];
 
   /**
    * Get appropriate reader for a file
    * @param filePath Path to the file
    * @returns FileReader instance or null if no reader supports the file
    */
-  static getReader(filePath: string): FileReader | null {
+  getReader(filePath: string): FileReader | null {
     for (const reader of this.readers) {
       if (reader.canRead(filePath)) {
         logger.debug(`Using ${reader.getName()} for file: ${filePath}`);
@@ -35,7 +33,7 @@ export class FileReaderFactory {
    * Register a custom reader
    * @param reader Custom FileReader implementation
    */
-  static registerReader(reader: FileReader): void {
+  registerReader(reader: FileReader): void {
     this.readers.push(reader);
     logger.info(`Registered custom reader: ${reader.getName()}`);
   }
@@ -43,14 +41,14 @@ export class FileReaderFactory {
   /**
    * Get all registered readers
    */
-  static getReaders(): FileReader[] {
+  getReaders(): FileReader[] {
     return [...this.readers];
   }
 
   /**
    * Check if any reader supports the file
    */
-  static canRead(filePath: string): boolean {
+  canRead(filePath: string): boolean {
     return this.getReader(filePath) !== null;
   }
 }

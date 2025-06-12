@@ -6,7 +6,8 @@ export interface PromptContext {
   input: string;
   filter: string;
   fileName: string;
-  fileContent: any;
+  fileContent: string;
+  chunkContent: string;
   chunkIndex?: number;
   totalChunks?: number;
   retrievedContext?: any;
@@ -17,7 +18,7 @@ export interface PromptContext {
  */
 export class PromptManager {
   private templateEngine: PromptTemplateEngine;
-  private systemPromptVersion: string = 'v3';
+  private systemPromptVersion: string = 'v4';
   private customSystemPrompt?: string;
   private templatesDir: string;
 
@@ -94,10 +95,10 @@ export class PromptManager {
       const templateContext: TemplateContext = {
         fileName: context.fileName,
         filePath: context.fileName,
-        fileContent: context.fileContent?.content || context.fileContent,
+        fileContent: context.fileContent,
         chunkIndex: context.chunkIndex,
         totalChunks: context.totalChunks,
-        chunkContent: context.fileContent?.content,
+        chunkContent: context.chunkContent,
         inputDirectory: context.input,
         filter: context.filter
       };
@@ -153,7 +154,7 @@ export class PromptManager {
       prompt += `(Chunk ${context.chunkIndex} of ${context.totalChunks})\n\n`;
     }
 
-    prompt += `${context.fileContent?.content || context.fileContent}\n\n`;
+    prompt += `${context.chunkContent || context.fileContent}\n\n`;
     prompt += `Extract all entities and relationships from this content.`;
 
     return prompt;

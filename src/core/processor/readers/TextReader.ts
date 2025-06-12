@@ -9,8 +9,7 @@ export class TextReader extends FileReader {
   constructor() {
     super([
       '.txt', '.md', '.markdown', '.rst', '.asciidoc',
-
-            '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
+      '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
       '.py', '.pyw', '.pyi', '.pyc', '.pyd', '.pyo',
       '.java', '.class', '.jar',
       '.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hxx',

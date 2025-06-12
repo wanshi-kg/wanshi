@@ -12,19 +12,15 @@
 
 ## 🚧 In Progress (Phase 2)
 
-- [ ] Create batch processing for multiple files
-- [ ] Add progress reporting for long operations
 - [ ] Set up Jest/Vitest testing framework
 - [ ] Create unit tests for core services
 - [ ] Add integration tests for end-to-end flows
 - [ ] Mock LLM responses for consistent testing
 - [ ] Add test coverage reporting
 - [ ] File-based embeddings caching
-- [ ] Performance benchmarking
 - [ ] Implement quality evaluator from README specs
 - [ ] Add entity/observation validation
 - [ ] Create hallucination detection system
-- [ ] Add metrics collection, logging and reporting (Processing speed (files/second), Memory usage per file, LLM token usage, Cache hit rates, Error rates by file type, Knowledge graph quality scores)
 - [ ] Implement graph consistency checker
 
 ## 📋 Planned (Phase 3-5)

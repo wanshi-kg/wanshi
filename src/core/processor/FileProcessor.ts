@@ -1,17 +1,19 @@
-import { FileReaderFactory } from './readers';
 import { logger } from '../../shared/logger';
 import * as path from 'path';
 import { ChunkingOptions, IFileProcessor, ProcessedFile } from '../../types';
 import { TextChunker } from './chunking';
+import { FileReaderFactory } from './readers';
 
 /**
  * Main file processor that coordinates reading and chunking
  */
 export class FileProcessor implements IFileProcessor {
-  private textChunker: TextChunker;
+  private readonly textChunker: TextChunker;
+  private readonly readerFactory: FileReaderFactory;
 
-  constructor() {
+  constructor(readerFactory: FileReaderFactory) {
     this.textChunker = new TextChunker();
+    this.readerFactory = readerFactory;
   }
 
   /**
@@ -24,7 +26,7 @@ export class FileProcessor implements IFileProcessor {
     logger.info(`Processing file: ${filePath}`);
 
     // Get appropriate reader
-    const reader = FileReaderFactory.getReader(filePath);
+    const reader = this.readerFactory.getReader(filePath);
     if (!reader) {
       logger.warn(`No reader available for file: ${filePath}`);
       return {
@@ -130,6 +132,6 @@ export class FileProcessor implements IFileProcessor {
    * Check if a file can be processed
    */
   canProcess(filePath: string): boolean {
-    return FileReaderFactory.canRead(filePath);
+    return this.readerFactory.canRead(filePath);
   }
 }

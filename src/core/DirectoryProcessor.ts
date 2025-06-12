@@ -1,10 +1,10 @@
-import { glob } from 'glob';
-import * as fs from 'fs';
-import * as path from 'path';
-import { logger } from '../shared/logger';
-import { KnowledgeGraph } from '../types/KnowledgeGraph';
-import { ProcessingOptions } from '../types/ProcessingOptions';
-import { DIContainer, TYPES } from './di';
+import { glob } from "glob";
+import * as fs from "fs";
+import * as path from "path";
+import { logger } from "../shared/logger";
+import { KnowledgeGraph } from "../types/KnowledgeGraph";
+import { ProcessingOptions } from "../types/ProcessingOptions";
+import { DIContainer, TYPES } from "./di";
 import {
   IFileProcessor,
   IKnowledgeGraphBuilder,
@@ -14,9 +14,9 @@ import {
   IDirectoryProcessor,
   ChunkingOptions,
   ProcessedFile,
-  MergeOptions
-} from '../types';
-import { PromptManager } from './llm';
+  MergeOptions,
+} from "../types";
+import { PromptManager } from "./llm";
 
 /**
  * Refactored DirectoryProcessor using dependency injection
@@ -30,7 +30,9 @@ export class DirectoryProcessor implements IDirectoryProcessor {
    */
   async processDirectory(options: ProcessingOptions): Promise<void> {
     logger.info(`Starting knowledge graph generation`);
-    logger.info(`Input: ${options.input}, Filter: ${options.filter}, Output: ${options.output}, Model: ${options.model}`);
+    logger.info(
+      `Input: ${options.input}, Filter: ${options.filter}, Output: ${options.output}, Model: ${options.model}`
+    );
 
     try {
       // Orchestrate the workflow
@@ -77,13 +79,24 @@ export class DirectoryProcessor implements IDirectoryProcessor {
   ): Promise<KnowledgeGraph[]> {
     const knowledgeGraphs: KnowledgeGraph[] = [];
     const chunkingOptions = this.createChunkingOptions(options);
-    
-    const fileProcessor = await this.container.resolve<IFileProcessor>(TYPES.FileProcessor);
-    const kgBuilder = await this.container.resolve<IKnowledgeGraphBuilder>(TYPES.KnowledgeGraphBuilder);
-    
+
+    const fileProcessor = await this.container.resolve<IFileProcessor>(
+      TYPES.FileProcessor
+    );
+    const kgBuilder = await this.container.resolve<IKnowledgeGraphBuilder>(
+      TYPES.KnowledgeGraphBuilder
+    );
+
     for (const file of files) {
       try {
-        const fileGraphs = await this.processFile(file, chunkingOptions, options, fileProcessor, kgBuilder, knowledgeGraphs);
+        const fileGraphs = await this.processFile(
+          file,
+          chunkingOptions,
+          options,
+          fileProcessor,
+          kgBuilder,
+          knowledgeGraphs
+        );
         knowledgeGraphs.push(...fileGraphs);
 
         if (options.debug) {
@@ -110,7 +123,10 @@ export class DirectoryProcessor implements IDirectoryProcessor {
   ): Promise<KnowledgeGraph[]> {
     logger.info(`Processing: ${file}`);
 
-    const processedFile = await fileProcessor.processFile(file, chunkingOptions);
+    const processedFile = await fileProcessor.processFile(
+      file,
+      chunkingOptions
+    );
     this.validateProcessedFile(processedFile, file);
 
     const retrievalContext = await this.getRetrievalContext(
@@ -120,8 +136,14 @@ export class DirectoryProcessor implements IDirectoryProcessor {
       options
     );
 
-    const promptManager = await this.container.resolve(TYPES.PromptManager) as PromptManager;
-    const systemPrompt = await promptManager.getSystemPrompt(options.input, options.filter, options.description);
+    const promptManager = (await this.container.resolve(
+      TYPES.PromptManager
+    )) as PromptManager;
+    const systemPrompt = await promptManager.getSystemPrompt(
+      options.input,
+      options.filter,
+      options.description
+    );
 
     return await kgBuilder.build(processedFile, systemPrompt, retrievalContext);
   }
@@ -133,7 +155,7 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     return {
       maxChunkSize: Number(options.chunkSize || 2000),
       overlapSize: Number(options.overlapSize || 100),
-      enabled: this.shouldEnableChunking(options)
+      enabled: this.shouldEnableChunking(options),
     };
   }
 
@@ -142,18 +164,21 @@ export class DirectoryProcessor implements IDirectoryProcessor {
    */
   private shouldEnableChunking(options: ProcessingOptions): boolean {
     // Fix the conflicting boolean pairs issue
-    if (options.chunking === 'disabled') return false;
-    if (options.chunking === 'enabled') return true;
+    if (options.chunking === "disabled") return false;
+    if (options.chunking === "enabled") return true;
     return true; // Auto (anyway true)
   }
 
   /**
    * Validate processed file content
    */
-  private validateProcessedFile(processedFile: ProcessedFile, filePath: string): void {
+  private validateProcessedFile(
+    processedFile: ProcessedFile,
+    filePath: string
+  ): void {
     const hasContent = processedFile.content?.trim();
     const hasImages = processedFile.images && processedFile.images.length > 0;
-    
+
     if (!hasContent && !hasImages) {
       logger.warn(`No content extracted from: ${filePath}`);
       throw new Error(`No content extracted from file: ${filePath}`);
@@ -173,14 +198,16 @@ export class DirectoryProcessor implements IDirectoryProcessor {
       return undefined;
     }
 
-    const searchService = await this.container.resolve<IKnowledgeGraphSearch>(TYPES.KnowledgeGraphSearch);
+    const searchService = await this.container.resolve<IKnowledgeGraphSearch>(
+      TYPES.KnowledgeGraphSearch
+    );
     return await searchService.searchByFileContent(
       processedFile.content,
       filePath,
       existingGraphs,
-      { 
-        limit: options.retrievalLimit || 3, 
-        includeObservations: true 
+      {
+        limit: options.retrievalLimit || 3,
+        includeObservations: true,
       }
     );
   }
@@ -190,8 +217,8 @@ export class DirectoryProcessor implements IDirectoryProcessor {
    */
   private shouldUseRetrieval(options: ProcessingOptions): boolean {
     // Fix the conflicting boolean pairs issue
-    if (options.retrieval === 'disabled') return false;
-    if (options.retrieval === 'enabled') return true;
+    if (options.retrieval === "disabled") return false;
+    if (options.retrieval === "enabled") return true;
     return true; // Auto to true
   }
 
@@ -203,14 +230,17 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     options: ProcessingOptions
   ): Promise<KnowledgeGraph> {
     logger.info(`Merging ${graphs.length} knowledge graphs`);
-    
-    const merger = await this.container.resolve<IKnowledgeGraphMerger>(TYPES.KnowledgeGraphMerger);
-    
+
+    const merger = await this.container.resolve<IKnowledgeGraphMerger>(
+      TYPES.KnowledgeGraphMerger
+    );
+
     const mergeOptions: MergeOptions = {
       entitySimilarityThreshold: options.entitySimilarityThreshold || 0.9,
-      observationSimilarityThreshold: options.observationSimilarityThreshold || 0.9,
-      model: options.embeddingsModel || 'mxbai-embed-large:335m',
-      host: options.host
+      observationSimilarityThreshold:
+        options.observationSimilarityThreshold || 0.9,
+      model: options.embeddingsModel || "mxbai-embed-large:335m",
+      host: options.host,
     };
 
     return await merger.merge(graphs, mergeOptions);
@@ -224,17 +254,23 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     options: ProcessingOptions
   ): Promise<void> {
     await this.ensureOutputDirectory(options.output);
-    
-    const exporter = await this.container.resolve<IKnowledgeGraphExporter>(TYPES.KnowledgeGraphExporter);
-    const exportFormat = options.exportFormat || 'json';
-    
+
+    const exporter = await this.container.resolve<IKnowledgeGraphExporter>(
+      TYPES.KnowledgeGraphExporter
+    );
+    const exportFormat = options.exportFormat || "json";
+
     if (!exporter.isFormatSupported(exportFormat)) {
-      throw new Error(`Unsupported export format: ${exportFormat}. Supported: ${exporter.getSupportedFormats().join(', ')}`);
+      throw new Error(
+        `Unsupported export format: ${exportFormat}. Supported: ${exporter
+          .getSupportedFormats()
+          .join(", ")}`
+      );
     }
 
     const outputContent = exporter.export(knowledgeGraph, exportFormat);
     const outputPath = this.getOutputPath(options.output, exportFormat);
-    
+
     await fs.promises.writeFile(outputPath, outputContent);
   }
 
@@ -253,13 +289,19 @@ export class DirectoryProcessor implements IDirectoryProcessor {
    */
   private getOutputPath(originalPath: string, format: string): string {
     switch (format) {
-      case 'jsonl':
-        return originalPath.endsWith('.jsonl') ? originalPath : originalPath.replace(/\.[^.]+$/, '.jsonl');
-      case 'mcp-jsonl':
-        return originalPath.endsWith('.jsonl') ? originalPath : originalPath.replace(/\.[^.]+$/, '.mcp.jsonl');
-      case 'json':
+      case "jsonl":
+        return originalPath.endsWith(".jsonl")
+          ? originalPath
+          : originalPath.replace(/\.[^.]+$/, ".jsonl");
+      case "mcp-jsonl":
+        return originalPath.endsWith(".jsonl")
+          ? originalPath
+          : originalPath.replace(/\.[^.]+$/, ".mcp.jsonl");
+      case "json":
       default:
-        return originalPath.endsWith('.json') ? originalPath : originalPath.replace(/\.[^.]+$/, '.json');
+        return originalPath.endsWith(".json")
+          ? originalPath
+          : originalPath.replace(/\.[^.]+$/, ".json");
     }
   }
 
@@ -270,7 +312,7 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     graphs: KnowledgeGraph[],
     outputPath: string
   ): Promise<void> {
-    const tmpPath = outputPath + '.tmp';
+    const tmpPath = outputPath + ".tmp";
     await fs.promises.writeFile(tmpPath, JSON.stringify(graphs, null, 2));
   }
 
@@ -279,9 +321,6 @@ export class DirectoryProcessor implements IDirectoryProcessor {
    */
   private handleFileError(file: string, error: any, debug: boolean): void {
     logger.error(`Failed to process file ${file}: ${error.message || error}`);
-    if (debug) {
-      console.error(error);
-    }
   }
 
   /**
@@ -289,9 +328,6 @@ export class DirectoryProcessor implements IDirectoryProcessor {
    */
   private handleError(error: any, debug: boolean): void {
     logger.error(`Failed to process directory: ${error.message || error}`);
-    if (debug) {
-      console.error(error);
-    }
   }
 
   /**

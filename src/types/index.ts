@@ -5,3 +5,4 @@ export * from './IExportService';
 export * from './KnowledgeGraph';
 export * from './MCPKnowledgeGraph';
 export * from './ProcessingOptions';
+export * from './DotExportOptions';
