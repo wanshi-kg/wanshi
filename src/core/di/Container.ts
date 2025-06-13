@@ -318,10 +318,12 @@ export class ContainerFactory {
     });
 
     // Register Knowledge Graph Exporter
-    container.register(TYPES.KnowledgeGraphExporter, async () => {
+    container.register(TYPES.KnowledgeGraphExporter, async (c) => {
       const { KnowledgeGraphConverter } = await import(
         "../export/KnowledgeGraphConverter"
       );
+
+      const options = await c.resolve<ProcessingOptions>(TYPES.ProcessingOptions);
 
       // Return a wrapper that implements the interface
       return {
@@ -332,7 +334,7 @@ export class ContainerFactory {
             case "mcp-jsonl":
               return KnowledgeGraphConverter.toMCPJSONL(knowledgeGraph);
             case "dot":
-              return KnowledgeGraphConverter.toDOT(knowledgeGraph);
+              return KnowledgeGraphConverter.toDOT(knowledgeGraph, options);
             case "json":
             default:
               return JSON.stringify(knowledgeGraph, null, 2);

@@ -297,6 +297,10 @@ export class DirectoryProcessor implements IDirectoryProcessor {
         return originalPath.endsWith(".jsonl")
           ? originalPath
           : originalPath.replace(/\.[^.]+$/, ".mcp.jsonl");
+      case "dot":
+        return originalPath.endsWith(".dot")
+          ? originalPath
+          : originalPath.replace(/\.[^.]+$/, ".dot");
       case "json":
       default:
         return originalPath.endsWith(".json")

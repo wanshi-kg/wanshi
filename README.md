@@ -25,7 +25,7 @@ An advanced CLI tool that analyzes files, extracts meaningful entities and relat
 
 ### 🔥 Core Capabilities
 
-- **Multi-format Processing**: Text, code, PDFs, images with smart content extraction
+- **Multi-format Processing**: Text, code, PDFs, images and audi/video with smart content extraction
 - **Hierarchical Merging**: File-level → entity-level → global-level intelligent merging
 - **Smart Chunking**: Content-aware splitting with overlap for large files
 - **Context-Aware Processing**: Uses existing knowledge to maintain consistency
@@ -49,21 +49,7 @@ An advanced CLI tool that analyzes files, extracts meaningful entities and relat
 ## 📦 Installation
 
 ```bash
-# Clone repository
-git clone https://github.com/yourusername/knowledge-graph-generator
-cd knowledge-graph-generator
-
-# Install dependencies
-npm install
-
-# Build project
-npm run build
-
-# Make globally available
-npm link
-
-# Or install directly
-npm install -g knowledge-graph-generator
+TODO: Add examples later
 ```
 
 ## 🎮 Usage
@@ -71,42 +57,13 @@ npm install -g knowledge-graph-generator
 ### Basic Usage
 
 ```bash
-# Process current directory
-kg-gen
-
-# Process specific directory with custom output
-kg-gen -i ./src -o knowledge-graph.json
-
-# Use specific model and chunking
-kg-gen -i ./docs -m llama3.2 --chunk-size 3000 --overlap-size 150
-
-# Export in MCP format for Claude Desktop
-kg-gen -i ./project --export-format mcp-jsonl -o memory.jsonl
-
-# Watch mode for real-time updates
-kg-gen -i ./src -w --silent
+TODO: Add examples later
 ```
 
 ### Advanced Usage
 
 ```bash
-# Fine-tuned entity similarity and observation deduplication
-kg-gen -i ./codebase \
-  --entity-similarity 0.85 \
-  --observation-similarity 0.9 \
-  --model mistral-7b
-
-# Enable vector search with ChromaDB
-kg-gen -i ./research \
-  --vector-store chroma \
-  --chroma-host http://localhost:8000 \
-  --reranker BAAI/bge-reranker-base
-
-# Debug mode with detailed logging
-kg-gen -i ./project \
-  --debug \
-  --log-level debug \
-  --log-file processing.log
+TODO: Add examples later
 ```
 
 ### CLI Options
@@ -184,17 +141,7 @@ The system includes comprehensive quality evaluation:
 ## 🧪 Testing
 
 ```bash
-# Run full test suite
-npm test
-
-# Run quality evaluation
-npm run test:quality
-
-# Run performance benchmarks
-npm run benchmark
-
-# Generate test coverage
-npm run test:coverage
+TODO: Add examples later
 ```
 
 ## 🔧 Configuration
@@ -202,23 +149,7 @@ npm run test:coverage
 ### Environment Variables
 
 ```bash
-# Ollama configuration
-OLLAMA_HOST=http://localhost:11434
-OLLAMA_MODEL=llama3.2
-
-# Vector database configuration  
-CHROMA_HOST=http://localhost:8000
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=password
-
-# Cache configuration
-KG_CACHE_DIR=./.kg-cache
-KG_CACHE_SIZE_MB=1024
-
-# Quality thresholds
-ENTITY_SIMILARITY_THRESHOLD=0.8
-OBSERVATION_SIMILARITY_THRESHOLD=0.85
+TODO: Add examples later
 ```
 
 ## 🤖 Local LLM Requirements & Leaderboard
@@ -232,15 +163,15 @@ TODO: Add examples later
 ### Development Setup
 
 ```bash
-git clone https://github.com/yourusername/knowledge-graph-generator
-cd knowledge-graph-generator
+git clone https://github.com/alex_sabaka/kg-gen
+cd kg-gen
 npm install
 npm run dev
 ```
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+GPL-3.0 License - see [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
