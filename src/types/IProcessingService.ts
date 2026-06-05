@@ -4,6 +4,11 @@
 export interface ProcessedFile {
   path: string;
   chunks: ProcessedChunk[];
+  /**
+   * Full source text of the file, reconstructed from chunk offsets. Fed to the
+   * document-outline generator and the grounding path; empty when unavailable.
+   */
+  content?: string;
   metadata?: Record<string, any>;
 }
 

@@ -2,8 +2,9 @@ import * as path from 'path';
 import { z } from 'zod';
 import { ILLMProvider, LLMMessage } from '../../types/ILLMProvider';
 import { PromptManager, PromptContext } from '../llm/prompts/PromptManager';
-import { ProcessedFile, KnowledgeGraph, ProcessedImage, IKnowledgeGraphBuilder, ClassificationResult } from '../../types';
+import { ProcessedFile, KnowledgeGraph, ProcessedImage, IKnowledgeGraphBuilder, ClassificationResult, IProgressEmitter } from '../../types';
 import { CheckpointService } from '../checkpoint';
+import { NoopProgressEmitter } from '../progress';
 import { Logger, shutdown } from '../../shared';
 
 // Define the schema for knowledge graph extraction
@@ -39,6 +40,9 @@ export interface BuilderOptions {
   // *relative to this root* so moving the whole tree / changing the `input`
   // prefix doesn't invalidate the checkpoint.
   inputRoot?: string;
+  // Optional structured-progress sink (per-chunk start/complete events).
+  // Defaults to a no-op emitter.
+  progress?: IProgressEmitter;
 }
 
 /**
@@ -53,6 +57,7 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
   private promptVersion: string;
   private inputRoot: string;
   private logger: Logger;
+  private progress: IProgressEmitter;
 
   constructor(options: BuilderOptions, logger: Logger) {
     this.llmService = options.llmService;
@@ -63,6 +68,7 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
     this.promptVersion = options.promptVersion ?? 'default';
     this.inputRoot = options.inputRoot ?? '';
     this.logger = logger;
+    this.progress = options.progress ?? new NoopProgressEmitter();
   }
 
   /**
@@ -118,7 +124,7 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
             this.buildFromChunk(
               processedFile.path,
               chunk.content,
-              '', // TODO: What to do here? Do I need fileContent?
+              processedFile.content ?? '', // full file text → outline + grounding
               systemPrompt,
               chunk.index,
               chunk.totalChunks,
@@ -178,6 +184,13 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
     generate: () => Promise<KnowledgeGraph>,
     attachMetadata: (entity: KnowledgeGraph['entities'][number]) => void
   ): Promise<KnowledgeGraph> {
+    this.progress.emit({
+      type: "chunk_start",
+      path: filePath,
+      chunk: chunkIndex,
+      totalChunks,
+    });
+
     const relPath = this.stablePathId(filePath);
     const key =
       this.resume && this.checkpoint
@@ -194,11 +207,31 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
       this.logger.info(
         `Skipping cached chunk ${chunkIndex}/${totalChunks} of ${filePath} (checkpoint hit)`
       );
-      return this.checkpoint!.get(key)!;
+      const cached = this.checkpoint!.get(key)!;
+      this.progress.emit({
+        type: "chunk_complete",
+        path: filePath,
+        chunk: chunkIndex,
+        totalChunks,
+        entities: cached.entities.length,
+        relations: cached.relations.length,
+        cached: true,
+      });
+      return cached;
     }
 
     const kg = await generate();
     kg.entities.forEach(attachMetadata);
+
+    this.progress.emit({
+      type: "chunk_complete",
+      path: filePath,
+      chunk: chunkIndex,
+      totalChunks,
+      entities: kg.entities.length,
+      relations: kg.relations.length,
+      cached: false,
+    });
 
     if (key) {
       await this.checkpoint!.append({

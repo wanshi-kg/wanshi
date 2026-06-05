@@ -2,7 +2,7 @@
 
 import { Command } from "commander";
 import * as info from "../../package.json";
-import { processCommand, watchCommand } from "./commands";
+import { processCommand, watchCommand, exportCommand } from "./commands";
 import { ProcessingOptions } from "../types/ProcessingOptions";
 import { ContainerFactory, TYPES } from "../core/di";
 import { readConfigurationFile, Logger, LoggerFactory } from "../shared";
@@ -132,7 +132,7 @@ program
   // Content Classification
   .option(
     "--classifier <mode>",
-    "content classifier mode (disabled|heuristic|llm|bert)",
+    "content classifier mode (disabled|heuristic|llm)",
     "disabled"
   )
 
@@ -181,6 +181,11 @@ program
   .option("-l, --log-file <path>", "log file")
   .option("-D, --debug", "debug mode", false)
   .option("-S, --silent", "silent mode", false)
+  .option(
+    "--progress-ndjson",
+    "emit structured NDJSON progress events (and log lines) to stdout for a parent process / UI to consume; suppresses pretty logging so stdout stays a clean NDJSON stream",
+    false
+  )
 
   // Resume / Continuation
   .option(
@@ -195,6 +200,11 @@ program
 
   // Runtime Modes
   .option("-w, --watch", "watch for changes and update knowledge graph", false)
+  .option(
+    "--export-only",
+    "convert an existing knowledge-graph JSON file (--input) to --export-format, written to --output",
+    false
+  )
 
   .version(info.version)
   .action(async (options: ProcessingOptions) => {
@@ -214,6 +224,16 @@ program
       };
     }
 
+    // The BERT classifier is not implemented; reject it early with a clear
+    // message rather than failing partway through a run.
+    if ((options.classifier as string) === "bert") {
+      const tempLogger = LoggerFactory.createLogger(options);
+      tempLogger.error(
+        "The 'bert' classifier is not implemented. Use --classifier heuristic|llm, or disabled."
+      );
+      process.exit(1);
+    }
+
     // API keys may come from the environment instead of CLI/config.
     const envApiKey = process.env.OPENAI_API_KEY || process.env.KG_API_KEY;
     if (!options.apiKey && envApiKey) {
@@ -231,7 +251,9 @@ program
     const logger = await container.resolve<Logger>(TYPES.Logger);
 
     try {
-      if (options.watch) {
+      if (options.exportOnly) {
+        await exportCommand(container);
+      } else if (options.watch) {
         await watchCommand(container);
       } else {
         await processCommand(container);

@@ -58,6 +58,7 @@ export class FileProcessor implements IFileProcessor {
       // Return results
       return {
         path: filePath,
+        content: this.reconstructContent(readResult.chunks),
         chunks: readResult.chunks.map((chunk) => {
           return {
             content: chunk.content,
@@ -86,6 +87,36 @@ export class FileProcessor implements IFileProcessor {
       this.logger.error(`Failed to process file ${filePath}: ${error}`);
       throw new Error(`Failed to process file ${filePath}: ${error}`);
     }
+  }
+
+  /**
+   * Reconstruct the full source text from chunks using their offsets, dropping
+   * any overlap added by the chunker. Falls back to plain concatenation when
+   * offsets are absent/unreliable. Used for outline generation and grounding.
+   */
+  private reconstructContent(
+    chunks: { content: string; startOffset?: number; endOffset?: number }[]
+  ): string {
+    if (chunks.length === 0) return "";
+    if (chunks.length === 1) return chunks[0].content;
+
+    const sorted = [...chunks].sort(
+      (a, b) => (a.startOffset ?? 0) - (b.startOffset ?? 0)
+    );
+    let result = "";
+    let cursor = 0;
+    for (const c of sorted) {
+      const start = c.startOffset ?? cursor;
+      const end = c.endOffset ?? start + c.content.length;
+      if (start >= cursor) {
+        result += c.content;
+      } else {
+        const overlap = cursor - start;
+        result += overlap < c.content.length ? c.content.slice(overlap) : "";
+      }
+      cursor = Math.max(cursor, end);
+    }
+    return result;
   }
 
   private async classifyContent(filePath: string, readResult: FileReadResult) {

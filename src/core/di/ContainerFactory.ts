@@ -4,6 +4,7 @@ import {
   ILLMProvider,
   IPromptManager,
   IKnowledgeGraphMerger,
+  IProgressEmitter,
 } from "../../types";
 import { DIContainer } from "./DIContainer";
 import { EmbeddingService } from "../llm";
@@ -32,6 +33,7 @@ export const TYPES = {
   KnowledgeGraphExportService: Symbol.for("KnowledgeGraphExportService"),
   ProcessingOptions: Symbol.for("ProcessingOptions"),
   CheckpointService: Symbol.for("CheckpointService"),
+  ProgressEmitter: Symbol.for("ProgressEmitter"),
 };
 
 /**
@@ -79,6 +81,21 @@ export class ContainerFactory {
       );
 
       return LoggerFactory.createLogger(options);
+    });
+
+    // Register progress emitter. NDJSON-on-stdout when --progress-ndjson is set
+    // (for a parent process / UI), otherwise a no-op so the normal path is
+    // unaffected.
+    container.register(TYPES.ProgressEmitter, async (c) => {
+      const options = await c.resolve<ProcessingOptions>(
+        TYPES.ProcessingOptions
+      );
+      const { NoopProgressEmitter, NdjsonProgressEmitter } = await import(
+        "../progress"
+      );
+      return options.progressNdjson
+        ? new NdjsonProgressEmitter(process.stdout)
+        : new NoopProgressEmitter();
     });
 
     // Register LLM services (provider-selectable: local Ollama or OpenAI-compatible)
@@ -275,14 +292,18 @@ export class ContainerFactory {
     container.register<IContentClassifier | undefined>(TYPES.ContentClassifier, async (c) => {
       const {
         HeuristicContentClassifier,
-        BertContentClassifier
       } = await import("../processor/classifier");
       const options = await c.resolve<ProcessingOptions>(
         TYPES.ProcessingOptions
       );
       const logger = await c.resolve<Logger>(TYPES.Logger);
       switch (options.classifier) {
-        case "bert": return new BertContentClassifier(logger);
+        case "bert":
+          // Not implemented — fail clearly at wiring time rather than throwing
+          // partway through a run. The CLI also rejects this earlier.
+          throw new Error(
+            "The 'bert' classifier is not implemented. Use --classifier heuristic|llm, or disabled."
+          );
         case "heuristic": return new HeuristicContentClassifier(logger);
         case "llm": return new LlmContentClassifier(logger, { model: options.model, host: options.host });
         default: return undefined;
@@ -341,6 +362,9 @@ export class ContainerFactory {
       const checkpoint = await c.resolve<CheckpointService>(
         TYPES.CheckpointService
       );
+      const progress = await c.resolve<IProgressEmitter>(
+        TYPES.ProgressEmitter
+      );
 
       return new KnowledgeGraphBuilder(
         {
@@ -351,6 +375,7 @@ export class ContainerFactory {
           model: options.model,
           promptVersion: options.promptVersion,
           inputRoot: options.input,
+          progress,
         },
         logger
       );

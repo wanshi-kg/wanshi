@@ -8,13 +8,13 @@
   },
   "scripts": {
     "start": "ts-node ./src/index.ts",
-    "test": "ts-node ./src/index.ts --config /Users/oleksii/Downloads/33/config.yml",
-    "t3-test": "ts-node ./t4.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "build": "tsc",
     "benchmark": "ts-node scripts/benchmark.ts"
   },
   "author": "Alex Sabaka",
-  "license": "GPL-3.0",
+  "license": "MIT",
   "nodemonConfig": {
     "ext": "*.ts,*.js,*.json",
     "ignore": [

@@ -100,8 +100,15 @@ export interface ProcessingOptions {
   debug: boolean;
   silent: boolean;
 
+  // Progress reporting. When true, structured progress events and log lines are
+  // emitted as newline-delimited JSON on stdout (demuxed by a `channel` field)
+  // for a parent process / UI to consume. Built-in pretty logging is suppressed
+  // to keep stdout a clean NDJSON stream. Default false (no behavior change).
+  progressNdjson?: boolean;
+
   // Runtime Modes
   watch: boolean;
+  exportOnly?: boolean;
 }
 
 /**

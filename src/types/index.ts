@@ -12,6 +12,7 @@ export * from './IKnowledgeGraphExporter';
 export * from './IKnowledgeGraphBuilder';
 export * from './IKnowledgeGraphMerger';
 export * from './IKnowledgeGraphSearch';
+export * from './IProgressEmitter';
 export * from './KnowledgeGraph';
 export * from './MCPKnowledgeGraph';
 export * from './ProcessingOptions';

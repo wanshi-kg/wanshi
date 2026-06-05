@@ -12,7 +12,8 @@ import {
   IDirectoryProcessor,
   ChunkingOptions,
   ProcessedFile,
-  IFileProcessor
+  IFileProcessor,
+  IProgressEmitter
 } from "../types";
 import { PromptManager } from "./llm";
 import { Logger, shutdown } from "../shared";
@@ -61,6 +62,7 @@ export class DirectoryProcessor implements IDirectoryProcessor {
    */
   async processDirectory(options: ProcessingOptions): Promise<void> {
     const logger = await this.container.resolve<Logger>(TYPES.Logger);
+    const progress = await this.container.resolve<IProgressEmitter>(TYPES.ProgressEmitter);
     const fileDiscoveryService = await this.container.resolve<IFileDiscoveryService>(TYPES.FileDiscoveryService);
 
     logger.info(`Starting knowledge graph generation`);
@@ -71,6 +73,7 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     try {
       // Orchestrate the workflow
       const files = await fileDiscoveryService.discover();
+      progress.emit({ type: "discovery", totalFiles: files.length });
 
       const knowledgeGraphs = await this.processFiles(files, options);
 
@@ -80,12 +83,31 @@ export class DirectoryProcessor implements IDirectoryProcessor {
         );
       }
 
+      progress.emit({ type: "merge", graphCount: knowledgeGraphs.length });
       const finalKG = await this.mergeGraphs(knowledgeGraphs, logger);
-      await this.exportKnowledgeGraph(finalKG, options);
+      const outputPath = await this.exportKnowledgeGraph(finalKG, options);
 
-      this.logSuccess(finalKG, options.output, logger);
+      progress.emit({
+        type: "export",
+        format: options.exportFormat || "json",
+        entities: finalKG.entities.length,
+        relations: finalKG.relations.length,
+        output: outputPath,
+      });
+      this.logSuccess(finalKG, outputPath, logger);
+      progress.emit({
+        type: "done",
+        entities: finalKG.entities.length,
+        relations: finalKG.relations.length,
+        output: outputPath,
+        interrupted: shutdown.isRequested(),
+      });
     } catch (error) {
       this.handleError(error, options.debug, logger);
+      progress.emit({
+        type: "error",
+        message: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }
@@ -99,25 +121,13 @@ export class DirectoryProcessor implements IDirectoryProcessor {
   ): Promise<KnowledgeGraph[]> {
     const knowledgeGraphs: KnowledgeGraph[] = [];
 
-    // if output graph exists, load it to use for retrieval context
-    // TECH DEBT: these prior graphs are also pushed into `knowledgeGraphs`, so a
-    // plain re-run (without --resume) re-merges the old output into the new one,
-    // double-counting. Pre-existing behavior; orthogonal to checkpoint/resume.
-    if (fs.existsSync(options.output)) {
-      const existingContent = fs.readFileSync(options.output, "utf-8");
-      try {
-        const existingGraphs = JSON.parse(existingContent) as KnowledgeGraph[];
-        knowledgeGraphs.push(...existingGraphs);
-      } catch (error) {
-        // log and ignore
-        const logger = await this.container.resolve<Logger>(TYPES.Logger);
-        logger.error(
-          `Failed to parse existing knowledge graph at ${options.output}: ${error}`
-        );
-      }
-    }
-
     const logger = await this.container.resolve<Logger>(TYPES.Logger);
+    const progress = await this.container.resolve<IProgressEmitter>(TYPES.ProgressEmitter);
+
+    // Load a prior output graph (if any) to seed retrieval CONTEXT only. It must
+    // NOT enter the merge set: re-merging already-merged output into a fresh run
+    // double-counts entities/observations on a plain (no --resume) re-run.
+    const priorGraphs = await this.loadPriorGraphs(options.output, logger);
 
     const fileProcessor = await this.container.resolve<IFileProcessor>(
       TYPES.FileProcessor
@@ -126,7 +136,10 @@ export class DirectoryProcessor implements IDirectoryProcessor {
       TYPES.KnowledgeGraphBuilder
     );
 
+    const total = files.length;
+    let index = 0;
     for (const file of files) {
+      index += 1;
       // Cooperative interrupt: stop before starting the next file so the
       // partial graph accumulated so far can still be merged and exported.
       if (shutdown.isRequested()) {
@@ -134,26 +147,61 @@ export class DirectoryProcessor implements IDirectoryProcessor {
         break;
       }
 
+      progress.emit({ type: "file_start", index, total, path: file });
       try {
+        // Retrieval sees prior output + graphs built so far this run; merge sees
+        // only what's built this run (knowledgeGraphs).
+        const retrievalContext = [...priorGraphs, ...knowledgeGraphs];
         const fileGraphs = await this.processFile(
           file,
           options,
           fileProcessor,
           kgBuilder,
-          knowledgeGraphs,
+          retrievalContext,
           logger
         );
         knowledgeGraphs.push(...fileGraphs);
+
+        const entities = fileGraphs.reduce((n, g) => n + g.entities.length, 0);
+        const relations = fileGraphs.reduce((n, g) => n + g.relations.length, 0);
+        progress.emit({ type: "file_complete", index, total, path: file, entities, relations });
 
         if (options.debug) {
           await this.writeIntermediateResults(knowledgeGraphs, options.output);
         }
       } catch (error) {
         this.handleFileError(file, error, options.debug, logger);
+        progress.emit({ type: "file_complete", index, total, path: file, entities: 0, relations: 0 });
       }
     }
 
     return knowledgeGraphs;
+  }
+
+  /**
+   * Load a previously-written output graph for retrieval seeding. Tolerates both
+   * the current single-graph object (`{entities, relations}`) and a legacy array
+   * of per-file graphs. Returns [] (and warns) when missing/unparseable — the
+   * prior graph is a retrieval nicety, never required.
+   */
+  private async loadPriorGraphs(
+    outputPath: string,
+    logger: Logger
+  ): Promise<KnowledgeGraph[]> {
+    if (!outputPath || !fs.existsSync(outputPath)) return [];
+    try {
+      const parsed = JSON.parse(fs.readFileSync(outputPath, "utf-8"));
+      if (Array.isArray(parsed)) return parsed as KnowledgeGraph[];
+      if (parsed && typeof parsed === "object" && Array.isArray(parsed.entities)) {
+        return [parsed as KnowledgeGraph];
+      }
+      return [];
+    } catch (error) {
+      logger.warn(
+        `Could not load prior graph at ${outputPath} for retrieval context (ignored): ${error}`
+      );
+      return [];
+    }
   }
 
   /**
@@ -278,7 +326,7 @@ export class DirectoryProcessor implements IDirectoryProcessor {
   private async exportKnowledgeGraph(
     knowledgeGraph: KnowledgeGraph,
     options: ProcessingOptions
-  ): Promise<void> {
+  ): Promise<string> {
     await this.ensureOutputDirectory(options.output);
 
     const exporter = await this.container.resolve<IKnowledgeGraphExporter>(
@@ -298,6 +346,7 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     const outputPath = this.getOutputPath(options.output, exportFormat);
 
     await fs.promises.writeFile(outputPath, outputContent);
+    return outputPath;
   }
 
   /**
