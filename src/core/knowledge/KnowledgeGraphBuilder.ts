@@ -1,3 +1,4 @@
+import * as path from 'path';
 import { z } from 'zod';
 import { ILLMProvider, LLMMessage } from '../../types/ILLMProvider';
 import { PromptManager, PromptContext } from '../llm/prompts/PromptManager';
@@ -34,6 +35,10 @@ export interface BuilderOptions {
   resume?: boolean;
   model: string;
   promptVersion?: string;
+  // Discovery root (`options.input`). The checkpoint key uses the file path
+  // *relative to this root* so moving the whole tree / changing the `input`
+  // prefix doesn't invalidate the checkpoint.
+  inputRoot?: string;
 }
 
 /**
@@ -46,6 +51,7 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
   private resume: boolean;
   private model: string;
   private promptVersion: string;
+  private inputRoot: string;
   private logger: Logger;
 
   constructor(options: BuilderOptions, logger: Logger) {
@@ -55,7 +61,22 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
     this.resume = options.resume ?? false;
     this.model = options.model;
     this.promptVersion = options.promptVersion ?? 'default';
+    this.inputRoot = options.inputRoot ?? '';
     this.logger = logger;
+  }
+
+  /**
+   * Stable identity for a file in the checkpoint key: the path relative to the
+   * discovery root (`inputRoot`), normalized to posix separators. This makes
+   * resume survive relocating the whole input tree or changing the `input`
+   * prefix. Falls back to the raw path when there's no root or the file resolves
+   * outside it (`..`), so behavior degrades gracefully rather than mis-keying.
+   */
+  private stablePathId(filePath: string): string {
+    if (!this.inputRoot) return filePath;
+    const rel = path.relative(this.inputRoot, filePath);
+    if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return filePath;
+    return rel.split(path.sep).join('/');
   }
 
   /**
@@ -157,10 +178,11 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
     generate: () => Promise<KnowledgeGraph>,
     attachMetadata: (entity: KnowledgeGraph['entities'][number]) => void
   ): Promise<KnowledgeGraph> {
+    const relPath = this.stablePathId(filePath);
     const key =
       this.resume && this.checkpoint
         ? this.checkpoint.computeKey(
-            filePath,
+            relPath,
             chunkIndex,
             content,
             this.model,
@@ -182,6 +204,7 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
       await this.checkpoint!.append({
         key,
         filePath,
+        relPath,
         chunkIndex,
         totalChunks,
         model: this.model,

@@ -350,6 +350,7 @@ export class ContainerFactory {
           resume: options.resume,
           model: options.model,
           promptVersion: options.promptVersion,
+          inputRoot: options.input,
         },
         logger
       );

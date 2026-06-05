@@ -339,7 +339,7 @@ jsonReader:
 
 **Graceful interrupt:** pressing **Ctrl+C** (or Ctrl+D / `SIGTERM`) once finishes the in-flight chunk, checkpoints it, then merges and writes the **partial** graph before exiting — so you never lose a chunk you already paid for. Press again to force-quit. Combine with `--resume` to continue later.
 
-**What invalidates resume:** a chunk is reused only when its **file content, chunk size/overlap, model, and prompt version** all match the run that created it — these are folded into the checkpoint key. Changing any of them (e.g. switching models or `--chunk-size` while tuning) means those chunks are re-extracted. On load, kg-gen reports how many checkpointed chunks match the current model/prompt and warns if none do; delete the `.checkpoint.jsonl` sidecar to start clean.
+**What invalidates resume:** a chunk is reused only when its **file content, chunk size/overlap, model, and prompt version** all match the run that created it — these are folded into the checkpoint key. Changing any of them (e.g. switching models or `--chunk-size` while tuning) means those chunks are re-extracted. The file is identified by its path **relative to `--input`**, so **relocating the whole input tree (or changing the `--input` prefix) keeps your checkpoint valid** — handy when you reorganize data folders; only renaming a file *within* the tree re-runs that one file. On load, kg-gen reports how many checkpointed chunks match the current model/prompt and warns if none do; delete the `.checkpoint.jsonl` sidecar to start clean.
 
 ### Logging & Runtime
 
