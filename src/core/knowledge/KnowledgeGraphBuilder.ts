@@ -2,7 +2,7 @@ import * as path from 'path';
 import { z } from 'zod';
 import { ILLMProvider, LLMMessage } from '../../types/ILLMProvider';
 import { PromptManager, PromptContext } from '../llm/prompts/PromptManager';
-import { ProcessedFile, KnowledgeGraph, ProcessedImage, IKnowledgeGraphBuilder, ClassificationResult, IProgressEmitter, ChunkProvenance, Observation, normalizeObservations, GroundingMode } from '../../types';
+import { ProcessedFile, KnowledgeGraph, ProcessedImage, IKnowledgeGraphBuilder, ClassificationResult, IProgressEmitter, ChunkProvenance, Observation, normalizeObservations, GroundingMode, CorpusGlossary } from '../../types';
 import { CheckpointService } from '../checkpoint';
 import { NoopProgressEmitter } from '../progress';
 import { NER_DOMAIN_EXAMPLES } from '../processor/classifier/NER_DOMAIN_EXAMPLES';
@@ -136,7 +136,8 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
   async build(
     processedFile: ProcessedFile,
     systemPrompt: string,
-    retrieve?: (chunkContent: string) => Promise<any>
+    retrieve?: (chunkContent: string) => Promise<any>,
+    glossary?: CorpusGlossary
   ): Promise<KnowledgeGraph[]> {
     this.logger.info(`Building knowledge graph for: ${processedFile.path}`);
 
@@ -176,7 +177,8 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
               chunk.totalChunks,
               retrievedContext,
               chunk.images,
-              contentClasses
+              contentClasses,
+              glossary
             ),
           (entity) => {
             entity.files = [processedFile.path];
@@ -205,7 +207,8 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
             systemPrompt,
             retrievedContext,
             images,
-            contentClasses
+            contentClasses,
+            glossary
           ),
         (entity) => {
           entity.files = [processedFile.path];
@@ -299,20 +302,28 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
   }
 
   /**
-   * Scope the entity-type enum to the detected content domain. Returns the
-   * domain's `primaryEntityTypes` + generic types + `other`, or undefined when
-   * no class was detected (→ free-string entityType, today's behavior).
+   * Scope the entity-type enum to the detected content domain, unioned with any
+   * corpus-glossary entity types. Returns the domain's `primaryEntityTypes` +
+   * generic types + glossary types + `other`, or undefined when neither a class
+   * nor a glossary is available (→ free-string entityType, today's behavior).
+   * The `other` escape keeps the model from being forced to mislabel.
    */
   private resolveAllowedTypes(
-    contentClasses?: ClassificationResult[]
+    contentClasses?: ClassificationResult[],
+    glossary?: CorpusGlossary
   ): string[] | undefined {
-    if (!contentClasses || contentClasses.length === 0) return undefined;
-    const top = contentClasses.reduce((a, b) =>
-      b.confidence > a.confidence ? b : a
+    const glossaryTypes = glossary?.entityTypes ?? [];
+    let domain: string[] = [];
+    if (contentClasses && contentClasses.length > 0) {
+      const top = contentClasses.reduce((a, b) =>
+        b.confidence > a.confidence ? b : a
+      );
+      domain = NER_DOMAIN_EXAMPLES[top.class]?.primaryEntityTypes ?? [];
+    }
+    if (domain.length === 0 && glossaryTypes.length === 0) return undefined;
+    return Array.from(
+      new Set([...domain, ...glossaryTypes, ...GENERIC_ENTITY_TYPES, "other"])
     );
-    const domain = NER_DOMAIN_EXAMPLES[top.class]?.primaryEntityTypes ?? [];
-    if (domain.length === 0) return undefined;
-    return Array.from(new Set([...domain, ...GENERIC_ENTITY_TYPES, "other"]));
   }
 
   /** Provenance to stamp on a chunk's observations (reader-supplied or file). */
@@ -414,7 +425,8 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
     totalChunks: number,
     retrievedContext?: any,
     images?: ProcessedImage[],
-    contentClasses?: ClassificationResult[]
+    contentClasses?: ClassificationResult[],
+    glossary?: CorpusGlossary
   ): Promise<RawGraph> {
     this.logger.debug(`Building KG for chunk ${chunkIndex}/${totalChunks} of ${filePath}`);
 
@@ -427,14 +439,15 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
       chunkIndex,
       totalChunks,
       retrievedContext,
-      contentClasses
+      contentClasses,
+      corpusGlossary: glossary
     });
 
     return this.generateKnowledgeGraph(
       systemPrompt,
       userPrompt,
       images,
-      this.resolveAllowedTypes(contentClasses)
+      this.resolveAllowedTypes(contentClasses, glossary)
     );
   }
 
@@ -447,7 +460,8 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
     systemPrompt: string,
     retrievedContext?: any,
     images?: ProcessedImage[],
-    contentClasses?: ClassificationResult[]
+    contentClasses?: ClassificationResult[],
+    glossary?: CorpusGlossary
   ): Promise<RawGraph> {
     this.logger.debug(`Building KG for entire file: ${filePath}`);
 
@@ -458,14 +472,15 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
       fileContent: content,
       chunkContent: content,
       retrievedContext,
-      contentClasses
+      contentClasses,
+      corpusGlossary: glossary
     });
 
     return this.generateKnowledgeGraph(
       systemPrompt,
       userPrompt,
       images,
-      this.resolveAllowedTypes(contentClasses)
+      this.resolveAllowedTypes(contentClasses, glossary)
     );
   }
 

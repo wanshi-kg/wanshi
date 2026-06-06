@@ -1,3 +1,5 @@
+import { CorpusProfilingMode } from "./CorpusProfile";
+
 /**
  * Configuration options for knowledge graph processing
  * Cleaned up to remove conflicting boolean pairs and improve clarity
@@ -76,6 +78,14 @@ export interface ProcessingOptions {
   // its source chunk and flag/drop the ungrounded ones.
   grounding?: GroundingMode;
   groundingMinScore?: number;
+
+  // Corpus analysis pre-pass: before extraction, count term frequency + classify
+  // once (cached), then ask the LLM for a corpus-specific glossary (canonical
+  // entity names / types / relation types) injected as soft hints. Default off.
+  corpusProfiling?: CorpusProfilingMode;
+  corpusTopTerms?: number;       // top-N frequent terms fed to the glossary call (default 100)
+  corpusProfilePath?: string;    // sidecar path (default <output>.corpus-profile.json)
+  corpusClustering?: boolean;    // v2 stub — embedding clustering of terms (deferred)
 
   // Knowledge Graph Merging
   entitySimilarityThreshold: number;

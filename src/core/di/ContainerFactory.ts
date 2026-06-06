@@ -34,6 +34,7 @@ export const TYPES = {
   ProcessingOptions: Symbol.for("ProcessingOptions"),
   CheckpointService: Symbol.for("CheckpointService"),
   ProgressEmitter: Symbol.for("ProgressEmitter"),
+  CorpusAnalyzer: Symbol.for("CorpusAnalyzer"),
 };
 
 /**
@@ -333,6 +334,20 @@ export class ContainerFactory {
       );
       const logger = await c.resolve<Logger>(TYPES.Logger);
       return new FileProcessor(factory, classifier, options.images !== "disabled", logger);
+    });
+
+    // Register Corpus Analyzer (used only when --corpus-profiling is enabled)
+    container.register(TYPES.CorpusAnalyzer, async (c) => {
+      const { CorpusAnalyzer } = await import("../corpus");
+      const llmService = await c.resolve<ILLMProvider>(TYPES.LLMService);
+      const classifier = await c.resolve<IContentClassifier | undefined>(
+        TYPES.ContentClassifier
+      );
+      const factory = await c.resolve<FileReaderFactory>(
+        TYPES.FileReaderFactory
+      );
+      const logger = await c.resolve<Logger>(TYPES.Logger);
+      return new CorpusAnalyzer(llmService, classifier, factory, logger);
     });
 
     // Register Checkpoint service (used only when --resume is set)

@@ -47,6 +47,7 @@ Facts carry **provenance and a bi-temporal axis**, an inline **grounding gate** 
 
 - **Provenance & bi-temporal facts**: every observation carries `speaker`/`source` and a Graphiti-style bi-temporal axis (`validAt`/`invalidAt` + `createdAt`/`expiredAt`) — see [Data Model](#standard-json---export-format-json)
 - **Inline grounding gate**: each extracted fact is scored against its source chunk; ungrounded "hallucinations" can be flagged or dropped before they reach the output (`--grounding`)
+- **Corpus glossary pre-pass** *(experimental)*: an optional pass over the whole corpus counts term frequency, classifies once (cached), and asks the LLM for a corpus-specific glossary of canonical entity names/types/relation types, injected as soft hints so extraction names things consistently from the start (`--corpus-profiling`)
 - **Provenance-preserving merge**: the same fact from two speakers/sources stays as two attributed observations, never one flattened string
 - **Entity Deduplication**: Jaro-Winkler similarity for entity names + cosine similarity for observations
 - **Cross-file Consistency**: Retrieval-augmented prompting maintains entity naming across files
@@ -349,6 +350,14 @@ Each extracted observation is scored against its source chunk (keyword overlap);
 | ------ | ------- | ----------- |
 | `--grounding <mode>` | `disabled` | `disabled` · `flag` (annotate each observation with `grounded`/`groundingScore`, keep all) · `drop` (remove observations below the threshold) |
 | `--grounding-min-score <n>` | `0.5` | Minimum keyword-overlap score (0–1) an observation must reach. Also gates which facts the `lora` export keeps |
+
+### Corpus Analysis (experimental)
+
+| Option | Default | Description |
+| ------ | ------- | ----------- |
+| `--corpus-profiling <mode>` | `disabled` | `disabled` · `enabled` — run a pre-pass that counts term frequency, classifies once (cached), and asks the LLM for a corpus-specific glossary (canonical entity names/types/relation types) injected as soft naming hints |
+| `--corpus-top-terms <n>` | `100` | Number of most-frequent terms fed to the glossary call |
+| `--corpus-profile-path <path>` | `<output>.corpus-profile.json` | Cached profile sidecar path (reused on re-run when the corpus + model are unchanged) |
 
 ### Resume / Continuation
 

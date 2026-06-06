@@ -164,6 +164,23 @@ program
     "0.5"
   )
 
+  // Corpus Analysis Pre-pass (experimental): build a corpus-specific glossary
+  // (canonical entity names / types / relation types) and inject it as soft hints.
+  .option(
+    "--corpus-profiling <mode>",
+    "corpus analysis pre-pass: disabled | enabled (term frequency + cached classification + LLM glossary, injected as naming hints)",
+    "disabled"
+  )
+  .option(
+    "--corpus-top-terms <number>",
+    "number of most-frequent terms fed to the glossary call",
+    "100"
+  )
+  .option(
+    "--corpus-profile-path <path>",
+    "corpus profile sidecar path (default: <output>.corpus-profile.json)"
+  )
+
   // Knowledge Graph Merging
   .option(
     "--entity-similarity-threshold <number>",

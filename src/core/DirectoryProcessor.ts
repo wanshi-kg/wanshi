@@ -13,9 +13,12 @@ import {
   ChunkingOptions,
   ProcessedFile,
   IFileProcessor,
-  IProgressEmitter
+  IProgressEmitter,
+  ICorpusAnalyzer,
+  CorpusProfile
 } from "../types";
 import { PromptManager } from "./llm";
+import { toRelPathId } from "./corpus";
 import { Logger, shutdown } from "../shared";
 
 export interface IFileDiscoveryService {
@@ -129,6 +132,10 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     // double-counts entities/observations on a plain (no --resume) re-run.
     const priorGraphs = await this.loadPriorGraphs(options.output, logger);
 
+    // Optional corpus analysis pre-pass: build/load a corpus-specific glossary
+    // (and cached per-file classification) once, before extraction.
+    const corpusProfile = await this.buildCorpusProfile(files, options, logger);
+
     const fileProcessor = await this.container.resolve<IFileProcessor>(
       TYPES.FileProcessor
     );
@@ -158,7 +165,8 @@ export class DirectoryProcessor implements IDirectoryProcessor {
           fileProcessor,
           kgBuilder,
           retrievalContext,
-          logger
+          logger,
+          corpusProfile
         );
         knowledgeGraphs.push(...fileGraphs);
 
@@ -213,11 +221,15 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     fileProcessor: IFileProcessor,
     kgBuilder: IKnowledgeGraphBuilder,
     existingGraphs: KnowledgeGraph[],
-    logger: Logger
+    logger: Logger,
+    corpusProfile?: CorpusProfile
   ): Promise<KnowledgeGraph[]> {
     logger.info(`Processing: ${file}`);
 
-    const processedFile = await fileProcessor.processFile(file);
+    // Reuse the pre-pass's cached classification for this file when available.
+    const cachedClasses =
+      corpusProfile?.perFileClasses[toRelPathId(options.input, file)];
+    const processedFile = await fileProcessor.processFile(file, cachedClasses);
     this.validateProcessedFile(processedFile, file, logger);
 
     const retrieve = await this.buildRetriever(
@@ -237,7 +249,37 @@ export class DirectoryProcessor implements IDirectoryProcessor {
       processedFile.metadata?.classes
     );
 
-    return await kgBuilder.build(processedFile, systemPrompt, retrieve);
+    return await kgBuilder.build(
+      processedFile,
+      systemPrompt,
+      retrieve,
+      corpusProfile?.glossary
+    );
+  }
+
+  /**
+   * Run the optional corpus analysis pre-pass (term frequency + cached
+   * classification + LLM glossary). Returns undefined when disabled or on
+   * failure — profiling is an enhancement, never required.
+   */
+  private async buildCorpusProfile(
+    files: string[],
+    options: ProcessingOptions,
+    logger: Logger
+  ): Promise<CorpusProfile | undefined> {
+    if (options.corpusProfiling !== "enabled") return undefined;
+    try {
+      logger.info("Corpus analysis pre-pass enabled — profiling corpus before extraction");
+      const analyzer = await this.container.resolve<ICorpusAnalyzer>(
+        TYPES.CorpusAnalyzer
+      );
+      return await analyzer.analyzeOrLoad(files, options);
+    } catch (error) {
+      logger.warn(
+        `Corpus pre-pass failed (continuing without a glossary): ${error}`
+      );
+      return undefined;
+    }
   }
 
   /**

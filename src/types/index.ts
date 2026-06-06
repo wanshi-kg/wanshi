@@ -15,5 +15,7 @@ export * from './IKnowledgeGraphSearch';
 export * from './IProgressEmitter';
 export * from './KnowledgeGraph';
 export * from './Observation';
+export * from './CorpusProfile';
+export * from './ICorpusAnalyzer';
 export * from './MCPKnowledgeGraph';
 export * from './ProcessingOptions';

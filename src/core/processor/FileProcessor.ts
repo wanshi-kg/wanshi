@@ -34,7 +34,10 @@ export class FileProcessor implements IFileProcessor {
   /**
    * Process a single file - read and optionally chunk it
    */
-  async processFile(filePath: string): Promise<ProcessedFile> {
+  async processFile(
+    filePath: string,
+    cachedClasses?: ClassificationResult[]
+  ): Promise<ProcessedFile> {
     this.logger.info(`Processing file: ${filePath}`);
 
     // Get appropriate reader
@@ -80,7 +83,9 @@ export class FileProcessor implements IFileProcessor {
         }),
         metadata: {
           ...readResult.metadata,
-          ...{ classes: await this.classifyContent(filePath, readResult) },
+          // Reuse the corpus pre-pass's cached classification when provided,
+          // otherwise classify now (the classifier is the expensive bit).
+          classes: cachedClasses ?? (await this.classifyContent(filePath, readResult)),
           chunked: false,
         },
       };

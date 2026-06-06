@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { PromptTemplateEngine, TemplateContext } from './PromptTemplateEngine';
 import { Logger } from '../../../shared';
-import { ClassificationResult, ContentClass, OutlineOptions } from '../../../types';
+import { ClassificationResult, ContentClass, CorpusGlossary, OutlineOptions } from '../../../types';
 import { NER_DOMAIN_EXAMPLES } from '../../processor/classifier/NER_DOMAIN_EXAMPLES';
 
 export interface PromptContext {
@@ -15,6 +15,8 @@ export interface PromptContext {
   totalChunks?: number;
   retrievedContext?: any;
   contentClasses?: ClassificationResult[];
+  /** Corpus-specific glossary from the pre-pass, injected as soft naming hints. */
+  corpusGlossary?: CorpusGlossary;
 }
 
 /** Minimum confidence to inject domain hints (below this = generic extraction) */
@@ -176,6 +178,12 @@ export class PromptManager {
         templateContext.domainHints = domainHints;
       }
 
+      // Add the corpus glossary (canonical names/types) as a soft naming hint.
+      const corpusGlossary = this.buildCorpusGlossaryHint(context.corpusGlossary);
+      if (corpusGlossary) {
+        templateContext.corpusGlossary = corpusGlossary;
+      }
+
       // Enhance context
       const enhancedContext = await this.templateEngine.enhanceContext(templateContext);
 
@@ -273,6 +281,39 @@ export class PromptManager {
       lines.push(`Prioritize these relation types: ${Array.from(relationTypes).join(', ')}`);
     }
 
+    return lines.join('\n');
+  }
+
+  /**
+   * Renders the corpus glossary as a soft-hint block: prefer these canonical
+   * names/types when they apply, but never force-fit (so new entities discovered
+   * in a chunk are still extracted). Returns undefined when the glossary is empty.
+   */
+  private buildCorpusGlossaryHint(glossary?: CorpusGlossary): string | undefined {
+    if (!glossary) return undefined;
+    const { entityNames, entityTypes, relationTypes } = glossary;
+    if (
+      entityNames.length === 0 &&
+      entityTypes.length === 0 &&
+      relationTypes.length === 0
+    ) {
+      return undefined;
+    }
+
+    const lines: string[] = [
+      'When a concept below appears, reuse its exact canonical form for the entity ' +
+        'name (do not invent spelling variants); do NOT force-fit — extract new ' +
+        'entities not listed here as usual.',
+    ];
+    if (entityNames.length > 0) {
+      lines.push(`Canonical entity names: ${entityNames.join(', ')}`);
+    }
+    if (entityTypes.length > 0) {
+      lines.push(`Preferred entity types: ${entityTypes.join(', ')}`);
+    }
+    if (relationTypes.length > 0) {
+      lines.push(`Preferred relation types: ${relationTypes.join(', ')}`);
+    }
     return lines.join('\n');
   }
 

@@ -73,6 +73,10 @@ kg-gen/
 │   │   │           └── partials/         # Reusable partials + domain examples
 │   │   ├── checkpoint/
 │   │   │   └── CheckpointService.ts      # Per-chunk resume sidecar (JSONL) for --resume
+│   │   ├── corpus/                       # Corpus pre-pass: term frequency + glossary (--corpus-profiling)
+│   │   │   ├── CorpusAnalyzer.ts         # Build/load CorpusProfile (freq + cached class + LLM glossary)
+│   │   │   ├── termFrequency.ts          # Pure term counter (content words + proper-noun runs)
+│   │   │   └── CorpusProfileStore.ts     # Cached sidecar (<output>.corpus-profile.json)
 │   │   ├── processor/
 │   │   │   ├── FileProcessor.ts          # Read → chunk → classify pipeline
 │   │   │   ├── readers/                  # 11 file type readers (see below)
@@ -280,6 +284,8 @@ DirectoryProcessor.processDirectory()
     ↓
 FileDiscoveryService.discover()          ← glob patterns
     ↓
+[CorpusAnalyzer.analyzeOrLoad()]         ← --corpus-profiling enabled: term frequency + cached classification + 1 LLM glossary call (cached sidecar)
+    ↓
 For each file:                           ← [graceful interrupt checked between files]
   FileProcessor.processFile()            ← select reader → read → chunk → [classify]
   PromptManager.getSystemPrompt()        ← render Handlebars system template
@@ -291,6 +297,27 @@ KnowledgeGraphExportService.export()     ← json | jsonl | mcp-jsonl | dot
     ↓
 Output file
 ```
+
+### Corpus analysis pre-pass (`--corpus-profiling`, experimental, default off)
+
+Before extraction, `CorpusAnalyzer` (`src/core/corpus/`) builds a corpus-global
+`CorpusProfile` (cached to `<output>.corpus-profile.json`): it reads each file (char-capped),
+counts term frequency (`countTerms`, pure — lowercased content words + capitalized
+multiword proper-noun runs, stopword/number/short dropped), runs content classification
+**once** (cached in `perFileClasses`, reused by `FileProcessor` so the classifier isn't
+re-run per file), then makes **one** `ILLMProvider.generateStructured` call returning a
+`CorpusGlossary {entityNames, entityTypes, relationTypes}`. The glossary is threaded
+explicitly (`DirectoryProcessor` → `KnowledgeGraphBuilder.build(…, glossary)`) and injected
+as a **soft hint**: a `{{corpusGlossary}}` block in `user.hbs` ("prefer these canonical
+forms, don't force-fit") plus a union of `glossary.entityTypes` into the `resolveAllowedTypes`
+entityType enum (names are never enum'd, so new entities are still discovered). The aim is
+consistent entity *naming* up front, complementing the downstream Jaro-Winkler/embedding
+merge. Cached by a key over (sorted relpaths + model + topN + classifier); a stale key
+rebuilds. Profiling is an enhancement — any failure (e.g. the glossary LLM emitting bad JSON)
+is caught and the run continues without it. Flags: `--corpus-profiling disabled|enabled`,
+`--corpus-top-terms` (100), `--corpus-profile-path`. `corpusClustering` is a v2 stub
+(embedding clustering of terms, deferred). The glossary call uses `ILLMProvider` (honors the
+`openai` provider), unlike `LlmContentClassifier` which still hits Ollama directly.
 
 ## File Readers (src/core/processor/readers/)
 

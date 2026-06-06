@@ -79,6 +79,51 @@ describe("KnowledgeGraphBuilder", () => {
     );
   });
 
+  it("unions corpus-glossary entity types into the enum and injects the glossary", async () => {
+    let capturedSchema: any;
+    const capturedCtx: any[] = [];
+    const promptManager = {
+      getUserPrompt: async (ctx: any) => {
+        capturedCtx.push(ctx);
+        return "u";
+      },
+      getSystemPrompt: async () => "s",
+    } as any;
+    const llmService = {
+      generateStructured: async (_m: any, schema: any) => {
+        capturedSchema = schema;
+        return { entities: [], relations: [] };
+      },
+      getModelCapabilities: async () => [],
+    } as any;
+    const builder = new KnowledgeGraphBuilder(
+      { llmService, promptManager, model: "m" },
+      stubLogger()
+    );
+
+    const processedFile = {
+      path: "f.txt",
+      content: "x",
+      chunks: [{ content: "c", index: 1, totalChunks: 1, startOffset: 0, endOffset: 1 }],
+    } as any;
+    const glossary = {
+      entityNames: ["Bayes Theorem"],
+      entityTypes: ["theorem"],
+      relationTypes: ["assumes"],
+    };
+
+    await builder.build(processedFile, "s", undefined, glossary);
+
+    // glossary forwarded to the prompt context
+    expect(capturedCtx[0].corpusGlossary).toEqual(glossary);
+    // entityType enum exists (no class detected, glossary alone drives it) and
+    // includes the glossary type + the "other" escape
+    const entityType = capturedSchema.shape.entities.element.shape.entityType;
+    expect(entityType.options).toEqual(
+      expect.arrayContaining(["theorem", "other"])
+    );
+  });
+
   const SOURCE =
     "Recursion is when a function calls itself repeatedly until a base case.";
   const hallucinatingLlm = () =>
