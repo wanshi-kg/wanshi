@@ -11,6 +11,8 @@ export type FieldType =
   | "select"
   | "lines"
   | "path"
+  | "model"
+  | "host"
 
 export interface ConfigField {
   /** Dotted for nested groups, e.g. "dotOptions.layout". */
@@ -22,6 +24,10 @@ export interface ConfigField {
   placeholder?: string
   help?: string
   required?: boolean
+  /** For "model"/"host" fields: sibling keys the picker/credential UI reads. */
+  providerKey?: string
+  hostKey?: string
+  apiKeyKey?: string
 }
 
 export interface ConfigGroup {
@@ -72,8 +78,8 @@ export const CONFIG_GROUPS: ConfigGroup[] = [
     defaultOpen: true,
     fields: [
       { key: "provider", label: "Provider", type: "select", options: ["ollama", "openai"], default: "ollama" },
-      { key: "model", label: "Model", type: "text", default: "llama3.2", required: true },
-      { key: "host", label: "Host / base URL", type: "text", default: "http://localhost:11434" },
+      { key: "model", label: "Model", type: "model", default: "llama3.2", required: true, providerKey: "provider", hostKey: "host", apiKeyKey: "apiKey" },
+      { key: "host", label: "Host / base URL", type: "host", default: "http://localhost:11434", apiKeyKey: "apiKey", providerKey: "provider" },
       { key: "apiKey", label: "API key", type: "password", help: "OpenAI-compatible only; falls back to $OPENAI_API_KEY" },
       { key: "temperature", label: "Temperature", type: "number", default: "0.1" },
       { key: "repeatPenalty", label: "Repeat penalty (Ollama)", type: "number", default: "0.3" },
@@ -100,8 +106,8 @@ export const CONFIG_GROUPS: ConfigGroup[] = [
     description: "Independent provider for dedup / retrieval.",
     fields: [
       { key: "embeddingsProvider", label: "Provider", type: "select", options: ["ollama", "openai"], default: "ollama" },
-      { key: "embeddingsModel", label: "Model", type: "text", default: "mxbai-embed-large:335m" },
-      { key: "embeddingsHost", label: "Host / base URL", type: "text", default: "http://localhost:11434" },
+      { key: "embeddingsModel", label: "Model", type: "model", default: "mxbai-embed-large:335m", providerKey: "embeddingsProvider", hostKey: "embeddingsHost", apiKeyKey: "embeddingsApiKey" },
+      { key: "embeddingsHost", label: "Host / base URL", type: "host", default: "http://localhost:11434", apiKeyKey: "embeddingsApiKey", providerKey: "embeddingsProvider" },
       { key: "embeddingsApiKey", label: "API key", type: "password" },
       { key: "embeddingsMaxInputChars", label: "Max input chars", type: "number", default: "1024" },
     ],

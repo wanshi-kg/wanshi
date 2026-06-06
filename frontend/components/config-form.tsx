@@ -18,15 +18,19 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { ModelPicker } from "@/components/model-picker"
+import { HostField } from "@/components/host-field"
 import { CONFIG_GROUPS, type ConfigField, type FieldValue } from "@/lib/config-schema"
 
 function Field({
   field,
   value,
+  values,
   onChange,
 }: {
   field: ConfigField
   value: FieldValue | undefined
+  values: Record<string, FieldValue>
   onChange: (key: string, value: FieldValue) => void
 }) {
   if (field.type === "boolean") {
@@ -41,6 +45,17 @@ function Field({
     )
   }
 
+  if (field.type === "host") {
+    return (
+      <HostField
+        field={field}
+        value={value == null ? "" : String(value)}
+        values={values}
+        onChange={onChange}
+      />
+    )
+  }
+
   const str = value == null ? "" : String(value)
   const mono = field.type === "path"
 
@@ -50,7 +65,15 @@ function Field({
         {field.label}
         {field.required && <span className="text-destructive"> *</span>}
       </Label>
-      {field.type === "lines" ? (
+      {field.type === "model" ? (
+        <ModelPicker
+          value={str}
+          onChange={(v) => onChange(field.key, v)}
+          provider={String(values[field.providerKey ?? "provider"] ?? "ollama")}
+          host={String(values[field.hostKey ?? "host"] ?? "")}
+          apiKey={field.apiKeyKey ? String(values[field.apiKeyKey] ?? "") : undefined}
+        />
+      ) : field.type === "lines" ? (
         <Textarea
           id={field.key}
           rows={3}
@@ -115,7 +138,7 @@ export function ConfigForm({
             <div className="grid gap-4 sm:grid-cols-2">
               {group.fields.map((f) => (
                 <div key={f.key} className={cn(f.type === "lines" && "sm:col-span-2")}>
-                  <Field field={f} value={values[f.key]} onChange={onChange} />
+                  <Field field={f} value={values[f.key]} values={values} onChange={onChange} />
                 </div>
               ))}
             </div>

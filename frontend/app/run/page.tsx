@@ -1,15 +1,23 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import YAML from "yaml"
-import { Play, Loader2, Upload } from "lucide-react"
+import { Play, Loader2, Upload, Download, Copy, FileDown } from "lucide-react"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { ConfigForm } from "@/components/config-form"
 import { useStartRun } from "@/hooks/use-runs"
 import { apiPost } from "@/lib/api"
+import { configToYaml } from "@/lib/config-export"
+import { makeStorageKey } from "@/lib/local-storage"
 import {
   buildDefaultValues,
   flattenConfig,
@@ -18,14 +26,49 @@ import {
   type FieldValue,
 } from "@/lib/config-schema"
 
+// Remember the last config across reloads. API keys are NOT persisted here —
+// they live (encrypted) in the credential store.
+const FORM_STORAGE_KEY = makeStorageKey("run-form", "state")
+const SECRET_KEYS = ["apiKey", "embeddingsApiKey"]
+
+function loadStoredState(): {
+  values?: Record<string, FieldValue>
+  importExtra?: Record<string, unknown>
+} {
+  if (typeof window === "undefined") return {}
+  try {
+    const raw = localStorage.getItem(FORM_STORAGE_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
 export default function RunPage() {
   const router = useRouter()
   const start = useStartRun()
-  const [values, setValues] = useState<Record<string, FieldValue>>(() =>
-    buildDefaultValues()
+  const [values, setValues] = useState<Record<string, FieldValue>>(() => ({
+    ...buildDefaultValues(),
+    ...(loadStoredState().values ?? {}),
+  }))
+  const [importExtra, setImportExtra] = useState<Record<string, unknown>>(
+    () => loadStoredState().importExtra ?? {}
   )
-  const [importExtra, setImportExtra] = useState<Record<string, unknown>>({})
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Persist (minus secrets) so the form reopens with the last-used config.
+  useEffect(() => {
+    const persistable = { ...values }
+    for (const k of SECRET_KEYS) delete persistable[k]
+    try {
+      localStorage.setItem(
+        FORM_STORAGE_KEY,
+        JSON.stringify({ values: persistable, importExtra })
+      )
+    } catch {
+      // ignore quota / private mode
+    }
+  }, [values, importExtra])
 
   const set = (key: string, value: FieldValue) =>
     setValues((v) => ({ ...v, [key]: value }))
@@ -109,6 +152,29 @@ export default function RunPage() {
     )
   }
 
+  async function copyYaml() {
+    try {
+      await navigator.clipboard.writeText(configToYaml(values, importExtra))
+      toast.success("Config YAML copied to clipboard")
+    } catch {
+      toast.error("Failed to copy YAML")
+    }
+  }
+
+  function downloadYaml() {
+    try {
+      const blob = new Blob([configToYaml(values, importExtra)], { type: "text/yaml" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = "config.yaml"
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      toast.error("Failed to download YAML")
+    }
+  }
+
   const extraKeys = Object.keys(importExtra)
 
   return (
@@ -134,6 +200,22 @@ export default function RunPage() {
               <Upload className="h-4 w-4" />
               Import config
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" variant="outline" size="sm">
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={copyYaml}>
+                  <Copy className="mr-2 h-4 w-4" /> Copy YAML
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={downloadYaml}>
+                  <FileDown className="mr-2 h-4 w-4" /> Download config.yaml
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button type="submit" size="sm" disabled={start.isPending}>
               {start.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
