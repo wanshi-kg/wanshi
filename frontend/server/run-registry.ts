@@ -64,6 +64,16 @@ function launchCmd(): string[] {
 }
 
 /**
+ * Resolve a path the way the CLI will: absolute as-is, else relative to the
+ * run dir (`repoCwd`, the CLI's cwd). Used to make imported config paths
+ * unambiguous at import time. Empty input is returned unchanged.
+ */
+export function resolveAgainstRunDir(p: string): string {
+  if (!p) return p
+  return path.isAbsolute(p) ? p : path.resolve(repoCwd(), p)
+}
+
+/**
  * Resolve the output to an absolute path so the graph (and its checkpoint
  * sidecar) never land in the kg-gen repo root via the CLI's cwd. An absolute
  * output is used as-is; a relative one resolves against the input directory.

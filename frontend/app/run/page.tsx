@@ -7,80 +7,28 @@ import YAML from "yaml"
 import { Play, Loader2, Upload } from "lucide-react"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { ConfigForm } from "@/components/config-form"
 import { useStartRun } from "@/hooks/use-runs"
+import { apiPost } from "@/lib/api"
 import {
-  DEFAULT_RUN_REQUEST,
-  splitImportedConfig,
-  type RunRequest,
-} from "@/lib/kg-options"
-
-function toLines(value: string): string[] {
-  return value
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean)
-}
+  buildDefaultValues,
+  flattenConfig,
+  partitionValues,
+  PATH_KEYS,
+  type FieldValue,
+} from "@/lib/config-schema"
 
 export default function RunPage() {
   const router = useRouter()
   const start = useStartRun()
-
-  const [input, setInput] = useState("")
-  const [filter, setFilter] = useState(DEFAULT_RUN_REQUEST.filter.join("\n"))
-  const [exclude, setExclude] = useState(DEFAULT_RUN_REQUEST.exclude.join("\n"))
-  const [provider, setProvider] = useState<RunRequest["provider"]>("ollama")
-  const [model, setModel] = useState(DEFAULT_RUN_REQUEST.model)
-  const [host, setHost] = useState(DEFAULT_RUN_REQUEST.host)
-  const [apiKey, setApiKey] = useState("")
-  const [output, setOutput] = useState(DEFAULT_RUN_REQUEST.output)
-  const [exportFormat, setExportFormat] =
-    useState<RunRequest["exportFormat"]>("json")
-  const [chunkSize, setChunkSize] = useState(String(DEFAULT_RUN_REQUEST.chunkSize))
-  const [passthrough, setPassthrough] = useState<Record<string, unknown>>({})
+  const [values, setValues] = useState<Record<string, FieldValue>>(() =>
+    buildDefaultValues()
+  )
+  const [importExtra, setImportExtra] = useState<Record<string, unknown>>({})
   const fileRef = useRef<HTMLInputElement>(null)
 
-  function applyImported(parsed: Record<string, unknown>) {
-    const { known, passthrough: extra } = splitImportedConfig(parsed)
-    if (known.input != null) setInput(String(known.input))
-    if (known.filter) setFilter(known.filter.join("\n"))
-    if (known.exclude) setExclude(known.exclude.join("\n"))
-    if (known.provider === "ollama" || known.provider === "openai")
-      setProvider(known.provider)
-    if (known.model != null) setModel(String(known.model))
-    if (known.host != null) setHost(String(known.host))
-    if (known.apiKey != null) setApiKey(String(known.apiKey))
-    if (known.output != null) setOutput(String(known.output))
-    if (
-      known.exportFormat === "json" ||
-      known.exportFormat === "jsonl" ||
-      known.exportFormat === "mcp-jsonl" ||
-      known.exportFormat === "dot"
-    )
-      setExportFormat(known.exportFormat)
-    if (known.chunkSize != null) setChunkSize(String(known.chunkSize))
-    setPassthrough(extra)
-    const extraCount = Object.keys(extra).length
-    toast.success(
-      `Config imported${extraCount ? ` · ${extraCount} extra field${extraCount > 1 ? "s" : ""} passed through` : ""}`
-    )
-  }
+  const set = (key: string, value: FieldValue) =>
+    setValues((v) => ({ ...v, [key]: value }))
 
   async function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -92,7 +40,36 @@ export default function RunPage() {
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
         throw new Error("config must be a YAML/JSON object")
       }
-      applyImported(parsed as Record<string, unknown>)
+      const { values: imported, extra } = flattenConfig(
+        parsed as Record<string, unknown>
+      )
+
+      // Resolve path fields to absolute against the run dir (the browser can't
+      // see the config file's location; a relative output would otherwise
+      // double-nest under the input dir at run time).
+      const pathKeys = PATH_KEYS.filter(
+        (k) => imported[k] != null && String(imported[k]).trim() !== ""
+      )
+      if (pathKeys.length) {
+        try {
+          const { resolved } = await apiPost<{ resolved: string[] }>(
+            "/api/config/resolve",
+            { paths: pathKeys.map((k) => String(imported[k])) }
+          )
+          pathKeys.forEach((k, i) => {
+            imported[k] = resolved[i]
+          })
+        } catch {
+          // fall back to the raw (relative) paths
+        }
+      }
+
+      setValues((v) => ({ ...v, ...imported }))
+      setImportExtra(extra)
+      const n = Object.keys(extra).length
+      toast.success(
+        `Config imported${n ? ` · ${n} unknown field${n > 1 ? "s" : ""} passed through` : ""}`
+      )
     } catch (err) {
       toast.error(
         `Couldn't parse config: ${err instanceof Error ? err.message : String(err)}`
@@ -100,33 +77,27 @@ export default function RunPage() {
     }
   }
 
-  const passthroughKeys = Object.keys(passthrough)
-
   function submit(e: React.FormEvent) {
     e.preventDefault()
-    const filters = toLines(filter)
-    if (!input.trim()) {
+    if (!String(values.input ?? "").trim()) {
       toast.error("Input directory is required")
       return
     }
-    if (filters.length === 0) {
+    if (!String(values.filter ?? "").split("\n").some((s) => s.trim())) {
       toast.error("At least one include pattern is required")
       return
     }
-    const req: RunRequest = {
-      input: input.trim(),
-      filter: filters,
-      exclude: toLines(exclude),
-      provider,
-      model: model.trim(),
-      host: host.trim(),
-      apiKey: provider === "openai" && apiKey.trim() ? apiKey.trim() : undefined,
-      output: output.trim(),
-      exportFormat,
-      chunkSize: Number(chunkSize) || DEFAULT_RUN_REQUEST.chunkSize,
+    if (!String(values.model ?? "").trim()) {
+      toast.error("Model is required")
+      return
     }
+    if (!String(values.output ?? "").trim()) {
+      toast.error("Output file is required")
+      return
+    }
+    const { req, passthrough } = partitionValues(values, importExtra)
     start.mutate(
-      { req, passthrough: passthroughKeys.length ? passthrough : undefined },
+      { req, passthrough },
       {
         onSuccess: ({ run }) => {
           toast.success("Run started")
@@ -138,11 +109,13 @@ export default function RunPage() {
     )
   }
 
+  const extraKeys = Object.keys(importExtra)
+
   return (
     <form onSubmit={submit}>
       <PageHeader
         title="New run"
-        description="Configure input, model, and output, then launch."
+        description="Configure and launch. Import a YAML/JSON config to prefill."
         actions={
           <div className="flex items-center gap-2">
             <input
@@ -173,161 +146,16 @@ export default function RunPage() {
         }
       />
 
-      {passthroughKeys.length > 0 && (
+      {extraKeys.length > 0 && (
         <div className="mb-4 rounded-md border border-dashed bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
           <span className="font-medium text-foreground">
-            {passthroughKeys.length} imported field{passthroughKeys.length > 1 ? "s" : ""}
+            {extraKeys.length} unknown imported field{extraKeys.length > 1 ? "s" : ""}
           </span>{" "}
-          passed through to the run:{" "}
-          <span className="font-mono">{passthroughKeys.join(", ")}</span>
+          passed through: <span className="font-mono">{extraKeys.join(", ")}</span>
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Input</CardTitle>
-            <CardDescription>Directory and file patterns to process.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="input">Input directory</Label>
-              <Input
-                id="input"
-                placeholder="/path/to/project"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="filter">Include patterns (one per line)</Label>
-              <Textarea
-                id="filter"
-                rows={3}
-                className="font-mono text-xs"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="exclude">Exclude patterns (one per line)</Label>
-              <Textarea
-                id="exclude"
-                rows={2}
-                className="font-mono text-xs"
-                value={exclude}
-                onChange={(e) => setExclude(e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Model</CardTitle>
-            <CardDescription>Generation provider and model.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Provider</Label>
-              <Select
-                value={provider}
-                onValueChange={(v) => setProvider(v as RunRequest["provider"])}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ollama">Ollama (local)</SelectItem>
-                  <SelectItem value="openai">OpenAI-compatible</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="model">Model</Label>
-              <Input
-                id="model"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="host">Host / base URL</Label>
-              <Input
-                id="host"
-                value={host}
-                onChange={(e) => setHost(e.target.value)}
-              />
-            </div>
-            {provider === "openai" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="apiKey">API key</Label>
-                <Input
-                  id="apiKey"
-                  type="password"
-                  placeholder="sk-… (or set $OPENAI_API_KEY)"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Output</CardTitle>
-            <CardDescription>Where and how to write the graph.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="output">Output file</Label>
-              <Input
-                id="output"
-                value={output}
-                onChange={(e) => setOutput(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Export format</Label>
-              <Select
-                value={exportFormat}
-                onValueChange={(v) =>
-                  setExportFormat(v as RunRequest["exportFormat"])
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="json">json</SelectItem>
-                  <SelectItem value="jsonl">jsonl</SelectItem>
-                  <SelectItem value="mcp-jsonl">mcp-jsonl</SelectItem>
-                  <SelectItem value="dot">dot</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Processing</CardTitle>
-            <CardDescription>Chunking. Runs checkpoint automatically so they can be resumed.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="chunkSize">Chunk size (characters)</Label>
-              <Input
-                id="chunkSize"
-                type="number"
-                value={chunkSize}
-                onChange={(e) => setChunkSize(e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <ConfigForm values={values} onChange={set} />
     </form>
   )
 }

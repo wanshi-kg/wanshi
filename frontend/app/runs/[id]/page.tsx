@@ -102,7 +102,7 @@ export default function RunDetailPage() {
         }
       />
 
-      <div className="grid gap-4">
+      <div className="grid min-w-0 gap-4 [&>*]:min-w-0">
         {/* Progress */}
         <Card>
           <CardHeader>
@@ -171,13 +171,13 @@ export default function RunDetailPage() {
           <CardContent>
             <div
               ref={logRef}
-              className="h-72 overflow-auto rounded-md bg-muted/50 p-3 font-mono text-xs leading-relaxed"
+              className="h-72 min-w-0 overflow-y-auto overflow-x-hidden rounded-md bg-muted/50 p-3 font-mono text-xs leading-relaxed"
             >
               {logs.length === 0 ? (
                 <span className="text-muted-foreground">Waiting for output…</span>
               ) : (
                 logs.map((l, i) => (
-                  <div key={i} className="whitespace-pre-wrap">
+                  <div key={i} className="whitespace-pre-wrap break-all">
                     <span
                       className={
                         l.level === "error"
