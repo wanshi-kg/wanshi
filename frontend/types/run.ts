@@ -67,13 +67,23 @@ export interface LogLine {
 /**
  * A run enriched with its config — what the runs list (dashboard + Results)
  * shows. Live runs get this from the registry record's request; historical runs
- * from the persisted index.
+ * from the persisted store.
  */
 export interface RunListItem extends RunSummary {
   input?: string
   model?: string
   provider?: string
   exportFormat?: string
+}
+
+/**
+ * A run as persisted on disk (`~/.kg-gen/runs/<id>.json`). Carries the FULL
+ * config so a past run can be reconstructed for Resume/Restart.
+ */
+export interface StoredRun {
+  summary: RunSummary
+  config: import("@/lib/kg-options").RunRequest
+  passthrough?: Record<string, unknown>
 }
 
 /** Server-side summary of a run (what the registry tracks / the UI polls). */

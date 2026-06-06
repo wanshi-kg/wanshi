@@ -2,19 +2,22 @@ import { spawn, type ChildProcess } from "node:child_process"
 import { EventEmitter } from "node:events"
 import { createInterface } from "node:readline"
 import { randomUUID } from "node:crypto"
-import { mkdtempSync, writeFileSync } from "node:fs"
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { buildKgConfig, type RunRequest } from "@/lib/kg-options"
-import { listIndexedRuns, recordRun } from "@/server/run-store"
+import { getStoredRun, listStoredRuns, recordRun } from "@/server/run-store"
 import type {
   LogLine,
   ProgressEvent,
   RunListItem,
   RunState,
   RunSummary,
+  StoredRun,
   StreamLine,
 } from "@/types"
+
+export type RerunMode = "resume" | "restart"
 
 const LOG_CAP = 1000
 
@@ -24,8 +27,10 @@ export interface RunRecord {
   child: ChildProcess
   bus: EventEmitter
   sigintSent: boolean
-  /** Original request — carries config (input/model/format) for the runs list. */
+  /** Original request — the full config, kept so the run can be re-run/resumed. */
   req: RunRequest
+  /** Extra config fields imported from YAML and passed through to the CLI. */
+  passthrough?: Record<string, unknown>
   /** Absolute output path the CLI was told to write (graph source). */
   resolvedOutput: string
 }
@@ -86,16 +91,27 @@ function toListItem(record: RunRecord): RunListItem {
   }
 }
 
+/** A persisted run as a config-enriched list item. */
+function storedToListItem(stored: StoredRun): RunListItem {
+  return {
+    ...stored.summary,
+    input: stored.config.input,
+    model: stored.config.model,
+    provider: stored.config.provider,
+    exportFormat: stored.config.exportFormat,
+  }
+}
+
 /**
  * All known runs for the runs list: live registry records (current, may be
- * running) merged over the persisted index (historical), deduped by id.
+ * running) merged over the persisted history (durable), deduped by id.
  */
 export function listAllRuns(): RunListItem[] {
   const live = new Map<string, RunListItem>()
   for (const record of runs.values()) live.set(record.summary.id, toListItem(record))
   const merged = [...live.values()]
-  for (const entry of listIndexedRuns()) {
-    if (!live.has(entry.id)) merged.push(entry)
+  for (const stored of listStoredRuns()) {
+    if (!live.has(stored.summary.id)) merged.push(storedToListItem(stored))
   }
   return merged.sort((a, b) => b.startedAt - a.startedAt)
 }
@@ -104,21 +120,57 @@ export function getRun(id: string): RunRecord | undefined {
   return runs.get(id)
 }
 
-/** Resolve a run's output graph path from the registry or the persisted index. */
+/** Resolve a run's output graph path from the registry or the persisted store. */
 export function getRunOutput(id: string): string | undefined {
   const record = runs.get(id)
   if (record) return record.summary.output ?? record.resolvedOutput
-  return listIndexedRuns().find((r) => r.id === id)?.output
+  return getStoredRun(id)?.summary.output
 }
 
-export function startRun(req: RunRequest): RunSummary {
+/** The full config (+ passthrough) needed to re-run a past run. */
+function getRunConfig(
+  id: string
+): { config: RunRequest; passthrough?: Record<string, unknown>; output?: string } | undefined {
+  const record = runs.get(id)
+  if (record) {
+    return { config: record.req, passthrough: record.passthrough, output: record.resolvedOutput }
+  }
+  const stored = getStoredRun(id)
+  if (stored) {
+    return { config: stored.config, passthrough: stored.passthrough, output: stored.summary.output }
+  }
+  return undefined
+}
+
+/**
+ * Re-run a past run from its stored config. "resume" keeps the checkpoint so
+ * already-done chunks are skipped; "restart" deletes the checkpoint first to
+ * force a clean re-extract. Returns the NEW run, or undefined if unknown.
+ */
+export function rerunRun(id: string, mode: RerunMode): RunSummary | undefined {
+  const found = getRunConfig(id)
+  if (!found) return undefined
+  if (mode === "restart" && found.output) {
+    try {
+      rmSync(`${found.output}.checkpoint.jsonl`, { force: true })
+    } catch {
+      // a missing/locked checkpoint must not block a restart
+    }
+  }
+  return startRun(found.config, found.passthrough)
+}
+
+export function startRun(
+  req: RunRequest,
+  passthrough?: Record<string, unknown>
+): RunSummary {
   const id = randomUUID().slice(0, 8)
 
   // The CLI runs with cwd = repo root, so a *relative* output (the form default
   // is "knowledge-graph.json") — and its "<output>.checkpoint.jsonl" sidecar —
   // would land in the kg-gen project root. Resolve it to an absolute path next
   // to the input directory instead, where a project's graph is expected to live.
-  const config = buildKgConfig(req)
+  const config = buildKgConfig(req, passthrough)
   const resolvedOutput = resolveOutputPath(req.input, req.output)
   config.output = resolvedOutput
 
@@ -153,6 +205,7 @@ export function startRun(req: RunRequest): RunSummary {
     bus: new EventEmitter(),
     sigintSent: false,
     req,
+    passthrough,
     resolvedOutput,
   }
   record.bus.setMaxListeners(0)
@@ -301,10 +354,11 @@ function finalize(record: RunRecord, state: RunState, error?: string): void {
   if (error) record.summary.error = error
   emitSummary(record)
   emitEnd(record)
-  // Persist to the run index so the run survives a server restart. Best-effort.
-  try {
-    recordRun(toListItem(record))
-  } catch {
-    // never let persistence break a run
-  }
+  // Persist the full config + summary so the run survives a restart and can be
+  // re-run/resumed. (run-store logs its own failures rather than hiding them.)
+  recordRun({
+    summary: record.summary,
+    config: record.req,
+    passthrough: record.passthrough,
+  })
 }

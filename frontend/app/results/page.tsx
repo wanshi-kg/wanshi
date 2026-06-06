@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { DataTable } from "@/components/data-table/data-table"
 import { Button } from "@/components/ui/button"
 import { RunStateBadge } from "@/components/run-state-badge"
+import { RerunActions } from "@/components/rerun-actions"
 import { useRuns } from "@/hooks/use-runs"
 import { basename } from "@/lib/utils"
 import type { RunListItem } from "@/types"
@@ -88,6 +89,8 @@ export default function ResultsPage() {
           const viewable = VIEWABLE(run)
           return (
             <div className="flex justify-end gap-1">
+              <RerunActions id={run.id} state={run.state} compact />
+              <span className="mx-0.5 w-px self-stretch bg-border" />
               <Button asChild variant="ghost" size="icon-sm" title="Details" disabled={!viewable}>
                 <Link href={`/results/${run.id}`}>
                   <FileSearch className="h-4 w-4" />

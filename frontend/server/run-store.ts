@@ -1,36 +1,72 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs"
+import os from "node:os"
 import path from "node:path"
-import type { RunListItem } from "@/types"
+import type { StoredRun } from "@/types"
 
 /**
- * Tiny on-disk run index so the Results page survives server restarts (the
- * in-memory registry forgets runs, but the graph files persist). Not a DB —
- * one small gitignored JSON file under the app's working directory.
+ * Durable run history. Each run is its own JSON file under a cwd-INDEPENDENT
+ * directory (default ~/.kg-gen/runs), so history survives a server restart no
+ * matter where the app is launched from — and a corrupt write loses one run,
+ * not all of them. Override the location with KG_GEN_DATA_DIR.
  */
-function indexPath(): string {
-  return path.join(process.cwd(), ".data", "runs.json")
+function dataDir(): string {
+  return process.env.KG_GEN_DATA_DIR || path.join(os.homedir(), ".kg-gen")
+}
+function runsDir(): string {
+  return path.join(dataDir(), "runs")
+}
+function runFile(id: string): string {
+  return path.join(runsDir(), `${id}.json`)
 }
 
-export function listIndexedRuns(): RunListItem[] {
-  const file = indexPath()
-  if (!existsSync(file)) return []
+/** Persist a run atomically (temp file + rename). Failures are logged, not hidden. */
+export function recordRun(stored: StoredRun): void {
+  const dir = runsDir()
+  const file = runFile(stored.summary.id)
+  const tmp = `${file}.${process.pid}.tmp`
   try {
-    const parsed = JSON.parse(readFileSync(file, "utf-8"))
-    return Array.isArray(parsed) ? (parsed as RunListItem[]) : []
-  } catch {
-    return [] // corrupt index — start fresh rather than crash the route
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(tmp, JSON.stringify(stored, null, 2))
+    renameSync(tmp, file)
+  } catch (err) {
+    console.error(
+      `[run-store] failed to persist run ${stored.summary.id} to ${file}:`,
+      err
+    )
   }
 }
 
-/** Upsert a run by id (newest write wins) and keep the list newest-first. */
-export function recordRun(entry: RunListItem): void {
-  const file = indexPath()
-  mkdirSync(path.dirname(file), { recursive: true })
-  const existing = listIndexedRuns().filter((r) => r.id !== entry.id)
-  const next = [entry, ...existing].sort((a, b) => b.startedAt - a.startedAt)
+export function listStoredRuns(): StoredRun[] {
+  const dir = runsDir()
+  if (!existsSync(dir)) return []
+  const out: StoredRun[] = []
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith(".json")) continue
+    try {
+      const parsed = JSON.parse(
+        readFileSync(path.join(dir, name), "utf-8")
+      ) as StoredRun
+      if (parsed?.summary?.id) out.push(parsed)
+    } catch (err) {
+      console.warn(`[run-store] skipping unreadable run file ${name}:`, err)
+    }
+  }
+  return out
+}
+
+export function getStoredRun(id: string): StoredRun | undefined {
+  const file = runFile(id)
+  if (!existsSync(file)) return undefined
   try {
-    writeFileSync(file, JSON.stringify(next, null, 2))
+    return JSON.parse(readFileSync(file, "utf-8")) as StoredRun
   } catch {
-    // best-effort persistence — a failed write must not break a run
+    return undefined
   }
 }

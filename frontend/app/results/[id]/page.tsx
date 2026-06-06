@@ -13,6 +13,7 @@ import { DataTable } from "@/components/data-table/data-table"
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter"
 import { TypeBarChart } from "@/components/charts/type-bar-chart"
 import { TypeChip } from "@/components/type-chip"
+import { RerunActions } from "@/components/rerun-actions"
 import { useGraph } from "@/hooks/use-graph"
 import { ApiError } from "@/lib/api"
 import { basename, cn } from "@/lib/utils"
@@ -151,12 +152,15 @@ export default function ResultDetailPage() {
         title={`Graph ${id}`}
         description={data?.output ? basename(data.output) : undefined}
         actions={
-          <Button asChild size="sm">
-            <Link href={`/graph?run=${id}`}>
-              <Network className="h-4 w-4" />
-              Visualize
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <RerunActions id={id} state="completed" />
+            <Button asChild size="sm">
+              <Link href={`/graph?run=${id}`}>
+                <Network className="h-4 w-4" />
+                Visualize
+              </Link>
+            </Button>
+          </div>
         }
       />
 

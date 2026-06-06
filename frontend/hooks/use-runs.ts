@@ -17,8 +17,13 @@ export function useRuns(poll = true) {
 export function useStartRun() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (req: RunRequest) =>
-      apiPost<{ run: RunSummary }>("/api/runs", req),
+    mutationFn: ({
+      req,
+      passthrough,
+    }: {
+      req: RunRequest
+      passthrough?: Record<string, unknown>
+    }) => apiPost<{ run: RunSummary }>("/api/runs", { ...req, passthrough }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["runs"] }),
   })
 }
@@ -26,4 +31,16 @@ export function useStartRun() {
 export async function cancelRun(id: string): Promise<boolean> {
   const res = await apiPost<{ ok: boolean }>(`/api/runs/${id}/cancel`)
   return res.ok
+}
+
+export type RerunMode = "resume" | "restart"
+
+/** Re-run a past run from its stored config (resume = continue, restart = fresh). */
+export function useRerun() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, mode }: { id: string; mode: RerunMode }) =>
+      apiPost<{ run: RunSummary }>(`/api/runs/${id}/rerun`, { mode }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["runs"] }),
+  })
 }

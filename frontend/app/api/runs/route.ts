@@ -17,6 +17,11 @@ export async function POST(req: Request) {
       { status: 400 }
     )
   }
-  const run = startRun(parsed.data)
+  // Extra config fields imported from YAML ride alongside the known form fields.
+  const passthrough =
+    body && typeof body.passthrough === "object" && body.passthrough !== null
+      ? (body.passthrough as Record<string, unknown>)
+      : undefined
+  const run = startRun(parsed.data, passthrough)
   return NextResponse.json({ run }, { status: 201 })
 }
