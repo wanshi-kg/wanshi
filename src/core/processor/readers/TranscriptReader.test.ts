@@ -14,12 +14,12 @@ describe("TranscriptReader", () => {
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 
-  const reader = () => {
+  const reader = (maxChunkSize = 4000) => {
     const chunker = new TextChunker(
-      { maxChunkSize: 4000, overlapSize: 50, enabled: true },
+      { maxChunkSize, overlapSize: 50, enabled: true },
       stubLogger()
     );
-    return new TranscriptReader(chunker, stubLogger(), 4000);
+    return new TranscriptReader(chunker, stubLogger(), maxChunkSize);
   };
 
   const write = (name: string, content: string) => {
@@ -28,23 +28,44 @@ describe("TranscriptReader", () => {
     return p;
   };
 
-  it("parses speaker-labeled text into speaker-pure chunks, merging consecutive turns", async () => {
+  it("packs a small dialogue into one chunk with inline speaker labels", async () => {
     const p = write(
       "lesson.parakeet.txt",
       "SPEAKER_00: first part here.\n\nSPEAKER_00: second part here.\n\nSPEAKER_01: a reply from the other side."
     );
     const res = await reader().read(p);
-    // two SPEAKER_00 turns merge into one chunk; SPEAKER_01 is its own chunk
-    expect(res.chunks).toHaveLength(2);
-    expect(res.chunks[0].provenance?.speaker).toBe("SPEAKER_00");
-    expect(res.chunks[0].content).toContain("first part");
-    expect(res.chunks[0].content).toContain("second part");
-    expect(res.chunks[0].content).not.toMatch(/^SPEAKER_00:/); // label stripped → in provenance
-    expect(res.chunks[1].provenance?.speaker).toBe("SPEAKER_01");
-    expect(res.chunks.every((c) => c.provenance?.source === p)).toBe(true);
+    // everything fits one chunk; speaker labels stay inline so attribution is visible
+    expect(res.chunks).toHaveLength(1);
+    expect(res.chunks[0].content).toContain("SPEAKER_00: first part here.");
+    expect(res.chunks[0].content).toContain("SPEAKER_01: a reply");
+    // mixed-speaker chunk → no single speaker on provenance, but source is kept
+    expect(res.chunks[0].provenance?.speaker).toBeUndefined();
+    expect(res.chunks[0].provenance?.source).toBe(p);
   });
 
-  it("parses recua turns JSON with speaker provenance", async () => {
+  it("keeps speaker provenance when a packed chunk is single-speaker", async () => {
+    const p = write(
+      "mono.parakeet.txt",
+      "SPEAKER_00: first part here.\n\nSPEAKER_00: second part here."
+    );
+    const res = await reader().read(p);
+    expect(res.chunks).toHaveLength(1);
+    expect(res.chunks[0].provenance?.speaker).toBe("SPEAKER_00");
+  });
+
+  it("splits across chunks by size while keeping labels, not one-per-turn", async () => {
+    // 6 short turns; a tiny budget forces multiple chunks but far fewer than 6
+    const body = Array.from({ length: 6 }, (_, i) =>
+      `SPEAKER_${i % 2 === 0 ? "00" : "01"}: turn number ${i} talking here.`
+    ).join("\n\n");
+    const p = write("chatty.parakeet.txt", body);
+    const res = await reader(120).read(p);
+    expect(res.chunks.length).toBeGreaterThan(1);
+    expect(res.chunks.length).toBeLessThan(6);
+    expect(res.chunks.every((c) => /SPEAKER_0[01]:/.test(c.content))).toBe(true);
+  });
+
+  it("parses recua turns JSON, packing both turns into one labeled chunk", async () => {
     const p = write(
       "lesson.json",
       JSON.stringify([
@@ -54,15 +75,12 @@ describe("TranscriptReader", () => {
     );
     expect(reader().canRead(p)).toBe(true);
     const res = await reader().read(p);
-    expect(res.chunks).toHaveLength(2);
-    expect(res.chunks.map((c) => c.provenance?.speaker)).toEqual([
-      "SPEAKER_00",
-      "SPEAKER_01",
-    ]);
-    expect(res.chunks[0].content).toContain("alpha beta gamma");
+    expect(res.chunks).toHaveLength(1);
+    expect(res.chunks[0].content).toContain("SPEAKER_00: alpha beta gamma");
+    expect(res.chunks[0].content).toContain("SPEAKER_01: delta epsilon zeta");
   });
 
-  it("parses Claude chat-export JSON with sender + timestamp provenance", async () => {
+  it("parses Claude chat-export JSON, keeping earliest timestamp on the packed chunk", async () => {
     const p = write(
       "conversations.json",
       JSON.stringify([
@@ -80,11 +98,10 @@ describe("TranscriptReader", () => {
     );
     expect(reader().canRead(p)).toBe(true);
     const res = await reader().read(p);
-    expect(res.chunks).toHaveLength(2);
-    expect(res.chunks[0].provenance?.speaker).toBe("human");
+    expect(res.chunks).toHaveLength(1);
+    expect(res.chunks[0].content).toContain("human: what is recursion");
+    expect(res.chunks[0].content).toContain("assistant: a function that calls itself");
     expect(res.chunks[0].provenance?.occurredAt).toBe("2025-01-01T00:00:00Z");
-    expect(res.chunks[1].provenance?.speaker).toBe("assistant");
-    expect(res.chunks[1].content).toContain("calls itself");
   });
 
   it("defers non-transcript files (plain .txt and ordinary .json)", async () => {

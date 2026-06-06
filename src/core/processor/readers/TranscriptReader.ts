@@ -20,9 +20,11 @@ const TEXT_SUFFIXES = [
 ];
 
 /**
- * Reads conversational transcripts into **speaker-pure** chunks carrying
- * per-turn provenance (speaker + time), so extracted observations are attributed
- * to who actually said them instead of the speaker becoming an entity.
+ * Reads conversational transcripts into **size-packed** chunks (capped at
+ * `maxChunkSize`, tied to the global `chunkSize`) so a long dialogue becomes a
+ * handful of chunks instead of one-per-turn. Each turn is rendered inline as
+ * `speaker: text` so attribution stays visible to the model, and chunk
+ * provenance carries the speaker whenever a chunk happens to be single-speaker.
  *
  * Handles three real shapes:
  *  - recua speaker-labeled text  (`SPEAKER_XX: …` blocks)
@@ -171,46 +173,64 @@ export class TranscriptReader extends FileReader {
     return "";
   }
 
+  /** Render a turn with its inline speaker label (`speaker: text`). */
+  private render(turn: Turn): string {
+    return `${turn.speaker}: ${turn.text}`;
+  }
+
   /**
-   * Group consecutive same-speaker turns into chunks (≤ maxChunkSize, splitting
-   * oversized monologues), each stamped with that speaker's provenance.
+   * Pack consecutive turns into chunks up to `maxChunkSize` (regardless of
+   * speaker), rendering each turn inline as `speaker: text`. Provenance carries
+   * the speaker only when a chunk turns out to be single-speaker; a turn longer
+   * than the budget on its own is split with the label kept on every piece.
    */
   private async chunkTurns(turns: Turn[], filePath: string): Promise<FileReadResult> {
+    const SEP = "\n\n";
     const chunks: ChunkResult[] = [];
     let buf: Turn[] = [];
-    const bufLen = () => buf.reduce((n, t) => n + t.text.length + 1, 0);
+    const renderLen = (t: Turn) => this.render(t).length;
+    const bufLen = () => buf.reduce((n, t) => n + renderLen(t) + SEP.length, 0);
 
-    const flush = async () => {
+    const flush = () => {
       if (buf.length === 0) return;
-      const speaker = buf[0].speaker;
+      const speakers = new Set(buf.map((t) => t.speaker));
       const occurredAt = buf.find((t) => t.occurredAt)?.occurredAt;
-      const text = buf.map((t) => t.text).join("\n").trim();
+      const text = buf.map((t) => this.render(t)).join(SEP).trim();
       const provenance: ChunkProvenance = {
-        speaker,
         source: filePath,
+        ...(speakers.size === 1 && { speaker: buf[0].speaker }),
         ...(occurredAt && { occurredAt }),
       };
-      if (text.length <= this.maxChunkSize) {
-        chunks.push({ content: text, index: 0, totalChunks: 0, startOffset: 0, endOffset: text.length, provenance });
-      } else {
-        for (const p of await this.chunker.chunk(text)) {
-          chunks.push({ content: p.content, index: 0, totalChunks: 0, startOffset: p.startOffset, endOffset: p.endOffset, provenance });
-        }
-      }
+      chunks.push({ content: text, index: 0, totalChunks: 0, startOffset: 0, endOffset: text.length, provenance });
       buf = [];
+    };
+
+    // Split a single oversized turn, keeping its speaker label on each piece.
+    const flushOversized = async (turn: Turn) => {
+      const provenance: ChunkProvenance = {
+        source: filePath,
+        speaker: turn.speaker,
+        ...(turn.occurredAt && { occurredAt: turn.occurredAt }),
+      };
+      for (const p of await this.chunker.chunk(turn.text)) {
+        const content = `${turn.speaker}: ${p.content}`;
+        chunks.push({ content, index: 0, totalChunks: 0, startOffset: p.startOffset, endOffset: p.endOffset, provenance });
+      }
     };
 
     for (const turn of turns) {
       if (!turn.text) continue;
-      if (
-        buf.length > 0 &&
-        (turn.speaker !== buf[0].speaker || bufLen() + turn.text.length > this.maxChunkSize)
-      ) {
-        await flush();
+      if (renderLen(turn) > this.maxChunkSize) {
+        flush();
+        await flushOversized(turn);
+        continue;
+      }
+      if (buf.length > 0 && bufLen() + renderLen(turn) + SEP.length > this.maxChunkSize) {
+        flush();
       }
       buf.push(turn);
     }
-    await flush();
+    flush();
 
     chunks.forEach((c, i) => {
       c.index = i + 1;
