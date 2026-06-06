@@ -10,7 +10,7 @@
     "start": "ts-node ./src/index.ts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "build": "tsc",
+    "build": "tsc && node scripts/copy-assets.js",
     "benchmark": "ts-node scripts/benchmark.ts"
   },
   "author": "Alex Sabaka",
