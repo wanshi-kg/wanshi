@@ -14,6 +14,7 @@ import { DataTableFacetedFilter } from "@/components/data-table/data-table-facet
 import { TypeBarChart } from "@/components/charts/type-bar-chart"
 import { TypeChip } from "@/components/type-chip"
 import { RerunActions } from "@/components/rerun-actions"
+import { SaveAsButton } from "@/components/save-as-button"
 import { useGraph } from "@/hooks/use-graph"
 import { ApiError } from "@/lib/api"
 import { basename, cn } from "@/lib/utils"
@@ -154,6 +155,7 @@ export default function ResultDetailPage() {
         actions={
           <div className="flex items-center gap-2">
             <RerunActions id={id} state="completed" />
+            <SaveAsButton runId={id} />
             <Button asChild size="sm">
               <Link href={`/graph?run=${id}`}>
                 <Network className="h-4 w-4" />

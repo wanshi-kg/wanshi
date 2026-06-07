@@ -49,7 +49,7 @@ function isTerminal(state: RunState): boolean {
 }
 
 /** Repo root that holds the kg-gen CLI. Next runs with cwd = `frontend/`. */
-function repoCwd(): string {
+export function repoCwd(): string {
   return process.env.KG_GEN_CWD || path.resolve(process.cwd(), "..")
 }
 /**
@@ -59,7 +59,7 @@ function repoCwd(): string {
  * Requires `npm run build` in the repo root; override with KG_GEN_CMD to point
  * at a ts-node invocation if you prefer running from source.
  */
-function launchCmd(): string[] {
+export function launchCmd(): string[] {
   return (process.env.KG_GEN_CMD || "node dist/index.js").split(/\s+/)
 }
 
@@ -137,8 +137,8 @@ export function getRunOutput(id: string): string | undefined {
   return getStoredRun(id)?.summary.output
 }
 
-/** The full config (+ passthrough) needed to re-run a past run. */
-function getRunConfig(
+/** The full config (+ passthrough) needed to re-run or re-export a past run. */
+export function getRunConfig(
   id: string
 ): { config: RunRequest; passthrough?: Record<string, unknown>; output?: string } | undefined {
   const record = runs.get(id)
