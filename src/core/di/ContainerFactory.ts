@@ -398,6 +398,9 @@ export class ContainerFactory {
           progress,
           grounding: options.grounding.mode,
           groundingMinScore: options.grounding.minScore,
+          // Stamp edge source spans only when the pipeline grounding gate needs
+          // them, so the baseline graph stays free of the extra weight.
+          attachSourceSpans: options.pipeline.grounding.enabled,
         },
         logger
       );

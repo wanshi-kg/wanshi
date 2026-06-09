@@ -333,7 +333,13 @@ async function mergeWithinFile(
         const relationKey = `${fromEntity}->${toEntity}:${relationType.join(",")}`;
         if (!relationSet.has(relationKey)) {
           relationSet.add(relationKey);
-          relations.push({ from: fromEntity, to: toEntity, relationType });
+          relations.push({
+            from: fromEntity,
+            to: toEntity,
+            relationType,
+            ...(relation.sourceSpan ? { sourceSpan: relation.sourceSpan } : {}),
+            ...(relation.validAt ? { validAt: relation.validAt } : {}),
+          });
         }
       }
     }
@@ -463,7 +469,13 @@ async function mergeGlobally(
         const relationKey = `${fromEntity}->${toEntity}:${relationType.join(",")}`;
         if (!relationSet.has(relationKey)) {
           relationSet.add(relationKey);
-          relations.push({ from: fromEntity, to: toEntity, relationType });
+          relations.push({
+            from: fromEntity,
+            to: toEntity,
+            relationType,
+            ...(relation.sourceSpan ? { sourceSpan: relation.sourceSpan } : {}),
+            ...(relation.validAt ? { validAt: relation.validAt } : {}),
+          });
         }
       }
     }

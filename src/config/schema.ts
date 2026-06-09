@@ -241,6 +241,142 @@ const RuntimeSchema = z
   })
   .strict();
 
+// ── pipeline stages (canonicalization experiment) ──────────────────────────
+//
+// Explicit, reorderable, enable/disable stages (canon brief §3/§4). For
+// Experiment 1 the producer stages (tf_analysis / schema_induction /
+// extraction) run in fixed relative order and gate existing behavior; the
+// genuinely reorderable part is the post-extraction graph→graph transforms
+// (grounding, canonicalization), which is the seam Experiment 2 needs.
+
+export const TfAnalysisSourceEnum = z.enum(["corpus", "graph"]);
+export const CanonMethodEnum = z.enum(["embeddings", "llm", "hybrid"]);
+export const ClusterAlgoEnum = z.enum(["agglomerative", "hdbscan", "kmeans"]);
+export const CanonicalSelectionEnum = z.enum(["frequency", "degree"]);
+export const CanonTargetEnum = z.enum(["entities", "relations"]);
+
+const DEFAULT_STAGES = [
+  "tf_analysis",
+  "schema_induction",
+  "extraction",
+  "grounding",
+  "canonicalization",
+];
+
+const StageToggleSchema = z
+  .object({ enabled: z.boolean().default(true) })
+  .strict();
+
+const TfAnalysisStageSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    source: TfAnalysisSourceEnum.default("corpus").describe(
+      "Term-frequency source: 'corpus' (lexical, Exp 1) | 'graph' (structural salience, Exp 2 — stat collection only)"
+    ),
+  })
+  .strict();
+
+// NOTE: distinct from the top-level `grounding` group (the inline *observation*
+// grounding gate). This is the *edge* co-occurrence gate — OFF for Experiment 1,
+// the precision gate Experiment 2 runs before canonicalization.
+const PipelineGroundingSchema = z
+  .object({
+    enabled: z.boolean().default(false).describe("Edge co-occurrence grounding gate (OFF for Exp 1)"),
+    requireCooccurrence: z
+      .boolean()
+      .default(true)
+      .describe("Drop edges whose endpoints don't co-occur in their source span"),
+  })
+  .strict();
+
+const CanonClusterSchema = (threshold: number) =>
+  z
+    .object({
+      cluster: ClusterAlgoEnum.default("agglomerative").describe(
+        "Clustering algorithm (only 'agglomerative' is implemented)"
+      ),
+      threshold: num(threshold).describe("Cosine-similarity merge threshold"),
+      k: z.coerce.number().nullable().default(null).describe("Cluster count (only for kmeans)"),
+    })
+    .strict();
+
+const simBand = () =>
+  z
+    .tuple([z.coerce.number(), z.coerce.number()])
+    .describe("Similarity band [low, high] considered borderline");
+
+const CanonicalizationSchema = z
+  .object({
+    enabled: z.boolean().default(false).describe("Global embedding-clustering canonicalization pass (after merge)"),
+    target: z
+      .array(CanonTargetEnum)
+      .default(["entities", "relations"])
+      .describe("Canonicalize entity names/types, edge labels, or both"),
+    method: CanonMethodEnum.default("embeddings").describe(
+      "embeddings (cluster) | llm (adjudicate) | hybrid (cluster + escalate borderline)"
+    ),
+    canonicalSelection: CanonicalSelectionEnum.default("frequency").describe(
+      "Pick the cluster's canonical representative by frequency or graph degree"
+    ),
+    embeddings: z
+      .object({
+        entity: CanonClusterSchema(0.82).default({}),
+        relation: CanonClusterSchema(0.85).default({}),
+      })
+      .strict()
+      .default({}),
+    llm: z
+      .object({
+        model: z.string().optional().describe("Adjudication model (defaults to llm.model)"),
+        adjudicate: z.enum(["borderline_only"]).default("borderline_only"),
+        band: simBand().default([0.72, 0.88]),
+      })
+      .strict()
+      .default({}),
+    hybrid: z
+      .object({
+        escalateBand: simBand().default([0.72, 0.88]),
+      })
+      .strict()
+      .default({}),
+  })
+  .strict();
+
+const PipelineSchema = z
+  .object({
+    stages: z
+      .array(z.string())
+      .default(DEFAULT_STAGES)
+      .describe("Ordered stage list; reorder for Experiment 2 (typeless-first)"),
+    tfAnalysis: TfAnalysisStageSchema.default({}),
+    schemaInduction: StageToggleSchema.default({}),
+    extraction: StageToggleSchema.default({}),
+    grounding: PipelineGroundingSchema.default({}),
+    canonicalization: CanonicalizationSchema.default({}),
+  })
+  .strict();
+
+const InspectionSchema = z
+  .object({
+    emitMergeLog: z.boolean().default(false).describe("Write the per-cluster canonicalization merge log"),
+    mergeLogPath: z
+      .string()
+      .optional()
+      .describe("Merge-log path (default runs/<run_id>/merges.jsonl)"),
+  })
+  .strict();
+
+const EvalSchema = z
+  .object({
+    seed: z.coerce.number().optional().describe("Experiment seed (recorded in the run manifest)"),
+    groundTruth: z.string().optional().describe("Ground-truth facts JSONL for scoring"),
+    pinVersions: z
+      .boolean()
+      .default(true)
+      .describe("Pin model/embedding/seed versions in the run manifest"),
+  })
+  .strict();
+
 // ── root schema ────────────────────────────────────────────────────────────
 
 export const ConfigSchema = z
@@ -266,5 +402,10 @@ export const ConfigSchema = z
     resume: ResumeSchema.default({}),
     logging: LoggingSchema.default({}),
     runtime: RuntimeSchema.default({}),
+
+    // Canonicalization experiment (canon brief). Config-only (no CLI flags).
+    pipeline: PipelineSchema.default({}),
+    inspection: InspectionSchema.default({}),
+    eval: EvalSchema.default({}),
   })
   .strict();
