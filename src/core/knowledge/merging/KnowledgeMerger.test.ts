@@ -1,4 +1,9 @@
-import { mergeKnowledgeGraphs, canonicalizeRelationType } from "./KnowledgeMerger";
+import {
+  mergeKnowledgeGraphs,
+  canonicalizeRelationType,
+  normalizeEntityName,
+} from "./KnowledgeMerger";
+import { MergeRecord } from "../MergeRecord";
 import { JsonExportStrategy, McpExportStrategy } from "../../export/strategies";
 import { KnowledgeGraph } from "../../../types";
 import { stubLogger } from "../../../__tests__/helpers";
@@ -86,6 +91,141 @@ describe("canonicalizeRelationType", () => {
     expect(canonicalizeRelationType(["calls", "uses"])).toEqual(["calls", "uses"]);
     expect(canonicalizeRelationType([" Uses ", "USES", "uses"])).toEqual(["uses"]);
     expect(canonicalizeRelationType([])).toEqual([]);
+  });
+});
+
+// Entity factory shared by the guard/rename tests below.
+const mkEnt = (name: string, entityType = "concept", file = "A.txt") => ({
+  name,
+  entityType,
+  files: [file],
+  observations: [{ text: `${name} fact`, source: file, createdAt: "2026-01-01T00:00:00Z" }],
+});
+
+describe("KnowledgeMerger — merge guards (the garlic↔Anthropic class)", () => {
+  it("does NOT fuse dissimilar same-file names (garlic vs Anthropic, JW 0.704)", async () => {
+    const g: KnowledgeGraph = {
+      entities: [mkEnt("Anthropic", "organization"), mkEnt("garlic", "concept")],
+      relations: [],
+    };
+
+    const merged = await mergeKnowledgeGraphs([g], opts, stubEmbed, stubLogger());
+
+    expect(merged.entities.map((e) => e.name).sort()).toEqual(["Anthropic", "garlic"]);
+  });
+
+  it("digit guard: Table 1 / Table 2 stay distinct even at an absurdly low threshold", async () => {
+    const g: KnowledgeGraph = {
+      entities: [mkEnt("Table 1"), mkEnt("Table 2")],
+      relations: [],
+    };
+
+    const merged = await mergeKnowledgeGraphs(
+      [g],
+      { ...opts, entitySimilarityThreshold: 0.5 },
+      stubEmbed,
+      stubLogger()
+    );
+
+    expect(merged.entities).toHaveLength(2);
+  });
+
+  it("normalized-exact path: black_pepper and black pepper merge", async () => {
+    const g: KnowledgeGraph = {
+      entities: [mkEnt("black_pepper"), mkEnt("black pepper")],
+      relations: [],
+    };
+
+    const merged = await mergeKnowledgeGraphs([g], opts, stubEmbed, stubLogger());
+
+    expect(merged.entities).toHaveLength(1);
+    expect(merged.entities[0].name).toBe("black_pepper"); // first-seen surface form wins
+  });
+
+  it("cross-type fuzzy matches need near-exact similarity (South Asian ≠ Southeast Asian)", async () => {
+    const g: KnowledgeGraph = {
+      entities: [mkEnt("Southeast Asian", "concept"), mkEnt("South Asian", "location")],
+      relations: [],
+    };
+
+    // JW ≈ 0.90 — above the 0.9 name threshold but below the cross-type bar.
+    const merged = await mergeKnowledgeGraphs(
+      [g],
+      { ...opts, entitySimilarityThreshold: 0.85 },
+      stubEmbed,
+      stubLogger()
+    );
+
+    expect(merged.entities).toHaveLength(2);
+  });
+
+  it("enableSimilarityMerging: false ⇒ only exact matches merge", async () => {
+    const g: KnowledgeGraph = {
+      entities: [mkEnt("GMM partitioning"), mkEnt("GMM partition"), mkEnt("gmm_partitioning")],
+      relations: [],
+    };
+
+    const merged = await mergeKnowledgeGraphs(
+      [g],
+      { ...opts, enableSimilarityMerging: false },
+      stubEmbed,
+      stubLogger()
+    );
+
+    // exact-normalized pair collapses, the fuzzy variant survives
+    expect(merged.entities.map((e) => e.name).sort()).toEqual([
+      "GMM partition",
+      "GMM partitioning",
+    ]);
+  });
+
+  it("emits a merge-log record per fusion of distinct surface forms", async () => {
+    const records: MergeRecord[] = [];
+    const g: KnowledgeGraph = {
+      entities: [mkEnt("black_pepper"), mkEnt("black pepper"), mkEnt("garlic")],
+      relations: [],
+    };
+
+    await mergeKnowledgeGraphs(
+      [g],
+      { ...opts, onMergeRecord: (r) => records.push(r) },
+      stubEmbed,
+      stubLogger()
+    );
+
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({
+      target: "entity",
+      method: "string-exact",
+      canonical_chosen: "black_pepper",
+      surface_forms: ["black_pepper", "black pepper"],
+    });
+  });
+});
+
+describe("normalizeEntityName", () => {
+  it("unifies case, underscores, hyphens and whitespace runs", () => {
+    expect(normalizeEntityName("Black_Pepper")).toBe("black pepper");
+    expect(normalizeEntityName("soft-NMI")).toBe("soft nmi");
+    expect(normalizeEntityName("  Foo   Bar ")).toBe("foo bar");
+  });
+});
+
+describe("KnowledgeMerger — relation re-keying via rename map", () => {
+  it("relation endpoints follow merged entities; unextracted endpoints drop the relation", async () => {
+    const g: KnowledgeGraph = {
+      entities: [mkEnt("black_pepper"), mkEnt("black pepper"), mkEnt("Cooc")],
+      relations: [
+        { from: "Cooc", to: "black pepper", relationType: ["contains"] },
+        // endpoint never extracted as an entity → dropped, NOT fuzzily rebound
+        { from: "Cooc", to: "blck peppr", relationType: ["contains"] },
+      ],
+    };
+
+    const merged = await mergeKnowledgeGraphs([g], opts, stubEmbed, stubLogger());
+
+    expect(merged.relations).toHaveLength(1);
+    expect(merged.relations[0]).toMatchObject({ from: "Cooc", to: "black_pepper" });
   });
 });
 

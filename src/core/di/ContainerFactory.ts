@@ -431,16 +431,37 @@ export class ContainerFactory {
       // Return a wrapper that implements the interface
       return {
         merge: async (graphs) => {
-          return await mergeKnowledgeGraphs(
+          const records: import("../knowledge/MergeRecord").MergeRecord[] = [];
+          const result = await mergeKnowledgeGraphs(
             graphs,
             {
               entitySimilarityThreshold: options.merging.entitySimilarityThreshold,
               observationSimilarityThreshold:
                 options.merging.observationSimilarityThreshold,
+              enableSimilarityMerging: options.merging.enableSimilarityMerging,
+              onMergeRecord: options.inspection.emitMergeLog
+                ? (r) => records.push(r)
+                : undefined,
             },
             embeddingService,
             logger
           );
+
+          // String-merge fusions land next to the canon merge log (same JSONL shape,
+          // readable by `kg-gen inspect-merges`).
+          if (options.inspection.emitMergeLog && records.length > 0) {
+            const path = await import("path");
+            const fs = await import("fs");
+            const base =
+              options.inspection.mergeLogPath ??
+              path.join("runs", new Date().toISOString().replace(/[:.]/g, "-"), "merges.jsonl");
+            const logPath = path.join(path.dirname(base), "string-merges.jsonl");
+            fs.mkdirSync(path.dirname(logPath), { recursive: true });
+            fs.writeFileSync(logPath, records.map((r) => JSON.stringify(r)).join("\n") + "\n");
+            logger.info(`String-merge log written to ${logPath} (${records.length} fusion(s))`);
+          }
+
+          return result;
         },
       } as IKnowledgeGraphMerger;
     });

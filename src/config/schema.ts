@@ -122,9 +122,9 @@ const RetrievalSchema = z
 
 const MergingSchema = z
   .object({
-    entitySimilarityThreshold: num(0.9).describe("Jaro-Winkler threshold for entity-name merging"),
+    entitySimilarityThreshold: num(0.9).describe("Jaro-Winkler threshold for entity-name merging, applied uniformly within-file and globally; fuzzy merging never crosses a digit mismatch (Table 1 ≠ Table 2) and cross-type matches need near-exact similarity"),
     observationSimilarityThreshold: num(0.9).describe("Embedding cosine threshold for observation merging"),
-    enableSimilarityMerging: z.boolean().default(true).describe("Enable similarity merging for entities and observations"),
+    enableSimilarityMerging: z.boolean().default(true).describe("Allow fuzzy (Jaro-Winkler) entity-name merging; false ⇒ only normalized-exact name matches merge"),
   })
   .strict();
 

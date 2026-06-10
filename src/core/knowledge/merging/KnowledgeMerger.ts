@@ -1,10 +1,16 @@
+import * as crypto from "crypto";
 import { KnowledgeGraph, Entity, Relation, IEmbeddingProvider, Observation, obsText } from "../../../types";
 import { jaroWinklerSimilarity , cosineSimilarity } from "../../../shared/utils";
 import { Logger } from "../../../shared";
+import { MergeRecord } from "../MergeRecord";
 
 // Default similarity thresholds for entities and observation merging
 const DefaultSimilarityThreshold = 0.7;
 const DefaultObservationThreshold = 0.7;
+// A fuzzy match across two different known entity types must clear this bar —
+// spelling similarity alone is weak evidence of co-reference when types disagree
+// (garlic/concept vs Anthropic/organization sit at JW 0.704).
+const CrossTypeThreshold = 0.95;
 
 /** Provenance identity used to keep distinct sources/speakers un-merged. */
 function provenanceKey(o: Observation): string {
@@ -104,35 +110,101 @@ async function dedupWithinProvenance(
   return data.filter((_, index) => !toRemove.has(index)).map((d) => d.obs);
 }
 
-// Find similar entity by name
-function findSimilarEntity(
-  entityName: string,
-  existingEntities: Map<string, Entity>,
-  threshold: number
-): string | null {
-  let bestMatch: string | null = null;
-  let bestSimilarity = 0;
+/** Normalize an entity name for the exact-match fast path: case, `_`/`-`/dash and whitespace runs. */
+export function normalizeEntityName(name: string): string {
+  return name.toLowerCase().replace(/[_\-‐-―\s]+/g, " ").trim();
+}
 
+/** Digit tokens of a name ("Table 12 v2" → "12,2"). Differing signatures veto fuzzy merging. */
+function digitSignature(name: string): string {
+  return (name.match(/\d+/g) ?? []).join(",");
+}
+
+interface EntityMatch {
+  name: string;
+  sim: number;
+  method: "string-exact" | "string-jw";
+}
+
+/**
+ * Find an existing entity the candidate should fold into. A normalized-exact name
+ * match always wins. Fuzzy (Jaro-Winkler) matching is gated by guards encoding
+ * "similar spelling is not co-reference": names whose digit tokens differ never
+ * merge (Table 1 ≠ Table 2, NeurIPS 2019 ≠ NeurIPS 2024), and a match across two
+ * different known entity types must clear the near-exact CrossTypeThreshold.
+ */
+function findSimilarEntity(
+  entity: Entity,
+  existingEntities: Map<string, Entity>,
+  threshold: number,
+  enableSimilarityMerging: boolean
+): EntityMatch | null {
+  const norm = normalizeEntityName(entity.name);
   for (const existingName of existingEntities.keys()) {
-    const similarity = jaroWinklerSimilarity(entityName, existingName);
-    if (similarity >= threshold && similarity > bestSimilarity) {
-      bestSimilarity = similarity;
-      bestMatch = existingName;
+    if (normalizeEntityName(existingName) === norm) {
+      return { name: existingName, sim: 1, method: "string-exact" };
     }
   }
 
-  return bestMatch;
+  if (!enableSimilarityMerging) return null;
+
+  const digits = digitSignature(entity.name);
+  let best: EntityMatch | null = null;
+
+  for (const [existingName, existing] of existingEntities) {
+    if (digitSignature(existingName) !== digits) continue;
+
+    const crossType =
+      !!entity.entityType &&
+      !!existing.entityType &&
+      entity.entityType !== existing.entityType &&
+      entity.entityType !== "other" &&
+      existing.entityType !== "other";
+    const required = crossType ? Math.max(threshold, CrossTypeThreshold) : threshold;
+
+    const similarity = jaroWinklerSimilarity(entity.name, existingName);
+    if (similarity >= required && (!best || similarity > best.sim)) {
+      best = { name: existingName, sim: similarity, method: "string-jw" };
+    }
+  }
+
+  return best;
 }
 
-/** Thresholds the hierarchical merge needs (narrow slice of the merging config). */
-export interface MergeThresholds {
+/** Options the hierarchical merge needs (narrow slice of the merging config). */
+export interface MergeOptions {
   entitySimilarityThreshold?: number;
   observationSimilarityThreshold?: number;
+  /** false ⇒ only normalized-exact name matches merge (no fuzzy JW). Default true. */
+  enableSimilarityMerging?: boolean;
+  /** Called once per fusion of two differently-named surface forms (merge-log seam). */
+  onMergeRecord?: (record: MergeRecord) => void;
+}
+
+/** Emit a merge-log record for one fusion (same JSONL shape as canon's merges.jsonl). */
+function recordFusion(
+  options: MergeOptions,
+  winner: string,
+  loser: string,
+  match: EntityMatch
+): void {
+  if (!options.onMergeRecord || winner === loser) return;
+  options.onMergeRecord({
+    cluster_id: crypto.createHash("sha1").update(`${winner}␟${loser}`).digest("hex").slice(0, 12),
+    target: "entity",
+    surface_forms: [winner, loser],
+    canonical_chosen: winner,
+    member_count: 2,
+    method: match.method,
+    intra_cluster_sim: { min: match.sim, max: match.sim },
+    borderline_pairs: [],
+    source_spans: [],
+  });
 }
 
 export async function mergeKnowledgeGraphs(
   graphs: KnowledgeGraph[],
-  options: MergeThresholds,
+  options: MergeOptions,
   embeddingService: IEmbeddingProvider,
   logger: Logger,
 ): Promise<KnowledgeGraph> {
@@ -228,11 +300,13 @@ function logVocabularyFit(graph: KnowledgeGraph, logger: Logger): void {
   );
 }
 
-// Merge entities within a single file using stricter similarity
+// Merge entities within a single file. Same threshold as the global pass — the old
+// "stricter for same-file" heuristic (×0.7, cap 0.6) fused unrelated short names
+// (garlic↔Anthropic at JW 0.704); same-file proximity is not evidence of co-reference.
 async function mergeWithinFile(
   fileGraphs: KnowledgeGraph[],
   fileName: string,
-  options: MergeThresholds,
+  options: MergeOptions,
   embeddingService: IEmbeddingProvider,
   logger: Logger,
 ): Promise<KnowledgeGraph> {
@@ -240,30 +314,24 @@ async function mergeWithinFile(
   const relationSet = new Set<string>();
   const relations: Relation[] = [];
 
-  // Use stricter similarity threshold for same-file merging (entities are more likely to be related)
-  const withinFileSimilarityThreshold = Math.min(
-    (options.entitySimilarityThreshold || DefaultSimilarityThreshold) * 0.7,
-    0.6
-  );
-
-  logger?.debug(
-    `Within-file similarity threshold for ${fileName}: ${withinFileSimilarityThreshold}`
-  );
+  const threshold = options.entitySimilarityThreshold || DefaultSimilarityThreshold;
+  const enableSimilarity = options.enableSimilarityMerging !== false;
+  // Every incoming surface form → its final entity key; relations re-key through this
+  // map only (never through an independent fuzzy lookup).
+  const rename = new Map<string, string>();
 
   // Merge entities within the file
   for (const graph of fileGraphs) {
     for (const entity of graph.entities) {
-      const similarEntityName = findSimilarEntity(
-        entity.name,
-        entityMap,
-        withinFileSimilarityThreshold
-      );
+      const match = findSimilarEntity(entity, entityMap, threshold, enableSimilarity);
 
-      if (similarEntityName) {
-        // Merge with existing similar entity
-        const existing = entityMap.get(similarEntityName)!;
+      if (match) {
+        rename.set(entity.name, match.name);
+        recordFusion(options, match.name, entity.name, match);
+
+        const existing = entityMap.get(match.name)!;
         logger?.debug(
-          `[${fileName}] Merging entity "${entity.name}" with existing "${similarEntityName}"`
+          `[${fileName}] Merging entity "${entity.name}" with existing "${match.name}"`
         );
 
         // Combine observations
@@ -272,11 +340,11 @@ async function mergeWithinFile(
           ...(entity.observations || []),
         ];
 
-        // Deduplicate observations using embeddings (more aggressive within file)
+        // Deduplicate observations using embeddings
         if (allObservations.length > 0) {
           existing.observations = await deduplicateObservations(
             allObservations,
-            Math.min((options.observationSimilarityThreshold || DefaultObservationThreshold) * 0.8, 0.7), // More aggressive deduplication
+            options.observationSimilarityThreshold || DefaultObservationThreshold,
             embeddingService,
             logger
           );
@@ -300,28 +368,19 @@ async function mergeWithinFile(
         }
       } else {
         // Add as new entity
+        rename.set(entity.name, entity.name);
         const newEntity = { ...entity, file: fileName };
         entityMap.set(entity.name, newEntity);
       }
     }
   }
 
-  // Merge relations within the file
+  // Merge relations within the file, re-keying endpoints through the rename map
+  let droppedRelations = 0;
   for (const graph of fileGraphs) {
     for (const relation of graph.relations) {
-      // Map relation entity names to merged names
-      const fromEntity =
-        findSimilarEntity(
-          relation.from,
-          entityMap,
-          withinFileSimilarityThreshold
-        ) || relation.from;
-      const toEntity =
-        findSimilarEntity(
-          relation.to,
-          entityMap,
-          withinFileSimilarityThreshold
-        ) || relation.to;
+      const fromEntity = rename.get(relation.from) ?? relation.from;
+      const toEntity = rename.get(relation.to) ?? relation.to;
 
       // Drop self-loops (X→X): an extraction artifact, and merging names can also
       // create one when both endpoints collapse to the same entity.
@@ -341,8 +400,15 @@ async function mergeWithinFile(
             ...(relation.validAt ? { validAt: relation.validAt } : {}),
           });
         }
+      } else {
+        droppedRelations++;
       }
     }
+  }
+  if (droppedRelations > 0) {
+    logger?.debug(
+      `[${fileName}] Dropped ${droppedRelations} relation(s) whose endpoints were never extracted as entities`
+    );
   }
 
   return {
@@ -351,10 +417,10 @@ async function mergeWithinFile(
   };
 }
 
-// Global merge across different files using more relaxed similarity
+// Global merge across different files
 async function mergeGlobally(
   fileGraphs: KnowledgeGraph[],
-  options: MergeThresholds,
+  options: MergeOptions,
   embeddingService: IEmbeddingProvider,
   logger: Logger,
 ): Promise<KnowledgeGraph> {
@@ -365,8 +431,11 @@ async function mergeGlobally(
   // Track which files each entity appears in
   const entityFileMap = new Map<string, Set<string>>();
 
-  // Use the original similarity threshold for cross-file merging
-  const globalSimilarityThreshold = options.entitySimilarityThreshold;
+  const globalSimilarityThreshold =
+    options.entitySimilarityThreshold || DefaultSimilarityThreshold;
+  const enableSimilarity = options.enableSimilarityMerging !== false;
+  // Every incoming surface form → its final entity key (relation re-keying source).
+  const rename = new Map<string, string>();
 
   logger?.debug(
     `Global similarity threshold: ${globalSimilarityThreshold}`
@@ -375,13 +444,18 @@ async function mergeGlobally(
   // Merge entities across files
   for (const graph of fileGraphs) {
     for (const entity of graph.entities) {
-      const similarEntityName = findSimilarEntity(
-        entity.name,
+      const match = findSimilarEntity(
+        entity,
         entityMap,
-        globalSimilarityThreshold || DefaultSimilarityThreshold
+        globalSimilarityThreshold,
+        enableSimilarity
       );
 
-      if (similarEntityName) {
+      if (match) {
+        const similarEntityName = match.name;
+        rename.set(entity.name, similarEntityName);
+        recordFusion(options, similarEntityName, entity.name, match);
+
         // Merge with existing similar entity from different file
         const existing = entityMap.get(similarEntityName)!;
         logger?.debug(
@@ -439,25 +513,19 @@ async function mergeGlobally(
         }
       } else {
         // Add as new entity
+        rename.set(entity.name, entity.name);
         entityMap.set(entity.name, { ...entity });
         entityFileMap.set(entity.name, new Set([entity.files[0] || "unknown"]));
       }
     }
   }
 
-  // Merge relations across files
+  // Merge relations across files, re-keying endpoints through the rename map
+  let droppedRelations = 0;
   for (const graph of fileGraphs) {
     for (const relation of graph.relations) {
-      // Map relation entity names to merged names
-      const fromEntity =
-        findSimilarEntity(
-          relation.from,
-          entityMap,
-          globalSimilarityThreshold || DefaultSimilarityThreshold
-        ) || relation.from;
-      const toEntity =
-        findSimilarEntity(relation.to, entityMap, globalSimilarityThreshold || DefaultSimilarityThreshold) ||
-        relation.to;
+      const fromEntity = rename.get(relation.from) ?? relation.from;
+      const toEntity = rename.get(relation.to) ?? relation.to;
 
       // Drop self-loops (X→X): an extraction artifact, and cross-file name
       // mapping can also collapse both endpoints onto the same entity.
@@ -477,8 +545,15 @@ async function mergeGlobally(
             ...(relation.validAt ? { validAt: relation.validAt } : {}),
           });
         }
+      } else {
+        droppedRelations++;
       }
     }
+  }
+  if (droppedRelations > 0) {
+    logger?.info(
+      `Global merge dropped ${droppedRelations} relation(s) whose endpoints were never extracted as entities`
+    );
   }
 
   // Log cross-file entity statistics

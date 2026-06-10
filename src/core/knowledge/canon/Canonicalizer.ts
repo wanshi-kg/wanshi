@@ -12,20 +12,10 @@ import {
 } from "../../../shared/utils";
 import { GraphTransform, TransformContext } from "../../pipeline/PipelineRunner";
 import { canonicalizeRelationType } from "../merging/KnowledgeMerger";
+import { MergeRecord } from "../MergeRecord";
 import { CanonicalizationOptions } from "../../../config";
 
-/** One per-cluster record in the merge log (canon brief §7 — the deliverable). */
-export interface MergeRecord {
-  cluster_id: string;
-  target: "entity" | "relation";
-  surface_forms: string[];
-  canonical_chosen: string;
-  member_count: number;
-  method: string;
-  intra_cluster_sim: { min: number; max: number };
-  borderline_pairs: Array<{ a: string; b: string; sim: number; merged: boolean }>;
-  source_spans: string[];
-}
+export { MergeRecord } from "../MergeRecord";
 
 /** Structural stats computed during canon (brief §7 — for Experiment 2's TF-over-graph). */
 export interface StructuralStats {
