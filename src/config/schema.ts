@@ -343,6 +343,20 @@ const CanonicalizationSchema = z
   })
   .strict();
 
+const PipelineRelationFilterSchema = z
+  .object({
+    // `related_to` is the relation layer's catch-all (NR-4): on the telegram-sink corpus
+    // ~30% of edges. This post-canon gate prunes the low-value subset. `redundant` drops
+    // a `related_to` edge only when the same unordered endpoint pair already carries a
+    // typed edge (safe — no information lost). `all` drops every `related_to` edge (for
+    // consumers wanting only typed relations). Re-typing (LLM pass) is a future option.
+    mode: z
+      .enum(["off", "redundant", "all"])
+      .default("off")
+      .describe("related_to pruning: off | redundant (drop when a typed twin exists) | all"),
+  })
+  .strict();
+
 const PipelineSchema = z
   .object({
     stages: z
@@ -354,6 +368,7 @@ const PipelineSchema = z
     extraction: StageToggleSchema.default({}),
     grounding: PipelineGroundingSchema.default({}),
     canonicalization: CanonicalizationSchema.default({}),
+    relationFilter: PipelineRelationFilterSchema.default({}),
   })
   .strict();
 

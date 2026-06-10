@@ -22,6 +22,7 @@ import { toRelPathId } from "./corpus";
 import {
   PipelineRunner,
   GroundingTransform,
+  RelationFilterTransform,
   GraphTransform,
   TransformContext,
 } from "./pipeline";
@@ -388,6 +389,7 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     const transforms: GraphTransform[] = [
       new GroundingTransform(),
       new Canonicalizer(),
+      new RelationFilterTransform(), // after canon: endpoints are canonical before pairing
     ];
 
     const ctx: TransformContext = {
