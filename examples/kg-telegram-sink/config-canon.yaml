@@ -1,0 +1,65 @@
+# Canon arm for the telegram-sink corpus: identical to config.yaml plus the global
+# embedding-clustering canonicalization stage + merge-log emission. Reuses the same
+# checkpoint sidecar, so re-running this costs zero LLM calls — only local embeddings.
+#
+#   npx ts-node ../../src/index.ts --config config-canon.yaml
+#   kg-gen inspect-merges ./data/output/canon-merges/merges.jsonl
+#
+# Brief §5 reminder: tune thresholds against the merge log, never against type counts.
+
+input: ./data/inbox
+filter: ["**/*"]
+exclude: []
+output: ./data/output/graph-canon.mcp-jsonl
+
+description: "Articles, videos, posts and files saved to my personal knowledge sink"
+
+llm:
+  provider: openai
+  host: https://openrouter.ai/api/v1
+  model: google/gemini-2.5-flash
+  temperature: 0.2
+
+embeddings:
+  provider: ollama
+  host: http://localhost:11434
+  model: mxbai-embed-large:335m
+
+export:
+  format: mcp-jsonl
+
+# Reuse the baseline run's checkpoints — extraction is content-keyed, not output-keyed.
+resume:
+  enabled: true
+  checkpointPath: ./data/output/graph.mcp-jsonl.checkpoint.jsonl
+
+retrieval:
+  mode: enabled
+
+pipeline:
+  canonicalization:
+    enabled: true
+    target: [entities, relations]
+    # hybrid: auto-merge ≥ 0.88, escalate [0.72, 0.88) to LLM adjudication, reject below.
+    # Embeddings-only at 0.82 chained wrong families (M1/M1 Pro, FlavorGraph/FlavorDB,
+    # cheese varieties); at 0.88 it missed legit variants (Cooc/Cooc model/Epicure-Cooc).
+    # The band is where co-reference needs judgment, not geometry. ~1.3k tiny LLM calls
+    # on this corpus (digit-mismatch pairs are vetoed before escalation).
+    method: hybrid
+    canonicalSelection: frequency
+    embeddings:
+      entity:
+        cluster: agglomerative
+        threshold: 0.88
+      relation:
+        cluster: agglomerative
+        threshold: 0.85
+    hybrid:
+      escalateBand: [0.72, 0.88]
+
+inspection:
+  emitMergeLog: true
+  mergeLogPath: ./data/output/canon-merges/merges.jsonl
+
+logging:
+  level: info
