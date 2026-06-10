@@ -80,8 +80,8 @@ export interface ClusterByEmbeddingResult {
 }
 
 export interface ClusterByEmbeddingOptions {
-  /** Per-pair decision from cosine similarity (the method's policy). */
-  decide: (sim: number) => MergeDecision;
+  /** Per-pair decision from cosine similarity and the two surface forms (the method's policy). */
+  decide: (sim: number, a: string, b: string) => MergeDecision;
   /** Similarity band [low, high) recorded as borderline for the merge log. */
   band?: [number, number];
   /** Adjudicate an escalated pair (llm/hybrid). Required for "escalate" decisions. */
@@ -114,7 +114,7 @@ export async function clusterByEmbedding(
       if (opts.band && sim >= opts.band[0] && sim < opts.band[1]) {
         bandPairs.push({ i, j, sim });
       }
-      const d = opts.decide(sim);
+      const d = opts.decide(sim, items[i].id, items[j].id);
       if (d === "merge") uf.union(i, j);
       else if (d === "escalate") escalate.push({ i, j, sim });
     }

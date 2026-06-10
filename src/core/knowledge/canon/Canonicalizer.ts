@@ -11,7 +11,7 @@ import {
   cosineSimilarity,
 } from "../../../shared/utils";
 import { GraphTransform, TransformContext } from "../../pipeline/PipelineRunner";
-import { canonicalizeRelationType } from "../merging/KnowledgeMerger";
+import { canonicalizeRelationType, digitSignature } from "../merging/KnowledgeMerger";
 import { MergeRecord } from "../MergeRecord";
 import { CanonicalizationOptions } from "../../../config";
 
@@ -227,9 +227,15 @@ export class Canonicalizer implements GraphTransform {
     ctx: TransformContext
   ) {
     const threshold = cfg.embeddings[which].threshold;
+    // Digit-mismatch veto (same rule as the string merger and the adjudicator's
+    // "distinct versions/models/sizes are NOT the same"): Table 1 ≠ Table 2,
+    // M1 ≠ M1 Pro, F_0/M0 ≠ F_4/M3 — embeddings put these too close, and one
+    // false pair chains whole families together under single-linkage.
+    const veto = (a: string, b: string): boolean => digitSignature(a) !== digitSignature(b);
     if (cfg.method === "embeddings") {
       return {
-        decide: (sim: number): MergeDecision => (sim >= threshold ? "merge" : "reject"),
+        decide: (sim: number, a: string, b: string): MergeDecision =>
+          !veto(a, b) && sim >= threshold ? "merge" : "reject",
         band: cfg.llm.band as [number, number],
       };
     }
@@ -239,8 +245,8 @@ export class Canonicalizer implements GraphTransform {
       number
     ];
     return {
-      decide: (sim: number): MergeDecision =>
-        sim >= band[1] ? "merge" : sim >= band[0] ? "escalate" : "reject",
+      decide: (sim: number, a: string, b: string): MergeDecision =>
+        veto(a, b) ? "reject" : sim >= band[1] ? "merge" : sim >= band[0] ? "escalate" : "reject",
       band,
       adjudicate: (a: string, b: string) => this.adjudicate(a, b, cfg, which, ctx),
     };

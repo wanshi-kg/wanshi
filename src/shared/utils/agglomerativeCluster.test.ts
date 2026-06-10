@@ -43,6 +43,24 @@ describe("agglomerativeClusters", () => {
   });
 });
 
+describe("clusterByEmbedding (pair-aware policy)", () => {
+  it("decide sees the surface forms, so a name-based veto breaks transitive chains", async () => {
+    // All three are pairwise above 0.9 by angle, but a digit-style veto on the ids
+    // (Table 1 ≠ Table 2) must keep them apart even under single-linkage.
+    const items: Embedded[] = [
+      { id: "Table 1", embedding: vec(0) },
+      { id: "Table 2", embedding: vec(10) },
+      { id: "Table 3", embedding: vec(20) },
+    ];
+    const digits = (s: string) => (s.match(/\d+/g) ?? []).join(",");
+    const res = await clusterByEmbedding(items, {
+      decide: (sim, a, b): MergeDecision =>
+        digits(a) === digits(b) && sim >= 0.9 ? "merge" : "reject",
+    });
+    expect(sortClusters(res.clusters)).toEqual([["Table 1"], ["Table 2"], ["Table 3"]]);
+  });
+});
+
 describe("clusterByEmbedding (escalation)", () => {
   const items: Embedded[] = [
     { id: "p", embedding: vec(0) },

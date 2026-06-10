@@ -116,7 +116,7 @@ export function normalizeEntityName(name: string): string {
 }
 
 /** Digit tokens of a name ("Table 12 v2" → "12,2"). Differing signatures veto fuzzy merging. */
-function digitSignature(name: string): string {
+export function digitSignature(name: string): string {
   return (name.match(/\d+/g) ?? []).join(",");
 }
 
