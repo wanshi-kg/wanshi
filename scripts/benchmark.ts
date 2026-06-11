@@ -11,8 +11,11 @@
  *   npm run benchmark -- --dataset crossre --data-path ./data/crossre/data.jsonl --limit 20
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
 import { Command } from 'commander';
 import { ContainerFactory, TYPES } from '../src/core/di';
+import { parseConfig } from '../src/config';
 import { KnowledgeGraphBuilder } from '../src/core/knowledge/KnowledgeGraphBuilder';
 import { PromptManager } from '../src/core/llm/prompts/PromptManager';
 import { EmbeddingService } from '../src/core/llm/EmbeddingService';
@@ -28,52 +31,77 @@ import {
   JsonReporter,
 } from '../src/evaluation';
 
-// ─── Default ProcessingOptions for benchmark ─────────────────────────────────
+// ─── ProcessingOptions for benchmark ─────────────────────────────────────────
+//
+// Build a fully-validated *nested* config via parseConfig (the single source of
+// truth). The previous flat object was registered as-is by createContainer but
+// services read nested paths (options.llm.*), so its sampling/model keys never
+// reached the model — the harness was silently running on undefined config.
+
+/** Minimal .env loader (no dotenv dep): populate process.env from a root .env. */
+function loadDotEnv(): void {
+  const envPath = path.resolve(__dirname, '..', '.env');
+  if (!fs.existsSync(envPath)) return;
+  for (const line of fs.readFileSync(envPath, 'utf-8').split('\n')) {
+    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+    if (!m) continue;
+    let val = m[2].trim();
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
+    if (process.env[m[1]] === undefined) process.env[m[1]] = val;
+  }
+}
 
 function buildProcessingOptions(opts: {
+  provider: string;
   model: string;
   host: string;
+  apiKey?: string;
   classifier: string;
+  embeddingsProvider: string;
   embeddingsModel: string;
+  embeddingsHost: string;
   promptVersion: string;
-}): Partial<ProcessingOptions> {
-  return {
-    model: opts.model,
-    host: opts.host,
-    classifier: opts.classifier as any,
-    promptVersion: opts.promptVersion,
-    embeddingsModel: opts.embeddingsModel,
-    temperature: 0,
-    repeatPenalty: 1.1,
-    contextLength: 8192,
-    seed: undefined,
-    system: '',
-    chunking: 'disabled',
-    chunkSize: 4096,
-    overlapSize: 0,
-    images: 'disabled',
-    asr: 'disabled',
-    whisperModel: '',
-    language: '',
-    translate: false,
-    retrieval: 'disabled',
-    retrievalLimit: 0,
-    entitySimilarityThreshold: 0.7,
-    observationSimilarityThreshold: 0.7,
-    enableSimilarityMerging: false,
-    docling: false,
-    logLevel: 'info',
-    logFile: '',
-    debug: false,
-    silent: false,
-    watch: false,
+}): ProcessingOptions {
+  // One sample at a time: chunking / retrieval / corpus profiling / grounding
+  // off. Generation targets Ollama or any OpenAI-compatible endpoint
+  // (OpenRouter); embeddings default to local Ollama so matching stays free.
+  return parseConfig({
     input: 'benchmark',
     filter: ['**/*.txt'],
-    exclude: [],
     output: 'benchmark-kg.json',
     description: 'Benchmark evaluation',
-    dotOptions: {},
-  };
+    llm: {
+      provider: opts.provider,
+      model: opts.model,
+      host: opts.host,
+      ...(opts.apiKey ? { apiKey: opts.apiKey } : {}),
+      temperature: 0,
+      repeatPenalty: 1.1,
+      contextLength: 8192,
+      seed: 42,
+      promptVersion: opts.promptVersion,
+    },
+    embeddings: {
+      provider: opts.embeddingsProvider,
+      model: opts.embeddingsModel,
+      host: opts.embeddingsHost,
+      ...(opts.apiKey && opts.embeddingsProvider === 'openai'
+        ? { apiKey: opts.apiKey }
+        : {}),
+    },
+    chunking: { mode: 'disabled' },
+    retrieval: { mode: 'disabled' },
+    corpus: { profiling: 'disabled' },
+    grounding: { mode: 'disabled' },
+    classifier: { mode: opts.classifier as any },
+    readers: { asr: { mode: 'disabled' }, images: 'disabled', outline: { enabled: false } },
+    logging: { level: 'info' },
+  });
 }
 
 // ─── CLI ─────────────────────────────────────────────────────────────────────
@@ -86,9 +114,13 @@ program
   .option('--data-path <path>',        'Path to dataset file or directory (CrossRE: dir loads all splits)')
   .option('--limit <n>',               'Max number of samples to evaluate (0 = all)',                        '50')
   .option('--match-threshold <n>',     'Semantic similarity threshold for entity matching (0–1)',            '0.80')
-  .option('--model <name>',            'Ollama model name',                                                  'llama3.2:3b')
-  .option('--host <url>',              'Ollama host URL',                                                    'http://localhost:11434')
-  .option('--embeddings-model <name>', 'Ollama embedding model',                                             'mxbai-embed-large:335m')
+  .option('--provider <name>',         'Generation provider: ollama | openai (OpenAI-compatible)',           'ollama')
+  .option('--model <name>',            'Model name (Ollama tag, or provider id like google/gemma-3-4b-it)',  'llama3.2:3b')
+  .option('--host <url>',              'Ollama host URL, or OpenAI-compatible base URL when provider=openai','http://localhost:11434')
+  .option('--api-key <key>',           'API key for OpenAI-compatible provider (else $OPENAI_API_KEY / $KG_API_KEY / .env)')
+  .option('--embeddings-provider <n>', 'Embeddings provider: ollama | openai',                               'ollama')
+  .option('--embeddings-model <name>', 'Embedding model',                                                    'mxbai-embed-large:335m')
+  .option('--embeddings-host <url>',   'Embeddings host / OpenAI-compatible base URL',                       'http://localhost:11434')
   .option('--classifier <mode>',       'Content classifier: disabled | heuristic | llm | bert',              'heuristic')
   .option('--prompt-version <ver>',    'Prompt template version to use (e.g. v4, v4.5)',                    'v4.5')
   .option('--domain <domains>',        'Domain filter: single (ai) or comma-separated (ai,news,science)')
@@ -106,11 +138,16 @@ program
     }
 
     // Bootstrap DI container
+    loadDotEnv();
     const processingOptions = buildProcessingOptions({
+      provider: opts.provider,
       model: opts.model,
       host: opts.host,
+      apiKey: opts.apiKey || process.env.OPENAI_API_KEY || process.env.KG_API_KEY,
       classifier: opts.classifier,
+      embeddingsProvider: opts.embeddingsProvider,
       embeddingsModel: opts.embeddingsModel,
+      embeddingsHost: opts.embeddingsHost,
       promptVersion: opts.promptVersion,
     });
 
