@@ -175,45 +175,6 @@ export class FileProcessor implements IFileProcessor {
   }
 
   /**
-   * Process multiple files in parallel
-   */
-  async processFiles(
-    filePaths: string[],
-    concurrency: number = 5
-  ): Promise<ProcessedFile[]> {
-    this.logger.info(
-      `Processing ${filePaths.length} files with concurrency ${concurrency}`
-    );
-
-    const results: ProcessedFile[] = [];
-    const queue = [...filePaths];
-    const inProgress: Promise<ProcessedFile>[] = [];
-
-    while (queue.length > 0 || inProgress.length > 0) {
-      // Start new tasks up to concurrency limit
-      while (inProgress.length < concurrency && queue.length > 0) {
-        const filePath = queue.shift()!;
-        inProgress.push(this.processFile(filePath));
-      }
-
-      // Wait for at least one task to complete
-      if (inProgress.length > 0) {
-        const result = await Promise.race(inProgress);
-        results.push(result);
-
-        // Remove completed task
-        const index = inProgress.findIndex(async (p) => (await p) === result);
-        if (index !== -1) {
-          inProgress.splice(index, 1);
-        }
-      }
-    }
-
-    this.logger.info(`Processed ${results.length} files successfully`);
-    return results;
-  }
-
-  /**
    * Check if a file can be processed
    */
   canProcess(filePath: string): boolean {

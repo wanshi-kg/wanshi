@@ -176,14 +176,12 @@ export class OpenAICompatibleService implements ILLMProvider {
   }
 
   private isResponseFormatError(error: unknown): boolean {
-    const status = (error as { status?: number })?.status;
     const message = String((error as { message?: string })?.message ?? error);
-    return (
-      status === 400 ||
-      /response_format|json_schema|schema|not supported|unsupported/i.test(
-        message
-      )
-    );
+    // Only a genuine response_format / json_schema rejection should latch the
+    // downgrade for the rest of the process. A bare HTTP 400 (a malformed chunk,
+    // a rate limit, a content-policy block) must NOT permanently disable
+    // json_schema — that was the KG-18 bug; the message must name the feature.
+    return /response[_\s-]?format|json[_\s-]?schema/i.test(message);
   }
 
   private logUsage(completion: OpenAI.Chat.Completions.ChatCompletion): void {

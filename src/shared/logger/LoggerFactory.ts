@@ -21,19 +21,22 @@ export class LoggerFactory {
       // can't pollute the structured stdout stream; we re-emit logs ourselves as
       // `channel: "log"` lines below.
       type: progressNdjson ? "hidden" : "pretty",
+      // tslog scale: silly=0, trace=1, debug=2, info=3, warn=4, error=5, fatal=6.
+      // The old mapping was two notches loose (info→1 = "trace and up"), and
+      // `silent` at 4 still printed warn/error. (KG-19)
       minLevel: silent
-        ? 4
+        ? 7 // above fatal → nothing prints
         : debug
-        ? 0
-        : logLevel === "debug"
-        ? 0
-        : logLevel === "info"
-        ? 1
-        : logLevel === "warning"
         ? 2
-        : logLevel === "error"
+        : logLevel === "debug"
+        ? 2
+        : logLevel === "info"
         ? 3
-        : 4,
+        : logLevel === "warning"
+        ? 4
+        : logLevel === "error"
+        ? 5
+        : 3,
     });
 
     if (progressNdjson) {

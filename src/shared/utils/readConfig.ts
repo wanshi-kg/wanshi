@@ -21,6 +21,10 @@ export async function readConfigurationFile(
       return (yaml.load(content) as Record<string, unknown>) ?? {};
 
     default:
-      return {};
+      // Fail loud: returning {} silently ran the whole pipeline on pure
+      // defaults (ignoring the user's config entirely) — KG-18.
+      throw new Error(
+        `Unsupported config file extension "${ext}" for ${file}; use .json, .yaml, or .yml`
+      );
   }
 }
