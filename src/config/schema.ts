@@ -75,7 +75,9 @@ const LlmSchema = z
       .optional()
       .describe("API key for OpenAI-compatible provider (falls back to $OPENAI_API_KEY / $KG_API_KEY)"),
     temperature: num(0.1).describe("Model temperature"),
-    repeatPenalty: num(0.3).describe("Repeat penalty (higher → more diverse output)"),
+    repeatPenalty: num(1.1).describe(
+      "Repeat penalty (Ollama: >1.0 discourages repetition, <1.0 promotes it; 1.0 = off)"
+    ),
     contextLength: num(8192).describe("Model context length (system prompt + chunk + response)"),
     maxTokens: z.coerce
       .number()

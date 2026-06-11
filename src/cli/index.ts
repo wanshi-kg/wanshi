@@ -49,7 +49,7 @@ program
     "API key for the OpenAI-compatible provider (falls back to OPENAI_API_KEY / KG_API_KEY env)"
   )
   .option("--temperature <number>", "model temperature")
-  .option("--repeat-penalty <number>", "repeat penalty (higher value promotes more diverse results)")
+  .option("--repeat-penalty <number>", "repeat penalty, Ollama only (>1.0 discourages repetition, <1.0 promotes it, 1.0 = off)")
   .option(
     "--context-length <number>",
     "model context length, should be long enough to fit system prompt, file content/chunk and response (default: 8192)"

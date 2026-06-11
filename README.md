@@ -266,7 +266,7 @@ dot -Tsvg graph.dot -o graph.svg
 | `-h, --host <url>` | `http://localhost:11434` | Ollama host, or OpenAI-compatible **base URL** when `--provider openai` |
 | `--api-key <key>` | — | API key for the OpenAI-compatible provider (falls back to `$OPENAI_API_KEY` / `$KG_API_KEY`) |
 | `--temperature <n>` | `0.1` | Sampling temperature |
-| `--repeat-penalty <n>` | `0.3` | Repetition penalty (Ollama only) |
+| `--repeat-penalty <n>` | `1.1` | Repetition penalty, Ollama only (>1.0 discourages repetition, <1.0 promotes it, 1.0 = off) |
 | `--context-length <n>` | `8192` | Context window size (Ollama only) |
 | `--max-tokens <n>` | provider default | Max output tokens per generation. Raise it (or lower `--chunk-size`) if large knowledge-graph JSON gets truncated mid-output |
 | `--seed <n>` | — | Random seed for reproducibility (Ollama only) |

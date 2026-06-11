@@ -21,7 +21,7 @@ export class OllamaService implements ILLMProvider {
     this.options = {
       temperature: 0.1,
       contextLength: 8192,
-      repeatPenalty: 0.3,
+      repeatPenalty: 1.1,
       ...options,
     };
     this.ollama = new Ollama({ host: this.options.host });
@@ -60,9 +60,12 @@ export class OllamaService implements ILLMProvider {
         ...(this.options.maxTokens
           ? { num_predict: Number(this.options.maxTokens) }
           : {}),
-        // temperature: Number(this.options.temperature),
-        // repeat_penalty: Number(this.options.repeatPenalty),
-        // seed: Number(this.options.seed),
+        temperature: Number(this.options.temperature),
+        repeat_penalty: Number(this.options.repeatPenalty),
+        // seed only when set, so an unseeded run keeps Ollama's default RNG.
+        ...(this.options.seed !== undefined
+          ? { seed: Number(this.options.seed) }
+          : {}),
       },
     };
 
