@@ -569,7 +569,8 @@ Located in `src/quality/` — importable evaluators (also wired into the `npm ru
 
 ## Local LLM Requirements & Leaderboard
 
-All tested on knowledge graph extraction quality. Smaller models trade quality for speed:
+Qualitative guidance for local model selection (quality/speed trade-off). For
+measured P/R/F1 see the benchmark table below.
 
 | Model | Params | Quality | Speed | Notes |
 | ----- | ------ | ------- | ----- | ----- |
@@ -581,6 +582,32 @@ All tested on knowledge graph extraction quality. Smaller models trade quality f
 | `qwen3:0.6b` | 0.6B | ⭐ | Fastest | Minimal resources only |
 
 For embeddings: `mxbai-embed-large:335m` is the default and recommended model.
+
+### Measured benchmark (CrossRE)
+
+Re-run after the sampling fix (temperature reaches the model; seed wired).
+Dataset **CrossRE `ai-test`**, n = 17–20 samples (samples that failed extraction
+were excluded, not scored as zero); prompt **v5**; generation via **OpenRouter
+(cloud)**; matching via local `mxbai-embed-large:335m` at semantic threshold
+0.80. *Indicative, not definitive — small n, single domain, cloud inference.*
+(2026-06-11; reproduce with `npm run benchmark -- --provider openai --host https://openrouter.ai/api/v1 --model <id> --dataset crossre --data-path ./data/crossre/crossre_data/ai-test.json --limit 20 --prompt-version v5 --request-delay 2500`)
+
+| Model | n | Entity F1 (sem) | Relation F1 (sem) | Triple F1 (sem) | Intrinsic |
+| ----- | - | --------------- | ----------------- | --------------- | --------- |
+| `qwen3-14b` | 17 | **0.851** | 0.130 | 0.037 | 83.9 |
+| `qwen3-8b` | 19 | 0.808 | 0.187 | 0.019 | 82.0 |
+| `gemma-3-4b-it` | 20 | 0.807 | 0.198 | 0.036 | 83.4 |
+| `gemma-3-27b-it` | 20 | 0.767 | **0.211** | **0.070** | 82.8 |
+| `gemma-3-12b-it` | 20 | 0.716 | 0.093 | 0.019 | 74.7 |
+
+**The "small Gemma beats larger Gemmas" finding holds under corrected sampling:**
+`gemma-3-4b-it` (Entity F1 0.807, intrinsic 83.4) outperforms both
+`gemma-3-12b-it` and `gemma-3-27b-it` on entity extraction, and is near-tied for
+2nd of 5 overall (behind `qwen3-14b`, level with `qwen3-8b`). Relation/triple F1
+are uniformly low — CrossRE relation extraction is hard under strict matching.
+The original sub-4B local models (`gemma3:1b`, `qwen3:0.6b`, …) aren't hosted on
+OpenRouter, so they're absent from this cloud re-run; benchmark them locally with
+`--provider ollama`.
 
 ## Integration Examples
 
