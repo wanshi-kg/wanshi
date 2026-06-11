@@ -56,6 +56,37 @@ describe("config schema", () => {
     expect(c.llm.host).toBe("file-host");
   });
 
+  it("defaults the canonicalization-experiment groups (stages off)", () => {
+    const c = parseConfig({});
+    expect(c.pipeline.stages).toEqual([
+      "tf_analysis",
+      "schema_induction",
+      "extraction",
+      "grounding",
+      "canonicalization",
+    ]);
+    // Both new graph→transform stages are OFF by default → baseline behavior.
+    expect(c.pipeline.grounding.enabled).toBe(false);
+    expect(c.pipeline.grounding.requireCooccurrence).toBe(true);
+    expect(c.pipeline.canonicalization.enabled).toBe(false);
+    expect(c.pipeline.canonicalization.method).toBe("embeddings");
+    expect(c.pipeline.canonicalization.embeddings.entity.threshold).toBe(0.82);
+    expect(c.pipeline.canonicalization.embeddings.relation.threshold).toBe(0.85);
+    expect(c.pipeline.canonicalization.canonicalSelection).toBe("frequency");
+    expect(c.inspection.emitMergeLog).toBe(false);
+    expect(c.eval.pinVersions).toBe(true);
+  });
+
+  it("coerces canonicalization thresholds and rejects a bad cluster algo", () => {
+    const c = parseConfig({
+      pipeline: { canonicalization: { embeddings: { entity: { threshold: "0.9" } } } },
+    });
+    expect(c.pipeline.canonicalization.embeddings.entity.threshold).toBe(0.9);
+    expect(() =>
+      parseConfig({ pipeline: { canonicalization: { method: "telepathy" } } })
+    ).toThrow(ConfigError);
+  });
+
   it("exposes a JSON Schema + UI groups for the frontend", () => {
     const schema = configJsonSchema() as any;
     const props = schema.properties ?? schema.definitions?.KgGenConfig?.properties;

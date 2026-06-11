@@ -1,0 +1,116 @@
+# Canon arm (B) for the telegram-sink corpus: extraction-identical to config.yaml (A)
+# so B = A + the global canonicalization stage is a valid A/B. Same model/prompt/readers/
+# chunking ⇒ it REUSES A's checkpoint sidecar — running this after config.yaml costs zero
+# LLM extraction calls (only local embeddings + the hybrid adjudication band).
+#
+#   npx ts-node ../../src/index.ts --config config-canon.yaml
+#   kg-gen inspect-merges ./data/output/canon-merges/merges.jsonl
+#
+# Brief §5 reminder: tune thresholds against the merge log, never against type counts.
+
+input: ./data/inbox
+filter: ["**/*"]
+exclude: []
+output: ./data/output/graph-canon.mcp-jsonl   # <-- only the output path differs from A
+
+description: "Articles, videos, posts and files saved to my personal knowledge sink"
+
+llm:
+  provider: openai
+  model: google/gemini-2.5-flash-lite
+  host: https://openrouter.ai/api/v1
+  temperature: 0.1
+  repeatPenalty: 0.3
+  contextLength: 8192
+  promptVersion: v5
+
+embeddings:
+  provider: ollama
+  # Canon-clustering calibration (NR-3): mxbai@0.88 is validated precision-clean and
+  # fast here. embeddinggemma's geometry is differently scaled — at 0.88 it over-merged
+  # the 3 distinct Epicure siblings into one node and flooded the escalation band
+  # (26.5k adjudications / 4h). Making canon work natively on embeddinggemma
+  # (complete-linkage + threshold re-tune) is the follow-up brief
+  # docs/inbox/2026-06-10-cheetah-to-dove-canon-embeddinggemma.md.
+  # NOTE: this makes the canon arm's merge-dedup use mxbai too (arm A uses embeddinggemma),
+  # a minor A/B impurity accepted to isolate the canon-clustering effect.
+  model: mxbai-embed-large:335m
+  host: http://localhost:11434
+  maxInputChars: 2048
+
+export:
+  format: mcp-jsonl
+
+# Shared with A — extraction is content-keyed (model+prompt+chunk), so A's records hit here.
+resume:
+  enabled: true
+  checkpointPath: ./data/output/graph.mcp-jsonl.checkpoint.jsonl
+
+retrieval:
+  mode: enabled
+  limit: 5
+  scope: chunk
+
+readers:
+  stripReferences: true
+  images: enabled
+  asr:
+    mode: enabled
+    whisperModel: medium
+    language: auto
+    translate: false
+  docling: false
+  json:
+    strategy: structural
+  outline:
+    enabled: true
+    includeLineNumbers: true
+    includePrivate: true
+    includeComments: true
+
+corpus:
+  profiling: enabled
+
+chunking:
+  mode: enabled
+  size: 16000
+  overlap: 100
+
+classifier:
+  mode: heuristic
+
+grounding:
+  mode: flag
+  minScore: 0.5
+
+merging:
+  enableSimilarityMerging: true
+  entitySimilarityThreshold: 0.95
+  observationSimilarityThreshold: 0.95
+
+# ── the only thing A doesn't have: the global canonicalization stage ──
+pipeline:
+  canonicalization:
+    enabled: true
+    target: [entities, relations]
+    # hybrid: auto-merge ≥ 0.88, escalate [0.72, 0.88) to LLM adjudication, reject below.
+    # NOTE: 0.88 was tuned against mxbai embeddings; this arm now runs embeddinggemma
+    # (aligned to A), so NR-3 re-audits the merge log and re-tunes against it.
+    method: hybrid
+    canonicalSelection: frequency
+    embeddings:
+      entity:
+        cluster: agglomerative
+        threshold: 0.88
+      relation:
+        cluster: agglomerative
+        threshold: 0.85
+    hybrid:
+      escalateBand: [0.72, 0.88]
+
+inspection:
+  emitMergeLog: true
+  mergeLogPath: ./data/output/canon-merges/merges.jsonl
+
+logging:
+  level: info

@@ -35,6 +35,13 @@ export type GroundingMode = z.infer<typeof GroundingModeEnum>;
 export type ExportFormat = z.infer<typeof ExportFormatEnum>;
 export type OutlineOptions = ProcessingOptions["readers"]["outline"];
 
+// Canonicalization-experiment subtypes.
+export type PipelineOptions = ProcessingOptions["pipeline"];
+export type CanonicalizationOptions = ProcessingOptions["pipeline"]["canonicalization"];
+export type PipelineGroundingOptions = ProcessingOptions["pipeline"]["grounding"];
+export type InspectionOptions = ProcessingOptions["inspection"];
+export type EvalOptions = ProcessingOptions["eval"];
+
 /**
  * Validate a raw (merged) config object and apply all defaults. Throws a
  * `ConfigError` with an actionable message (legacy keys → new nested paths) on

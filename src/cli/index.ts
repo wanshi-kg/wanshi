@@ -2,7 +2,13 @@
 
 import { Command } from "commander";
 import * as info from "../../package.json";
-import { processCommand, watchCommand, exportCommand } from "./commands";
+import {
+  processCommand,
+  watchCommand,
+  exportCommand,
+  metricsCommand,
+  inspectMergesCommand,
+} from "./commands";
 import { ContainerFactory, TYPES } from "../core/di";
 import { readConfigurationFile, Logger } from "../shared";
 import {
@@ -86,6 +92,9 @@ program
 
   // Enable Docling PDF/DOC/DOCX/PPT/PPTX Processing
   .option("--docling", "use docling for PDF/DOC/DOCX/PPT/PPTX documents processing (default: false)")
+
+  // Quarantine trailing references/bibliography sections before extraction
+  .option("--strip-references", "quarantine trailing references/bibliography sections before extraction (PDF + markdown, default: false)")
 
   // JSON reading strategy
   .option(
@@ -228,6 +237,47 @@ program
   .action((opts: { json?: boolean }) => {
     const payload = configSchemaPayload();
     process.stdout.write(JSON.stringify(payload, null, opts.json ? 0 : 2) + "\n");
+  });
+
+// `kg-gen metrics <graph.json>` — the no-ground-truth A/B scorecard (entity/
+// relation-type counts, self-loops, bidirectional contradictions, referential
+// integrity, parallel edges). With --ground-truth it adds semantic triple
+// precision/recall + fabricated-edge rate. Used to capture the baseline numbers
+// and to score every canonicalization arm uniformly.
+program
+  .command("metrics")
+  .description("compute knowledge-graph health metrics (and ground-truth scores) for a json graph")
+  .argument("<graph.json>", "path to a json-format knowledge graph ({entities, relations})")
+  .option("--config <file>", "config file (for embeddings/provider settings, used only with --ground-truth)")
+  .option("--ground-truth <file.jsonl>", "JSONL of ground-truth triples/edges for precision/recall + fabricated-edge rate")
+  .option("--match-threshold <number>", "semantic match cosine threshold (default 0.80)")
+  .option("--output <file>", "also write the full metrics report as JSON to this path")
+  .action(async (graphPath: string, opts) => {
+    try {
+      await metricsCommand(graphPath, opts);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+// `kg-gen inspect-merges <merges.jsonl>` — table view over the canonicalization
+// merge log: what got fused, how tight each cluster was, suspicious over-merges
+// first. The merge log is the experiment's deliverable, not the graph.
+program
+  .command("inspect-merges")
+  .description("render the canonicalization merge log as a table (suspicious over-merges first)")
+  .argument("<merges.jsonl>", "path to a merges.jsonl emitted by a canonicalization run")
+  .option("--target <kind>", "only show 'entity' or 'relation' clusters")
+  .option("--suspect-below <number>", "flag clusters whose min intra-cluster sim is below this (default 0.80)")
+  .option("--limit <number>", "limit the number of rows printed")
+  .action((logPath: string, opts) => {
+    try {
+      inspectMergesCommand(logPath, opts);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
   });
 
 program.parse();

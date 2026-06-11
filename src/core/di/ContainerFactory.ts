@@ -244,11 +244,15 @@ export class ContainerFactory {
         );
       } else {
         factory.registerReader(new RtfReader(chunker, logger));
-        factory.registerReader(new MarkdownReader(chunker, logger));
+        factory.registerReader(
+          new MarkdownReader(chunker, logger, options.readers.stripReferences)
+        );
         factory.registerReader(new HtmlReader(chunker, logger));
         factory.registerReader(new ImageReader(chunker, logger));
         factory.registerReader(new OfficeReader(chunker, logger));
-        factory.registerReader(new PdfReader(chunker, logger));
+        factory.registerReader(
+          new PdfReader(chunker, logger, options.readers.stripReferences)
+        );
       }
 
       // Transcript reader claims speaker-labeled text (.parakeet.txt, …) and
@@ -398,6 +402,9 @@ export class ContainerFactory {
           progress,
           grounding: options.grounding.mode,
           groundingMinScore: options.grounding.minScore,
+          // Stamp edge source spans only when the pipeline grounding gate needs
+          // them, so the baseline graph stays free of the extra weight.
+          attachSourceSpans: options.pipeline.grounding.enabled,
         },
         logger
       );
@@ -428,16 +435,37 @@ export class ContainerFactory {
       // Return a wrapper that implements the interface
       return {
         merge: async (graphs) => {
-          return await mergeKnowledgeGraphs(
+          const records: import("../knowledge/MergeRecord").MergeRecord[] = [];
+          const result = await mergeKnowledgeGraphs(
             graphs,
             {
               entitySimilarityThreshold: options.merging.entitySimilarityThreshold,
               observationSimilarityThreshold:
                 options.merging.observationSimilarityThreshold,
+              enableSimilarityMerging: options.merging.enableSimilarityMerging,
+              onMergeRecord: options.inspection.emitMergeLog
+                ? (r) => records.push(r)
+                : undefined,
             },
             embeddingService,
             logger
           );
+
+          // String-merge fusions land next to the canon merge log (same JSONL shape,
+          // readable by `kg-gen inspect-merges`).
+          if (options.inspection.emitMergeLog && records.length > 0) {
+            const path = await import("path");
+            const fs = await import("fs");
+            const base =
+              options.inspection.mergeLogPath ??
+              path.join("runs", new Date().toISOString().replace(/[:.]/g, "-"), "merges.jsonl");
+            const logPath = path.join(path.dirname(base), "string-merges.jsonl");
+            fs.mkdirSync(path.dirname(logPath), { recursive: true });
+            fs.writeFileSync(logPath, records.map((r) => JSON.stringify(r)).join("\n") + "\n");
+            logger.info(`String-merge log written to ${logPath} (${records.length} fusion(s))`);
+          }
+
+          return result;
         },
       } as IKnowledgeGraphMerger;
     });

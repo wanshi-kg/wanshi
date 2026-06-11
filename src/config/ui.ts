@@ -120,6 +120,7 @@ export const CONFIG_GROUPS: ConfigGroupMeta[] = [
       { path: "readers.asr.language", label: "Language", widget: "text" },
       { path: "readers.asr.translate", label: "Translate to English", widget: "boolean" },
       { path: "readers.docling", label: "Use Docling for PDF/Office", widget: "boolean" },
+      { path: "readers.stripReferences", label: "Strip references/bibliography", widget: "boolean" },
     ],
   },
   {

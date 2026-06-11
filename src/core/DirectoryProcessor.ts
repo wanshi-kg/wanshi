@@ -19,6 +19,16 @@ import {
 } from "../types";
 import { PromptManager } from "./llm";
 import { toRelPathId } from "./corpus";
+import {
+  PipelineRunner,
+  GroundingTransform,
+  RelationFilterTransform,
+  GraphTransform,
+  TransformContext,
+} from "./pipeline";
+import { Canonicalizer } from "./knowledge/canon";
+import { IEmbeddingProvider } from "../types/IEmbeddingProvider";
+import { ILLMProvider } from "../types/ILLMProvider";
 import { Logger, shutdown } from "../shared";
 
 export interface IFileDiscoveryService {
@@ -87,7 +97,8 @@ export class DirectoryProcessor implements IDirectoryProcessor {
       }
 
       progress.emit({ type: "merge", graphCount: knowledgeGraphs.length });
-      const finalKG = await this.mergeGraphs(knowledgeGraphs, logger);
+      const mergedKG = await this.mergeGraphs(knowledgeGraphs, logger);
+      const finalKG = await this.applyGraphTransforms(mergedKG, options, logger);
       const outputPath = await this.exportKnowledgeGraph(finalKG, options);
 
       progress.emit({
@@ -361,6 +372,38 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     );
 
     return await merger.merge(graphs);
+  }
+
+  /**
+   * Run the post-extraction graph→graph transform pipeline (grounding gate,
+   * canonicalization) over the merged graph, in the order from `pipeline.stages`.
+   * A no-op when no transform is enabled — the providers resolved here are the
+   * same singletons extraction/merge already built, so the baseline path returns
+   * the merged graph unchanged.
+   */
+  private async applyGraphTransforms(
+    graph: KnowledgeGraph,
+    options: ProcessingOptions,
+    logger: Logger
+  ): Promise<KnowledgeGraph> {
+    const transforms: GraphTransform[] = [
+      new GroundingTransform(),
+      new Canonicalizer(),
+      new RelationFilterTransform(), // after canon: endpoints are canonical before pairing
+    ];
+
+    const ctx: TransformContext = {
+      options,
+      embeddings: await this.container.resolve<IEmbeddingProvider>(
+        TYPES.EmbeddingService
+      ),
+      llm: await this.container.resolve<ILLMProvider>(TYPES.LLMService),
+      logger,
+    };
+
+    const runner = new PipelineRunner(transforms, ctx);
+    if (!runner.hasWork()) return graph;
+    return runner.run(graph);
   }
 
   /**

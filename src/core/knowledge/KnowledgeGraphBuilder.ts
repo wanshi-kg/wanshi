@@ -105,6 +105,11 @@ export interface BuilderOptions {
   // chunk and flag/drop ungrounded ones. Defaults to disabled.
   grounding?: GroundingMode;
   groundingMinScore?: number;
+  // When set, stamp each relation with the chunk text it was extracted from
+  // (`Relation.sourceSpan`), so the post-merge co-occurrence grounding gate (and
+  // Experiment 2) can judge edges. Off by default — keeps the baseline graph
+  // free of the extra weight. Wired from `pipeline.grounding.enabled`.
+  attachSourceSpans?: boolean;
 }
 
 /**
@@ -122,6 +127,7 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
   private progress: IProgressEmitter;
   private grounding: GroundingMode;
   private groundingMinScore: number;
+  private attachSourceSpans: boolean;
 
   constructor(options: BuilderOptions, logger: Logger) {
     this.llmService = options.llmService;
@@ -135,6 +141,7 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
     this.progress = options.progress ?? new NoopProgressEmitter();
     this.grounding = options.grounding ?? 'disabled';
     this.groundingMinScore = options.groundingMinScore ?? 0.5;
+    this.attachSourceSpans = options.attachSourceSpans ?? false;
   }
 
   /**
@@ -239,7 +246,44 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
       graphs.push(kg);
     }
 
+    // Pin ingest-time document identity (reader metadata) as its own entity.
+    // Never trusted to extraction: body text is full of OTHER papers' IDs, and a
+    // cited paper's arXiv ID binding onto the host document is the worst-case
+    // provenance failure.
+    const identity = this.documentIdentityGraph(processedFile);
+    if (identity) graphs.push(identity);
+
     return graphs;
+  }
+
+  /** Build the pinned `document` entity from reader-supplied identity metadata. */
+  private documentIdentityGraph(processedFile: ProcessedFile): KnowledgeGraph | null {
+    const arxivId = processedFile.metadata?.arxivId as string | undefined;
+    const title = processedFile.metadata?.title as string | undefined;
+    if (!arxivId && !title) return null;
+
+    const createdAt = new Date().toISOString();
+    const observations: Observation[] = [];
+    if (title) {
+      observations.push({ text: `Title: ${title}`, source: processedFile.path, createdAt });
+    }
+    if (arxivId) {
+      observations.push({ text: `arXiv:${arxivId}`, source: processedFile.path, createdAt });
+    }
+
+    const name = title ?? path.basename(processedFile.path);
+    this.logger.info(`Pinned document identity for ${processedFile.path}: ${name}`);
+    return {
+      entities: [
+        {
+          name,
+          entityType: "document",
+          files: [processedFile.path],
+          observations,
+        },
+      ],
+      relations: [],
+    };
   }
 
   /**
@@ -293,7 +337,7 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
     }
 
     const raw = await generate();
-    const kg = this.applyGroundingGate(this.toGraph(raw, provenance), content);
+    const kg = this.applyGroundingGate(this.toGraph(raw, provenance, content), content);
     kg.entities.forEach(attachMetadata);
 
     this.progress.emit({
@@ -379,7 +423,11 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
    * time. Grounding is deterministic — we attach what we already know rather
    * than asking the model for it.
    */
-  private toGraph(raw: RawGraph, provenance: ChunkProvenance): KnowledgeGraph {
+  private toGraph(
+    raw: RawGraph,
+    provenance: ChunkProvenance,
+    content: string
+  ): KnowledgeGraph {
     const createdAt = new Date().toISOString();
     return {
       entities: raw.entities.map((e) => ({
@@ -400,6 +448,12 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
         from: r.from,
         to: r.to,
         relationType: r.relationType,
+        // Only stamp the span when a consumer (the grounding gate) is active, so
+        // the default/baseline graph carries no extra weight.
+        ...(this.attachSourceSpans ? { sourceSpan: content } : {}),
+        ...(this.attachSourceSpans && provenance.occurredAt
+          ? { validAt: provenance.occurredAt }
+          : {}),
       })),
     };
   }

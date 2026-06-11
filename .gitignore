@@ -146,3 +146,6 @@ examples/
 output/
 test_configs/
 doc-classifier/
+
+# canonicalization experiment run artifacts
+runs/

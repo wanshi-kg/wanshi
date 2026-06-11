@@ -3,6 +3,7 @@ import { ChunkResult, FileReader, FileReadResult, ImageResult } from "./FileRead
 import { Logger } from "../../../shared";
 import { ProcessedChunk } from "../../../types";
 import { TextChunker } from "../chunking";
+import { splitTrailingReferences } from "./stripReferences";
 
 /**
  * Represents markdown content with extracted images
@@ -36,7 +37,11 @@ export class MarkdownReadError extends Error {
  * Reader for markdown text files with image extraction support
  */
 export class MarkdownReader extends FileReader {
-  constructor(chunker: TextChunker, logger: Logger) {
+  constructor(
+    chunker: TextChunker,
+    logger: Logger,
+    private readonly stripReferences: boolean = false
+  ) {
     super([".md", ".markdown"], chunker, logger);
   }
 
@@ -51,6 +56,17 @@ export class MarkdownReader extends FileReader {
       this.logger.debug(`Reading markdown file: ${filePath}`);
 
       const markdownContent = await MarkdownProcessor.processFile(filePath);
+
+      if (this.stripReferences) {
+        const split = splitTrailingReferences(markdownContent.text);
+        if (split.references) {
+          this.logger.info(
+            `Quarantined trailing references section of ${filePath} (${split.references.length} chars)`
+          );
+          markdownContent.text = split.body;
+        }
+      }
+
       const chunks = await this.chunker.chunk(markdownContent.text);
 
       const enrichedChunks = await this.enrichChunksWithImages(

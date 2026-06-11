@@ -2,6 +2,7 @@ import { Ollama, ChatResponse, ChatRequest, Message } from "ollama";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { Logger } from "../../shared";
+import { parseJsonLenient } from "../../shared/utils";
 import { ILLMProvider, LLMOptions, LLMMessage } from "../../types/ILLMProvider";
 
 // Re-export for back-compat: these types used to live here.
@@ -24,6 +25,16 @@ export class OllamaService implements ILLMProvider {
       ...options,
     };
     this.ollama = new Ollama({ host: this.options.host });
+  }
+
+  private stripCodeFence(content: string): string {
+    if (content.startsWith("```")) {
+      return content.slice(
+        content.indexOf("\n") + 1,
+        content.lastIndexOf("\n")
+      );
+    }
+    return content;
   }
 
   /**
@@ -80,20 +91,11 @@ export class OllamaService implements ILLMProvider {
           `Raw LLM response: ${responseContent.substring(0, 200)}...`
         );
 
-        // Handle code block wrapped responses
-        let cleanContent = responseContent;
-        if (cleanContent.startsWith("```")) {
-          cleanContent = cleanContent.slice(
-            cleanContent.indexOf("\n") + 1,
-            cleanContent.lastIndexOf("\n")
-          );
-        }
+        const parsed = parseJsonLenient(this.stripCodeFence(responseContent), () =>
+          this.logger.warn("Response JSON was malformed; recovered with jsonrepair")
+        );
 
-        const parsed = JSON.parse(cleanContent);
-
-        // Validate against schema
-        const validated = schema.parse(parsed);
-        return validated;
+        return schema.parse(parsed);
       } catch (error) {
         this.logger.error(
           `LLM generation attempt ${attempt + 1} failed: ${error}`

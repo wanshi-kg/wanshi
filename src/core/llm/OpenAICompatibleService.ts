@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { Logger } from "../../shared";
+import { parseJsonLenient } from "../../shared/utils";
 import { ILLMProvider, LLMOptions, LLMMessage } from "../../types/ILLMProvider";
 
 /**
@@ -85,7 +86,9 @@ export class OpenAICompatibleService implements ILLMProvider {
           `Raw LLM response: ${responseContent.substring(0, 200)}...`
         );
 
-        const parsed = JSON.parse(this.stripCodeFence(responseContent));
+        const parsed = parseJsonLenient(this.stripCodeFence(responseContent), () =>
+          this.logger.warn("Response JSON was malformed; recovered with jsonrepair")
+        );
         return schema.parse(parsed);
       } catch (error) {
         this.logger.error(

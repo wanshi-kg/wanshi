@@ -1,5 +1,5 @@
-import { EmbeddingService } from '../../core/llm/EmbeddingService';
 import { cosineSimilarity } from '../../shared';
+import { IEmbeddingProvider } from '../../types/IEmbeddingProvider';
 import { ExactMatcher } from './ExactMatcher';
 import { Triplet } from '../datasets/IDataset';
 
@@ -7,8 +7,10 @@ export class SemanticMatcher {
   private exactMatcher = new ExactMatcher();
   private embeddingCache: Map<string, number[]> = new Map();
 
+  // Depends only on the provider interface (embed/embedBatch), so the metrics
+  // command can pass whichever provider the container built (Ollama | OpenAI).
   constructor(
-    private embeddingService: EmbeddingService,
+    private embeddingService: IEmbeddingProvider,
     private threshold: number = 0.80
   ) {}
 

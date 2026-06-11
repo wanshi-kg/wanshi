@@ -44,6 +44,7 @@ export const FLAG_TO_PATH: Record<string, string> = {
   language: "readers.asr.language",
   translate: "readers.asr.translate",
   docling: "readers.docling",
+  stripReferences: "readers.stripReferences",
   jsonStrategy: "readers.json.strategy",
   images: "readers.images",
   // classifier
