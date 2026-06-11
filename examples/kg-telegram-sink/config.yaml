@@ -1,0 +1,93 @@
+# kg-gen configuration for the Telegram sink.
+# The bot loads this once at startup and re-runs the full pipeline (with resume)
+# every time you forward something new. Defaults to cloud generation + free local
+# embeddings — flip `llm.provider` to `ollama` to run fully local.
+
+# The bot manages these two paths; it writes ingested content into `input/` and the
+# memory-server-compatible graph into `output`. Keep them as-is unless you also
+# update src/config.ts.
+input: ./data/inbox
+filter: ["**/*"]
+exclude: []
+output: ./data/output/graph.mcp-jsonl
+
+description: "Articles, videos, posts and files saved to my personal knowledge sink"
+
+# --- Generation: OpenAI-compatible cloud (OpenRouter shown; works with OpenAI, vLLM, …) ---
+# The API key is read from $OPENAI_API_KEY / $KG_API_KEY (see .env) — don't hardcode it here.
+llm:
+  provider: openai
+  model: google/gemini-2.5-flash-lite
+  host: https://openrouter.ai/api/v1
+  temperature: 0.1
+  repeatPenalty: 0.3
+  contextLength: 8192
+  promptVersion: v5
+
+# --- Embeddings: stay local & free so dedup/merge/retrieval cost nothing ---
+embeddings:
+  provider: ollama
+  model: mxbai-embed-large:335m
+  host: http://localhost:11434
+  maxInputChars: 1024
+
+export:
+  format: mcp-jsonl
+
+# Per-chunk checkpoint sidecar (<output>.checkpoint.jsonl). Lets each rebuild skip
+# already-extracted content instead of re-billing the cloud model — this is what
+# makes "re-run the whole inbox on every new item" cheap.
+resume:
+  enabled: true
+
+retrieval:
+  mode: enabled
+  limit: 5
+  scope: chunk
+
+readers:
+  stripReferences: true   # quarantine trailing bibliography sections (PDF + markdown readers)
+  images: enabled
+
+  asr:
+    mode: enabled
+    whisperModel: medium
+    language: auto
+    translate: false
+
+  docling: false   # built-in PdfReader/MarkdownReader so stripReferences + arXiv capture fire (DoclingReader has no parity yet)
+
+  json:
+    strategy: structural
+
+  outline:
+    enabled: true
+    includeLineNumbers: true
+    includePrivate: true
+    includeComments: true
+
+corpus:
+  profiling: enabled
+
+chunking:
+  mode: enabled
+  size: 16000
+  overlap: 100
+
+classifier:
+  mode: heuristic
+
+grounding:
+  mode: flag
+  minScore: 0.5
+
+merging:
+  enableSimilarityMerging: true
+  entitySimilarityThreshold: 0.95
+  observationSimilarityThreshold: 0.95
+
+logging:
+  level: info
+  file: /Volumes/2TB/repos/kg-gen/kg_tests/self/app.log
+  debug: false
+  silent: false

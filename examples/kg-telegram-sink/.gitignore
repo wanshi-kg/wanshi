@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+data/inbox/*
+data/output/*
+!data/inbox/.gitkeep
+!data/output/.gitkeep
+*.checkpoint.jsonl
+*.corpus-profile.json

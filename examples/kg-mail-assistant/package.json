@@ -1,0 +1,39 @@
+{
+  "name": "kg-mail-assistant",
+  "version": "0.1.0",
+  "description": "Smart agentic personal assistant with kg-gen, mail listener (IMAP/SMTP), and Telegram chat controls",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "dev": "ts-node src/index.ts --watch",
+    "clean": "rm -rf dist",
+    "gmail:auth": "ts-node scripts/gmail-auth.ts"
+  },
+  "keywords": [
+    "kg-gen",
+    "knowledge-graph",
+    "telegram",
+    "imap",
+    "smtp",
+    "agent"
+  ],
+  "author": "Alex Sabaka",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "@langchain/core": "^0.3.57",
+    "dotenv": "^16.3.1",
+    "google-auth-library": "^9.4.1",
+    "googleapis": "^118.0.0",
+    "kg-gen": "file:../../",
+    "node-telegram-bot-api": "^0.64.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "@types/node-telegram-bot-api": "^0.64.9",
+    "@types/nodemailer": "^6.4.14",
+    "nodemon": "^3.1.11",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.3"
+  }
+}

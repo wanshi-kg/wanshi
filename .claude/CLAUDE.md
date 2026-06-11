@@ -100,10 +100,12 @@ kg-gen/
 ├── src/evaluation/                       # Benchmark harness: datasets (CrossRE/REBEL), matching, metrics, reporters
 ├── data/crossre/crossre_data/            # Downloaded CrossRE domain splits (gitignored)
 ├── scripts/benchmark.ts                 # Standalone benchmark CLI (ts-node)
-├── examples/                             # Sample integrations and output files
+├── examples/                             # Sample integrations (each a standalone subproject)
+│   ├── kg-telegram-sink/                # Telegram → kg-gen graph bot (+ A/B canon config)
 │   ├── kg-mail-assistant/                # Full Gmail-to-KG example
-│   └── t3.ts … t6.ts                     # Ad-hoc test/example scripts
-└── doc-classifier/                       # Related document classifier subproject
+│   ├── canon/                            # Canonicalization A/B arm configs
+│   └── sandbox/                          # Ad-hoc throwaway scripts (t3–t6)
+└── doc-classifier/                       # Related document classifier subproject (Python)
 ```
 
 ## Core Data Model

@@ -1,0 +1,75 @@
+# Canonicalization A/B — arm 1: BASELINE (canonicalization OFF).
+#
+# The current pipeline, fresh numbers. Score with:
+#   kg-gen --config examples/canon/baseline.yaml
+#   kg-gen metrics kg_tests/canon/baseline.json
+#
+# Hold corpus / seed / model / embedding identical across all three arms — only
+# the `pipeline.canonicalization` block differs. Swap the llm block for the
+# OpenRouter one (commented) to run the real A/B on the cloud.
+
+input: ./src
+filter:
+  - "**/*.ts"
+exclude:
+  - "**/*.test.ts"
+output: ./kg_tests/canon/baseline-cloud.json
+description: kg-gen TypeScript sources (canonicalization experiment corpus).
+
+llm:
+  # provider: ollama
+  # model: gemma3:4b
+  # host: http://localhost:11434
+  temperature: 0.1
+  contextLength: 8192
+  maxTokens: 4096
+  promptVersion: v5
+  # --- OpenRouter (real A/B) — uncomment and set apiKey or $OPENAI_API_KEY ---
+  provider: openai
+  host: https://openrouter.ai/api/v1
+  model: google/gemini-2.5-flash
+
+embeddings:
+  provider: ollama
+  model: mxbai-embed-large:335m
+  host: http://localhost:11434
+  maxInputChars: 1024
+
+chunking:
+  mode: enabled
+  size: 8000
+  overlap: 100
+
+retrieval:
+  mode: enabled
+  limit: 5
+  scope: chunk
+
+merging:
+  enableSimilarityMerging: true
+  entitySimilarityThreshold: 0.9
+  observationSimilarityThreshold: 0.9
+
+corpus:
+  profiling: enabled
+
+classifier:
+  mode: disabled
+
+readers:
+  outline:
+    enabled: false
+
+pipeline:
+  canonicalization:
+    enabled: false
+
+eval:
+  seed: 1337
+  pinVersions: true
+
+logging:
+  level: info
+
+export:
+  format: json

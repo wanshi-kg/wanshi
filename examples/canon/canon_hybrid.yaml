@@ -1,0 +1,92 @@
+# Canonicalization A/B — arm 3 (optional): CANON_HYBRID.
+#
+# Identical to canon_embed.yaml except method: hybrid. Cluster with embeddings,
+# but escalate borderline pairs (similarity in escalateBand) to the LLM for a
+# merge/no-merge verdict — reserving the expensive judgment for exactly the cases
+# where pure embedding similarity is ambiguous. Answers: does LLM adjudication of
+# borderline pairs beat pure embeddings?
+#   kg-gen --config examples/canon/canon_hybrid.yaml
+#   kg-gen metrics kg_tests/canon/canon_hybrid.json
+#   kg-gen inspect-merges kg_tests/canon/canon_hybrid.merges.jsonl
+
+input: ./src
+filter:
+  - "**/*.ts"
+exclude:
+  - "**/*.test.ts"
+output: ./kg_tests/canon/canon_hybrid.json
+description: kg-gen TypeScript sources (canonicalization experiment corpus).
+
+llm:
+  provider: ollama
+  model: gemma3:4b
+  host: http://localhost:11434
+  temperature: 0.1
+  contextLength: 8192
+  maxTokens: 4096
+  promptVersion: v5
+  # --- OpenRouter (real A/B) — uncomment and set apiKey or $OPENAI_API_KEY ---
+  # provider: openai
+  # host: https://openrouter.ai/api/v1
+  # model: google/gemini-2.5-flash
+
+embeddings:
+  provider: ollama
+  model: mxbai-embed-large:335m
+  host: http://localhost:11434
+  maxInputChars: 1024
+
+chunking:
+  mode: enabled
+  size: 8000
+  overlap: 100
+
+retrieval:
+  mode: enabled
+  limit: 5
+  scope: chunk
+
+merging:
+  enableSimilarityMerging: true
+  entitySimilarityThreshold: 0.9
+  observationSimilarityThreshold: 0.9
+
+corpus:
+  profiling: enabled
+
+classifier:
+  mode: disabled
+
+readers:
+  outline:
+    enabled: false
+
+pipeline:
+  canonicalization:
+    enabled: true
+    target: [entities, relations]
+    method: hybrid
+    canonicalSelection: frequency
+    embeddings:
+      entity:
+        cluster: agglomerative
+        threshold: 0.82
+      relation:
+        cluster: agglomerative
+        threshold: 0.85
+    hybrid:
+      escalateBand: [0.72, 0.88]
+
+inspection:
+  emitMergeLog: true
+  mergeLogPath: ./kg_tests/canon/canon_hybrid.merges.jsonl
+
+eval:
+  seed: 1337
+  pinVersions: true
+
+logging:
+  level: info
+
+export:
+  format: json

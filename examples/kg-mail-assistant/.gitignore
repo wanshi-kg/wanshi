@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.local
+.vscode/
+.idea/
+data/emails/
+data/graphs/
+temp/
+*.swp
+*.swo
+*~

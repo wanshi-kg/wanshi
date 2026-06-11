@@ -137,15 +137,18 @@ dist
 temp/
 kg_tests/
 data/
-examples/
-# The bare `examples/` rule above is for the repo-root sample-integrations dir, but it
-# also matches the prompt example partials, which are source (gold extraction examples).
-# Re-include them.
-!src/core/llm/prompts/templates/partials/examples/
-!src/core/llm/prompts/templates/partials/examples/**
 output/
 test_configs/
-doc-classifier/
+
+# examples/ and doc-classifier/ are tracked for their source. Credentials, generated
+# data and deps are kept out by the global rules above (.env, data/, node_modules/,
+# dist, temp/, *.log) plus these:
+token.json
+
+# Python (doc-classifier)
+.venv/
+__pycache__/
+*.pyc
 
 # canonicalization experiment run artifacts
 runs/

@@ -1,0 +1,91 @@
+# Canonicalization A/B — arm 2: CANON_EMBED (embeddings clustering).
+#
+# Identical to baseline.yaml except the pipeline.canonicalization block below.
+# The cheap-and-informative test: does a global embedding-clustering pass collapse
+# the entity/relation-type sprawl?  Run + score + audit the merge log:
+#   kg-gen --config examples/canon/canon_embed.yaml
+#   kg-gen metrics kg_tests/canon/canon_embed.json
+#   kg-gen inspect-merges kg_tests/canon/canon_embed.merges.jsonl
+#
+# IMPORTANT (brief §5): do NOT tune `threshold` to minimize the type-count number
+# — that directly incentivizes over-merge. Tune against the merge log.
+
+input: ./src
+filter:
+  - "**/*.ts"
+exclude:
+  - "**/*.test.ts"
+output: ./kg_tests/canon/canon_embed-cloud.json
+description: kg-gen TypeScript sources (canonicalization experiment corpus).
+
+llm:
+  # provider: ollama
+  # model: gemma3:4b
+  # host: http://localhost:11434
+  temperature: 0.1
+  contextLength: 8192
+  maxTokens: 4096
+  promptVersion: v5
+  # --- OpenRouter (real A/B) — uncomment and set apiKey or $OPENAI_API_KEY ---
+  provider: openai
+  host: https://openrouter.ai/api/v1
+  model: google/gemini-2.5-flash
+
+embeddings:
+  provider: ollama
+  model: mxbai-embed-large:335m
+  host: http://localhost:11434
+  maxInputChars: 1024
+
+chunking:
+  mode: enabled
+  size: 8000
+  overlap: 100
+
+retrieval:
+  mode: enabled
+  limit: 5
+  scope: chunk
+
+merging:
+  enableSimilarityMerging: true
+  entitySimilarityThreshold: 0.9
+  observationSimilarityThreshold: 0.9
+
+corpus:
+  profiling: enabled
+
+classifier:
+  mode: disabled
+
+readers:
+  outline:
+    enabled: false
+
+pipeline:
+  canonicalization:
+    enabled: true
+    target: [entities, relations]
+    method: embeddings
+    canonicalSelection: frequency
+    embeddings:
+      entity:
+        cluster: agglomerative
+        threshold: 0.82
+      relation:
+        cluster: agglomerative
+        threshold: 0.85
+
+inspection:
+  emitMergeLog: true
+  mergeLogPath: ./kg_tests/canon/canon_embed.merges.jsonl
+
+eval:
+  seed: 1337
+  pinVersions: true
+
+logging:
+  level: info
+
+export:
+  format: json
