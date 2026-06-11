@@ -33,7 +33,7 @@
     "cli-highlight": "^2.1.11",
     "commander": "^12.1.0",
     "detect-file-encoding-and-language": "^2.4.0",
-    "document-outline-gen": "file:../document-outline-gen",
+    "document-outline-gen": "github:AlexSabaka/document-outline-gen",
     "dree": "^5.1.5",
     "ffmpeg-static": "^5.2.0",
     "ffprobe-static": "^3.1.0",
