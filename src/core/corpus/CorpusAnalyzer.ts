@@ -1,4 +1,5 @@
 import * as crypto from "crypto";
+import * as fs from "fs";
 import { z } from "zod";
 import {
   ClassificationResult,
@@ -16,6 +17,7 @@ import { FileReaderFactory } from "../processor/readers";
 import { IContentClassifier } from "../processor/classifier/IContentTypeClassifier";
 import { countTerms } from "./termFrequency";
 import { CorpusProfileStore } from "./CorpusProfileStore";
+import { normalizeGlossary } from "./normalizeGlossary";
 import { toRelPathId } from "./relPath";
 
 /** Per-file text read for the pre-pass is capped to bound frequency + classifier cost. */
@@ -159,17 +161,36 @@ export class CorpusAnalyzer implements ICorpusAnalyzer {
     }
   }
 
-  /** Validity key: sorted relpaths + model + topN + classifier mode. */
+  /**
+   * Validity key: model + topN + classifier mode + per-file (relpath, size,
+   * mtime). Folding size+mtime makes the cache **content-sensitive** (KG-06):
+   * editing a file invalidates its glossary, while a moved input tree / unchanged
+   * content stays stable (relpath is input-relative). size+mtime is a cheap
+   * `stat` proxy — deliberately *not* a byte hash, so expensive media readers
+   * (PDF/audio) aren't re-invoked on every run just to compute the key.
+   */
   private computeKey(
     files: string[],
     inputRoot: string,
     options: ProcessingOptions,
     topN: number
   ): string {
-    const rels = files.map((f) => toRelPathId(inputRoot, f)).sort();
+    const entries = files
+      .map((f) => {
+        const rel = toRelPathId(inputRoot, f);
+        let sig = "missing";
+        try {
+          const st = fs.statSync(f);
+          sig = `${st.size}:${Math.round(st.mtimeMs)}`;
+        } catch {
+          // Non-existent / unreadable file: stable sentinel, never throws.
+        }
+        return `${rel}|${sig}`;
+      })
+      .sort();
     const hash = crypto.createHash("sha1");
     hash.update(
-      `${options.llm.model} ${topN} ${options.classifier.mode} ${rels.length}\n${rels.join("\n")}`
+      `${options.llm.model} ${topN} ${options.classifier.mode} ${entries.length}\n${entries.join("\n")}`
     );
     return hash.digest("hex");
   }
@@ -217,11 +238,10 @@ export class CorpusAnalyzer implements ICorpusAnalyzer {
     // reused forever (KG-02). The caller (analyzeOrLoad) catches, runs this pass
     // without a glossary, and skips persisting the sidecar so the next run retries.
     const result = await this.llm.generateStructured(messages, GlossarySchema);
-    return {
-      entityNames: dedupe(result.entityNames),
-      entityTypes: dedupe(result.entityTypes),
-      relationTypes: dedupe(result.relationTypes),
-    };
+    // Validate + normalize before it becomes the authoritative closed vocabulary
+    // (KG-06): snake_case, dedupe, drop has_* predicates, cap to the prompt's
+    // limits — so garbage glossary output can't get enforced as the Zod enum.
+    return normalizeGlossary(result);
   }
 }
 
@@ -241,8 +261,4 @@ function aggregateClasses(
   return Array.from(sums.entries())
     .map(([cls, { sum, n }]) => ({ class: cls, confidence: sum / n } as ClassificationResult))
     .sort((a, b) => b.confidence - a.confidence);
-}
-
-function dedupe(values: string[]): string[] {
-  return Array.from(new Set(values.map((v) => v.trim()).filter(Boolean)));
 }

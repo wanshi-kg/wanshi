@@ -112,4 +112,48 @@ describe("CorpusAnalyzer", () => {
     await analyzer.analyzeOrLoad(files, makeOptions({ llm: { model: "m2" } }));
     expect(calls.n).toBe(2);
   });
+
+  it("invalidates the cache when a file's content changes but paths don't (KG-06)", async () => {
+    // Real on-disk files so the size+mtime content signal is exercised.
+    const a = path.join(tmp, "a.txt");
+    const b = path.join(tmp, "b.txt");
+    fs.writeFileSync(a, "probability inference prior");
+    fs.writeFileSync(b, "evidence posterior");
+    const realFiles = [a, b];
+
+    const realFactory = () =>
+      ({
+        getReader: (f: string) => ({
+          read: async () => ({ chunks: [{ content: fs.readFileSync(f, "utf-8") }] }),
+        }),
+      } as any);
+
+    const calls = { n: 0 };
+    const analyzer = new CorpusAnalyzer(
+      stubLlm(calls),
+      stubClassifier(),
+      realFactory(),
+      stubLogger()
+    );
+    const opts = () =>
+      makeConfig({
+        input: tmp,
+        output: path.join(tmp, "kg.json"),
+        llm: { model: "m1" },
+        classifier: { mode: "llm" },
+        corpus: { profiling: "enabled", topTerms: 50 },
+      });
+
+    await analyzer.analyzeOrLoad(realFiles, opts());
+    expect(calls.n).toBe(1);
+
+    // Unchanged corpus → cache hit, no second call.
+    await analyzer.analyzeOrLoad(realFiles, opts());
+    expect(calls.n).toBe(1);
+
+    // Edit a file's content (same path, different size) → key changes → rebuild.
+    fs.writeFileSync(a, "probability inference prior posterior evidence likelihood");
+    await analyzer.analyzeOrLoad(realFiles, opts());
+    expect(calls.n).toBe(2);
+  });
 });
