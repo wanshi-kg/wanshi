@@ -109,7 +109,7 @@ export class OpenAICompatibleService implements ILLMProvider {
           );
         }
 
-        await this.delay(1000 * (attempt + 1));
+        await this.delay(this.backoffMs(error, attempt));
       }
     }
 
@@ -173,6 +173,31 @@ export class OpenAICompatibleService implements ILLMProvider {
       );
     }
     return content;
+  }
+
+  /**
+   * Backoff before the next retry. Rate-limit / overload responses (429, 503)
+   * back off much longer — honoring a `Retry-After` header when present, else
+   * exponential (2s, 4s, 8s … capped at 30s) — so sustained cloud throttling
+   * recovers within the retry budget instead of failing the request. Other
+   * errors keep the original linear 1s/2s/3s.
+   */
+  private backoffMs(error: unknown, attempt: number): number {
+    const status = (error as { status?: number })?.status;
+    if (status === 429 || status === 503) {
+      const retryAfter = this.retryAfterMs(error);
+      return retryAfter ?? Math.min(2000 * 2 ** attempt, 30000);
+    }
+    return 1000 * (attempt + 1);
+  }
+
+  /** Parse a `Retry-After` header (seconds) into ms, when the provider sends one. */
+  private retryAfterMs(error: unknown): number | undefined {
+    const headers = (error as { headers?: Record<string, string> })?.headers;
+    const raw = headers?.["retry-after"];
+    if (!raw) return undefined;
+    const secs = Number(raw);
+    return Number.isFinite(secs) ? secs * 1000 : undefined;
   }
 
   private isResponseFormatError(error: unknown): boolean {

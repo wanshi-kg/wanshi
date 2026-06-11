@@ -34,9 +34,14 @@ export class BenchmarkRunner {
     private promptManager: PromptManager,
     private embeddingService: EmbeddingService,
     private logger: Logger,
-    matchThreshold: number = 0.80
+    matchThreshold: number = 0.80,
+    private requestDelayMs: number = 0
   ) {
     this.semanticMatcher = new SemanticMatcher(embeddingService, matchThreshold);
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async run(samples: BenchmarkSample[], opts: BenchmarkOptions): Promise<BenchmarkResult> {
@@ -47,21 +52,47 @@ export class BenchmarkRunner {
 
     const systemPrompt = await this.promptManager.getSystemPrompt('benchmark', '**/*.txt', 'Benchmark evaluation');
 
+    // Samples whose extraction actually FAILED (e.g. cloud 429 after retries) are
+    // excluded from the metrics rather than scored as 0-recall — otherwise a rate
+    // limit would masquerade as poor model quality. Detected via the builder's
+    // failed-chunk ledger (KG-02). `requestDelayMs` paces requests to stay under
+    // a provider's rate limit in the first place.
+    const failedSampleIds: string[] = [];
+
     for (let i = 0; i < samples.length; i++) {
       const sample = samples[i];
       this.logger.info(`[${i + 1}/${samples.length}] Processing sample ${sample.id}`);
 
+      const failedBefore = this.kgBuilder.getFailedChunks().length;
       const sampleStart = Date.now();
       const result = await this.processSample(sample, systemPrompt);
       result.durationMs = Date.now() - sampleStart;
 
-      sampleResults.push(result);
+      if (this.kgBuilder.getFailedChunks().length > failedBefore) {
+        failedSampleIds.push(sample.id);
+        this.logger.warn(
+          `Sample ${sample.id} extraction failed (rate-limit / transient) — excluded from metrics`
+        );
+      } else {
+        sampleResults.push(result);
+      }
 
-      // Progress log every 10 samples
-      if ((i + 1) % 10 === 0) {
+      // Progress log every 10 scored samples
+      if (sampleResults.length > 0 && sampleResults.length % 10 === 0) {
         const partial = microAverage(sampleResults.map(r => r.semantic));
         this.logger.info(`  Progress: Sem Triple F1 so far = ${partial.triple.f1.toFixed(3)}`);
       }
+
+      if (this.requestDelayMs > 0 && i < samples.length - 1) {
+        await this.sleep(this.requestDelayMs);
+      }
+    }
+
+    if (failedSampleIds.length > 0) {
+      this.logger.warn(
+        `${failedSampleIds.length}/${samples.length} samples failed extraction and were excluded ` +
+        `from metrics: ${failedSampleIds.join(', ')}`
+      );
     }
 
     // Aggregate
@@ -88,7 +119,7 @@ export class BenchmarkRunner {
       dataset: opts.datasetName,
       model: opts.model,
       classifier: opts.classifier,
-      sampleCount: samples.length,
+      sampleCount: sampleResults.length,
       exact,
       semantic,
       intrinsicQuality,

@@ -114,6 +114,7 @@ program
   .option('--data-path <path>',        'Path to dataset file or directory (CrossRE: dir loads all splits)')
   .option('--limit <n>',               'Max number of samples to evaluate (0 = all)',                        '50')
   .option('--match-threshold <n>',     'Semantic similarity threshold for entity matching (0–1)',            '0.80')
+  .option('--request-delay <ms>',      'Delay between samples in ms (pace cloud requests under rate limits)', '0')
   .option('--provider <name>',         'Generation provider: ollama | openai (OpenAI-compatible)',           'ollama')
   .option('--model <name>',            'Model name (Ollama tag, or provider id like google/gemma-3-4b-it)',  'llama3.2:3b')
   .option('--host <url>',              'Ollama host URL, or OpenAI-compatible base URL when provider=openai','http://localhost:11434')
@@ -130,6 +131,7 @@ program
     const limitRaw    = parseInt(opts.limit, 10);
     const limit       = limitRaw <= 0 ? Number.MAX_SAFE_INTEGER : limitRaw;
     const threshold   = parseFloat(opts.matchThreshold);
+    const requestDelay = parseInt(opts.requestDelay, 10) || 0;
     const dataPath    = opts.dataPath as string | undefined;
 
     if (!dataPath) {
@@ -181,7 +183,7 @@ program
     }
 
     // Run benchmark
-    const runner = new BenchmarkRunner(kgBuilder as any, promptManager, embeddingService, logger, threshold);
+    const runner = new BenchmarkRunner(kgBuilder as any, promptManager, embeddingService, logger, threshold, requestDelay);
     const result = await runner.run(samples, {
       datasetName,
       model: opts.model,
