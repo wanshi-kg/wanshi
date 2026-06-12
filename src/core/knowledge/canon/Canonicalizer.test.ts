@@ -99,6 +99,41 @@ describe("Canonicalizer (embeddings)", () => {
     expect(out.relations).toHaveLength(3);
   });
 
+  it("default complete-linkage keeps a sibling family distinct; single-linkage fuses it (KG-12)", async () => {
+    // Cooc—Epicure-Cooc—Chem—Epicure-Chem—Core: a single-linkage chain at threshold 0.82.
+    const sibAngles = { Cooc: 0, "Epicure-Cooc": 20, Chem: 40, "Epicure-Chem": 60, Core: 80 };
+    const sibGraph: KnowledgeGraph = {
+      entities: Object.keys(sibAngles).map((n) => entity(n)),
+      relations: [],
+    };
+    const sibCtx = (linkage: "single" | "complete"): TransformContext => ({
+      options: parseConfig({
+        pipeline: {
+          canonicalization: {
+            enabled: true,
+            target: ["entities"],
+            embeddings: { entity: { threshold: 0.82, linkage } },
+          },
+        },
+        eval: { pinVersions: false },
+      }),
+      embeddings: angleEmbeddings(sibAngles),
+      llm: {} as any,
+      logger: { info() {}, debug() {}, warn() {}, error() {} } as any,
+    });
+
+    const survivingSiblings = (g: KnowledgeGraph) =>
+      ["Cooc", "Chem", "Core"].filter((s) => g.entities.some((e) => e.name === s));
+
+    // complete (the default): the three distinct models survive as three entities
+    const complete = await new Canonicalizer().apply(sibGraph, sibCtx("complete"));
+    expect(survivingSiblings(complete)).toEqual(["Cooc", "Chem", "Core"]);
+
+    // single: the chain collapses them (the over-merge this phase fixes)
+    const single = await new Canonicalizer().apply(sibGraph, sibCtx("single"));
+    expect(survivingSiblings(single).length).toBeLessThan(3);
+  });
+
   it("writes the per-cluster merge log (the deliverable)", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "canon-"));
     const logPath = path.join(dir, "merges.jsonl");

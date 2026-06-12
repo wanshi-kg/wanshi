@@ -61,6 +61,51 @@ describe("clusterByEmbedding (pair-aware policy)", () => {
   });
 });
 
+describe("clusterByEmbedding (complete linkage — KG-12)", () => {
+  // A chain Cooc—b1—Chem—b2—Core: consecutive pairs (20° apart, cos≈0.94) clear the
+  // 0.82 threshold, but the bare siblings (≥40° apart) do not. Single-linkage chains
+  // the whole family into one node (the 8-member Epicure fusion); complete-linkage
+  // keeps the three siblings in distinct clusters because Cooc↔Chem↔Core never
+  // directly clear the threshold.
+  const items: Embedded[] = [
+    { id: "Cooc", embedding: vec(0) },
+    { id: "Epicure-Cooc", embedding: vec(20) },
+    { id: "Chem", embedding: vec(40) },
+    { id: "Epicure-Chem", embedding: vec(60) },
+    { id: "Core", embedding: vec(80) },
+  ];
+  const decide = (sim: number): MergeDecision => (sim >= 0.82 ? "merge" : "reject");
+  const siblings = ["Cooc", "Chem", "Core"];
+
+  it("single-linkage chains the whole family into one cluster", async () => {
+    const res = await clusterByEmbedding(items, { decide, linkage: "single" });
+    expect(res.clusters).toHaveLength(1);
+    expect(res.clusters[0]).toHaveLength(5);
+  });
+
+  it("complete-linkage keeps the three siblings in distinct clusters", async () => {
+    const res = await clusterByEmbedding(items, { decide, linkage: "complete" });
+    const clusterOf = (id: string) => res.clusters.findIndex((c) => c.includes(id));
+    // each sibling lands in a different cluster…
+    expect(new Set(siblings.map(clusterOf)).size).toBe(3);
+    // …and no cluster fuses two siblings
+    for (const c of res.clusters) {
+      expect(c.filter((id) => siblings.includes(id)).length).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("complete-linkage still collapses a true clique (all pairs above threshold)", async () => {
+    const clique: Embedded[] = [
+      { id: "LLM", embedding: vec(0) },
+      { id: "large language model", embedding: vec(3) }, // cos 3° ≈ 0.998
+      { id: "language model", embedding: vec(5) }, // cos 5° ≈ 0.996, all-pairs ≥ 0.82
+    ];
+    const res = await clusterByEmbedding(clique, { decide, linkage: "complete" });
+    expect(res.clusters).toHaveLength(1);
+    expect(res.clusters[0]).toHaveLength(3);
+  });
+});
+
 describe("clusterByEmbedding (escalation)", () => {
   const items: Embedded[] = [
     { id: "p", embedding: vec(0) },

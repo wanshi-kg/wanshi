@@ -299,6 +299,12 @@ const CanonClusterSchema = (threshold: number) =>
         "Clustering algorithm (only 'agglomerative' is implemented)"
       ),
       threshold: num(threshold).describe("Cosine-similarity merge threshold"),
+      linkage: z
+        .enum(["single", "complete"])
+        .default("complete")
+        .describe(
+          "Linkage: 'complete' (every in-cluster pair ≥ threshold; stops sibling chaining) | 'single' (legacy connectivity)"
+        ),
       k: z.coerce.number().nullable().default(null).describe("Cluster count (only for kmeans)"),
     })
     .strict();
