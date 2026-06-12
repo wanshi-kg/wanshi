@@ -26,7 +26,10 @@ Return one valid JSON object, nothing else — no prose, no markdown fences:
 - `entityType` — a single category drawn from the controlled vocabulary below.
 - `observations` — short factual statements about the entity, each grounded in
   the content. Not a restatement of the type.
-- `relations[].from` / `to` — must each match a `name` in `entities` exactly.
+- `relations[].from` / `to` — each must name a real entity: either one you emit
+  in `entities`, or one already established in the provided context (the *Already
+  extracted* list or the corpus vocabulary), which you reference by its canonical
+  name **without** re-emitting it. Never invent an endpoint that names neither.
 - `relationType` — an array holding **one** canonical predicate. Use a single
   predicate per edge; do not stack synonyms.
 
@@ -132,6 +135,10 @@ value, a constraint.
 - No self-loops. `from` and `to` must differ.
 - Don't assert both `A → B` and `B → A` for the same relationship; pick the one
   canonical direction.
+- Link across files. An endpoint may be an entity established elsewhere in the
+  corpus (from the provided context) — pointing this file's relations at those
+  names is the *purpose* of that context, not a violation. The only forbidden
+  endpoint is a name that exists nowhere.
 - Only connect entities when the content supports the link. A weak or guessed
   edge is worse than no edge.
 

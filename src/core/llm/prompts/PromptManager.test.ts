@@ -71,6 +71,16 @@ describe("PromptManager v5 system prompt — controlled vocabularies", () => {
     expect(prompt).not.toContain("${filter}");
   });
 
+  it("permits cross-file relation endpoints — no exact-match-only contradiction (KG-04)", async () => {
+    const prompt = await manager().getSystemPrompt("/repo", "**/*.ts");
+    // the old contract that contradicted user.hbs ("just point relations at them
+    // by name") must be gone
+    expect(prompt).not.toContain("must each match a `name` in `entities` exactly");
+    // the new contract explicitly allows referencing established-in-context entities
+    expect(prompt).toContain("already established in the provided context");
+    expect(prompt).toContain("Link across files");
+  });
+
   it("renders the glossary's types as the closed vocabulary when supplied", async () => {
     const prompt = await manager().getSystemPrompt("/repo", "**/*.ts", undefined, undefined, {
       entityNames: ["KnowledgeGraphBuilder"],
