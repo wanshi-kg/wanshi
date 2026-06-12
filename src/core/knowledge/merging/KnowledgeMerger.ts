@@ -137,10 +137,19 @@ function findSimilarEntity(
   entity: Entity,
   existingEntities: Map<string, Entity>,
   threshold: number,
-  enableSimilarityMerging: boolean
+  enableSimilarityMerging: boolean,
+  qualifyFileIdentity: boolean = false
 ): EntityMatch | null {
+  // At the global stage, file-identity entities (file/document) are matched by an
+  // exact name+file key *before* this is called, so skip them here — a conceptual
+  // entity must never fuse with a file artifact, and a file artifact never fuzzy-
+  // matches another file's same-named artifact (KG-13). Within-file merge passes
+  // false, preserving its name-only behavior.
+  const skip = (e: Entity) => qualifyFileIdentity && FILE_IDENTITY_TYPES.has(e.entityType);
+
   const norm = normalizeEntityName(entity.name);
-  for (const existingName of existingEntities.keys()) {
+  for (const [existingName, existing] of existingEntities) {
+    if (skip(existing)) continue;
     if (normalizeEntityName(existingName) === norm) {
       return { name: existingName, sim: 1, method: "string-exact" };
     }
@@ -152,6 +161,7 @@ function findSimilarEntity(
   let best: EntityMatch | null = null;
 
   for (const [existingName, existing] of existingEntities) {
+    if (skip(existing)) continue;
     if (digitSignature(existingName) !== digits) continue;
 
     const crossType =
@@ -448,6 +458,32 @@ async function mergeWithinFile(
 const ENTITY_CATCH_ALL = "other";
 
 /**
+ * Entity types that denote a *file/document artifact* rather than a concept
+ * (KG-13). Two `package.json` (or `index.ts`, or a `document` per paper) in
+ * different files are distinct artifacts that must NOT fuse, whereas a `function`
+ * or `concept` of the same name across files is the same thing and *should* merge
+ * (the whole point of global cross-file linking). So identity is name+file for
+ * these types only.
+ */
+const FILE_IDENTITY_TYPES = new Set(["file", "document"]);
+
+/** Field separator for a name+file qualified identity key (unit separator). */
+const ID_SEP = "␟";
+
+/**
+ * Global-merge identity key for an entity: its bare name for conceptual entities
+ * (so same-name concepts merge across files), or `name␟primaryFile` for
+ * file-identity types (so same-name file artifacts in different files stay
+ * distinct). The bare name never contains `␟`, so the two key spaces can't collide.
+ */
+function entityIdentityKey(entity: Entity): string {
+  if (FILE_IDENTITY_TYPES.has(entity.entityType)) {
+    return `${entity.name}${ID_SEP}${entity.files[0] ?? "unknown"}`;
+  }
+  return entity.name;
+}
+
+/**
  * Elect a merged entity's type from all the types its fused surface forms carried
  * (KG-13): a specific type always beats the `other` catch-all, then majority vote
  * wins (ties broken by first occurrence, so it's deterministic). Replaces the old
@@ -492,86 +528,115 @@ async function mergeGlobally(
   const globalSimilarityThreshold =
     options.entitySimilarityThreshold || DefaultSimilarityThreshold;
   const enableSimilarity = options.enableSimilarityMerging !== false;
-  // Every incoming surface form → its final entity key (relation re-keying source).
-  const rename = new Map<string, string>();
+  // Relation re-keying is PER GRAPH (KG-13): a file artifact's bare name is
+  // ambiguous across files, so each graph's relations resolve endpoints against
+  // that graph's own surface-name → output-name map; conceptual names also fall
+  // back to a global map for genuine cross-file references.
+  const renamePerGraph: Map<string, string>[] = [];
+  const globalConceptualRename = new Map<string, string>();
+  // For file-identity entities, `name␟file` → the output name already assigned, so
+  // the same artifact re-extracted (e.g. across chunks) merges into one entity.
+  const idKeyToName = new Map<string, string>();
 
   logger?.debug(
     `Global similarity threshold: ${globalSimilarityThreshold}`
   );
 
+  // Assign a unique output name, disambiguating a file artifact only when its bare
+  // name is already taken by a *different* file/entity (so the common single-project
+  // case keeps the clean `package.json`, but two projects' don't collide → no data loss).
+  const uniqueName = (name: string, file?: string): string => {
+    if (!entityMap.has(name)) return name;
+    const base = file ? `${name} [${file}]` : name;
+    let candidate = base;
+    let i = 2;
+    while (entityMap.has(candidate)) candidate = `${base}#${i++}`;
+    return candidate;
+  };
+
   // Merge entities across files
   for (const graph of fileGraphs) {
+    const localRename = new Map<string, string>();
+    renamePerGraph.push(localRename);
+
     for (const entity of graph.entities) {
-      const match = findSimilarEntity(
-        entity,
-        entityMap,
-        globalSimilarityThreshold,
-        enableSimilarity
-      );
+      const fileIdentity = FILE_IDENTITY_TYPES.has(entity.entityType);
 
-      if (match) {
-        const similarEntityName = match.name;
-        rename.set(entity.name, similarEntityName);
-        recordFusion(options, similarEntityName, entity.name, match);
+      // Resolve which existing entity (if any) this one merges into, as an output
+      // name. File artifacts merge only with the exact same name+file; conceptual
+      // entities merge by name/similarity (and never with a file artifact).
+      let outName: string;
+      let isNew: boolean;
+      let match: EntityMatch | null = null;
 
-        // Merge with existing similar entity from different file
-        const existing = entityMap.get(similarEntityName)!;
+      if (fileIdentity) {
+        const idKey = `${entity.name}${ID_SEP}${entity.files[0] ?? "unknown"}`;
+        const claimed = idKeyToName.get(idKey);
+        if (claimed) {
+          outName = claimed;
+          isNew = false;
+        } else {
+          outName = uniqueName(entity.name, entity.files[0]);
+          idKeyToName.set(idKey, outName);
+          isNew = true;
+        }
+      } else {
+        match = findSimilarEntity(entity, entityMap, globalSimilarityThreshold, enableSimilarity, true);
+        if (match) {
+          outName = match.name;
+          isNew = false;
+        } else {
+          // A conceptual entity that clashes with a file artifact holding the bare
+          // name gets disambiguated rather than overwriting it.
+          outName = uniqueName(entity.name);
+          isNew = true;
+        }
+      }
+
+      localRename.set(entity.name, outName);
+      if (!fileIdentity) globalConceptualRename.set(entity.name, outName);
+
+      if (!isNew) {
+        const existing = entityMap.get(outName)!;
+        // Only a genuinely different surface form fused is merge-log-worthy.
+        if (match && existing.name !== entity.name) {
+          recordFusion(options, outName, entity.name, match);
+        }
         logger?.debug(
-          `[Global] Merging entity "${entity.name}" (${entity.files[0]}) with existing "${similarEntityName}" (${existing.files[0]})`
+          `[Global] Merging entity "${entity.name}" (${entity.files[0]}) into "${outName}" (${existing.files[0]})`
         );
 
-        // Combine observations (more conservative deduplication across files)
         const allObservations = [
           ...(existing.observations || []),
           ...(entity.observations || []),
         ];
-
         if (allObservations.length > 0) {
           existing.observations = await deduplicateObservations(
             allObservations,
-            options.observationSimilarityThreshold || DefaultObservationThreshold, // Use original threshold
+            options.observationSimilarityThreshold || DefaultObservationThreshold,
             embeddingService,
             logger,
           );
         }
 
-        // Record this surface form's type as a vote; the winner is elected at
-        // end-of-merge (KG-13) — a specific type beats `other`, then majority.
-        entityTypeVotes.get(similarEntityName)!.push(entity.entityType);
+        // Vote this surface form's type; the winner is elected at end-of-merge (KG-13).
+        entityTypeVotes.get(outName)!.push(entity.entityType);
 
-        // Track files this entity appears in (union written back at end-of-merge).
-        if (!entityFileMap.has(similarEntityName)) {
-          entityFileMap.set(
-            similarEntityName,
-            new Set(existing.files.length ? existing.files : ["unknown"])
-          );
-        }
         for (const f of entity.files.length ? entity.files : ["unknown"]) {
-          entityFileMap.get(similarEntityName)!.add(f);
+          entityFileMap.get(outName)!.add(f);
         }
 
-        // Merge chunk information (keep ranges)
         if (entity.chunk !== undefined) {
           existing.chunk =
-            existing.chunk !== undefined
-              ? Math.min(existing.chunk, entity.chunk)
-              : entity.chunk;
+            existing.chunk !== undefined ? Math.min(existing.chunk, entity.chunk) : entity.chunk;
         }
         if (entity.totalChunks !== undefined) {
-          existing.totalChunks = Math.max(
-            existing.totalChunks || 0,
-            entity.totalChunks
-          );
+          existing.totalChunks = Math.max(existing.totalChunks || 0, entity.totalChunks);
         }
       } else {
-        // Add as new entity
-        rename.set(entity.name, entity.name);
-        entityMap.set(entity.name, { ...entity });
-        entityFileMap.set(
-          entity.name,
-          new Set(entity.files.length ? entity.files : ["unknown"])
-        );
-        entityTypeVotes.set(entity.name, [entity.entityType]);
+        entityMap.set(outName, { ...entity, name: outName });
+        entityFileMap.set(outName, new Set(entity.files.length ? entity.files : ["unknown"]));
+        entityTypeVotes.set(outName, [entity.entityType]);
       }
     }
   }
@@ -583,10 +648,16 @@ async function mergeGlobally(
   // file pass no longer destroys them.
   let droppedDanglingEdges = 0;
   let crossFileEdges = 0;
-  for (const graph of fileGraphs) {
+  fileGraphs.forEach((graph, gi) => {
+    const localRename = renamePerGraph[gi];
     for (const relation of graph.relations) {
-      const fromEntity = rename.get(relation.from) ?? relation.from;
-      const toEntity = rename.get(relation.to) ?? relation.to;
+      // Resolve endpoints against THIS graph's name map first (so a file artifact
+      // resolves to the right disambiguated entity), then a global conceptual
+      // fallback for genuine cross-file references (KG-13).
+      const fromEntity =
+        localRename.get(relation.from) ?? globalConceptualRename.get(relation.from) ?? relation.from;
+      const toEntity =
+        localRename.get(relation.to) ?? globalConceptualRename.get(relation.to) ?? relation.to;
 
       // Drop self-loops (X→X): an extraction artifact, and cross-file name
       // mapping can also collapse both endpoints onto the same entity.
@@ -616,7 +687,7 @@ async function mergeGlobally(
         droppedDanglingEdges++;
       }
     }
-  }
+  });
   if (droppedDanglingEdges > 0) {
     logger?.info(
       `Global merge dropped ${droppedDanglingEdges} relation(s) whose endpoints resolved to no entity (true danglers)`

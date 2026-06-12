@@ -350,3 +350,61 @@ describe("KnowledgeMerger — type election + files[] union (KG-13)", () => {
     expect([...shared.files].sort()).toEqual(["a.txt", "b.txt"]);
   });
 });
+
+describe("KnowledgeMerger — name+file entity identity (KG-13b)", () => {
+  const fileEnt = (file: string, fact: string) => ({
+    name: "package.json",
+    entityType: "file",
+    files: [file],
+    observations: [{ text: fact, source: file, createdAt: "2026-01-01T00:00:00Z" }],
+  });
+
+  it("keeps two same-named file artifacts from different projects distinct (no data loss)", async () => {
+    const graphs: KnowledgeGraph[] = [
+      {
+        entities: [fileEnt("projA/package.json", "depends on react")],
+        relations: [{ from: "package.json", to: "react", relationType: ["depends_on"] }],
+      },
+      {
+        entities: [
+          fileEnt("projB/package.json", "depends on vue"),
+          { name: "react", entityType: "concept", files: ["projA/package.json"], observations: [] },
+          { name: "vue", entityType: "concept", files: ["projB/package.json"], observations: [] },
+        ],
+        relations: [{ from: "package.json", to: "vue", relationType: ["depends_on"] }],
+      },
+    ];
+    const merged = await mergeKnowledgeGraphs(graphs, opts, stubEmbed, stubLogger());
+
+    const pkgs = merged.entities.filter((e) => e.entityType === "file");
+    expect(pkgs).toHaveLength(2); // not fused, not overwritten
+    const facts = pkgs.flatMap((p) => p.observations.map((o) => o.text)).sort();
+    expect(facts).toEqual(["depends on react", "depends on vue"]); // each kept its own facts
+    // each project's depends_on edge resolves to its OWN package.json (per-graph re-keying)
+    const reactEdge = merged.relations.find((r) => r.to === "react")!;
+    const vueEdge = merged.relations.find((r) => r.to === "vue")!;
+    expect(reactEdge.from).not.toBe(vueEdge.from);
+    // both endpoints point at real entities (no dangling)
+    expect(merged.entities.some((e) => e.name === reactEdge.from)).toBe(true);
+    expect(merged.entities.some((e) => e.name === vueEdge.from)).toBe(true);
+  });
+
+  it("still merges same-named CONCEPTUAL entities across files (cross-file linking preserved)", async () => {
+    const graphs: KnowledgeGraph[] = [
+      {
+        entities: [
+          { name: "cosine_similarity", entityType: "function", files: ["a.ts"], observations: [{ text: "in a", source: "a.ts" }] },
+        ],
+        relations: [],
+      },
+      {
+        entities: [
+          { name: "cosine_similarity", entityType: "function", files: ["b.ts"], observations: [{ text: "in b", source: "b.ts" }] },
+        ],
+        relations: [],
+      },
+    ];
+    const merged = await mergeKnowledgeGraphs(graphs, opts, stubEmbed, stubLogger());
+    expect(merged.entities.filter((e) => e.name === "cosine_similarity")).toHaveLength(1);
+  });
+});
