@@ -59,17 +59,18 @@ short and link the file. Remove an item when it's paid down.
   ignored (logged as not-implemented in `CorpusAnalyzer`). Either implement the
   v2 embedding-clustering pass or drop the flag.
 
-- **`document-outline-gen` rebuilt branch not merged — kg-gen wiring upgrades blocked.**
-  The dependency was rebuilt (tree-sitter WASM engine, 45 exts / 11 formats, a `formatOutline`
-  layer, `generateFromContentSafe`, a `compact` ascii-tree mode) but it sits **unpushed** on
-  `feat/wasm-engine-phase-0-1`; kg-gen's installed copy is the old commit `9dc67c5` (`generateFromContent`/
-  `generateFromFile` only, no Safe/`formatOutline`). Once Sabaka pushes + merges to master, do the
-  wiring (`docs/inbox/2026-06-12-from-cheetah-outline-gen-wiring.md`): swap the local guard for
-  upstream `generateFromContentSafe`; delete kg-gen's `formatAsTree`/`formatMetadata`
-  (`src/shared/utils/documentOutline.ts`) in favor of `formatOutline`; thread a `compact` option
-  through `readers.outline`; and pin `#semver:^1.x` instead of tracking master. Separately, outline-gen
-  **Phase 8** adds a deterministic Symbol API to seed kg-gen's own Phase 8 — its `kind` enum must map
-  1:1 into the Phase-2 type vocabulary, not fork; bring kg-gen's kind list to that planning session.
+- **`document-outline-gen` is pinned to a commit, not a semver tag.** `package.json` pins the
+  1.0.0 merge commit (`git+https://…#0adcc09…`) because the repo has **no git tags** yet (only
+  `master` + `features/peggyjs`). Once outline-gen tags `1.0`/`v1.0`, switch the pin to
+  `github:AlexSabaka/document-outline-gen#semver:^1.0` so kg-gen tracks patch/minor releases without
+  re-pinning a SHA. (Transport is `git+https` so sandbox/CI installs work without an ssh key.)
+
+- **Outline Phase-8 Symbol API is available but unused.** The rebuilt outline-gen now exports a
+  deterministic Symbol API (`extractSymbols`/`extractSymbolsSafe`, `SYMBOL_KINDS`,
+  `SYMBOL_TABLE_JSON_SCHEMA`, `hashContent`) purpose-built to seed kg-gen's own roadmap **Phase 8**
+  (AST-seeded code extraction). When that phase lands, its `kind` enum must map **1:1 into the
+  Phase-2 type vocabulary, not fork** — read kg-gen's entity-type taxonomy first and design the
+  mapping to fit. Not wired this pass (it's Phase-8 scope).
 
 - **Frontend needs a built backend.** The web UI fetches the config schema by
   spawning `kg-gen schema` (`frontend/app/api/config-schema/route.ts`); it can't
@@ -78,11 +79,14 @@ short and link the file. Remove an item when it's paid down.
 
 ## Paid down
 
-- **Outline warnings on plain text.** `generateOutlineFromContent`
-  (`src/shared/utils/documentOutline.ts`) now guards on the generator's `isSupported(extension)`
-  and returns `""` for unhandled extensions (e.g. `.txt`) instead of letting `generateFromContent`
-  throw a `No generator found` warning per chunk (KG-17). Local stand-in for the upstream
-  `generateFromContentSafe` until the rebuilt `document-outline-gen` is merged (see the Open item).
+- **Outline warnings on plain text + duplicated renderer (KG-17).** After pinning the rebuilt
+  `document-outline-gen` (1.0.0), `generateOutlineFromContent` (`src/shared/utils/documentOutline.ts`)
+  now calls upstream `generateFromContentSafe` (returns `[]` for unknown extensions / parse failures
+  instead of throwing a `No generator found` warning per chunk) and renders via upstream
+  `formatOutline(outline, "ascii-tree", { compact })` — kg-gen's byte-identical `formatAsTree`/
+  `formatMetadata` copies were deleted (single source of truth). The new token-lean `compact` mode is
+  threaded through `readers.outline.compact`. Newly covered extensions (Go/Rust/Swift/Kotlin, TOML/INI,
+  RST/LaTeX/Org, …) now produce real outlines instead of warning.
 
 - **Logger level mapping is off.** Fixed in Phase 1 (KG-19): `LoggerFactory.createLogger`
   now maps `logging.level` onto tslog's real scale (silly=0 … fatal=6) and `--silent`

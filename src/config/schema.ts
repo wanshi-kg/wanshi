@@ -196,6 +196,7 @@ const OutlineSchema = z
     includeLineNumbers: z.boolean().default(false).describe("Include line numbers in the outline"),
     includePrivate: z.boolean().default(false).describe("Include private/internal members"),
     includeComments: z.boolean().default(false).describe("Include comments"),
+    compact: z.boolean().default(false).describe("Token-lean ascii-tree outline: drop line numbers + metadata annotations"),
   })
   .strict();
 

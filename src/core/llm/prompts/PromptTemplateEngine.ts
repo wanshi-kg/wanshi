@@ -244,6 +244,7 @@ export class PromptTemplateEngine {
             includeLineNumbers: this.outlineOptions?.includeLineNumbers,
             includePrivate: this.outlineOptions?.includePrivate,
             includeComments: this.outlineOptions?.includeComments,
+            compact: this.outlineOptions?.compact,
           }
         );
       } catch (error: any) {

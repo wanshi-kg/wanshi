@@ -200,6 +200,7 @@ export const CONFIG_GROUPS: ConfigGroupMeta[] = [
       { path: "readers.outline.includeLineNumbers", label: "Include line numbers", widget: "boolean" },
       { path: "readers.outline.includePrivate", label: "Include private members", widget: "boolean" },
       { path: "readers.outline.includeComments", label: "Include comments", widget: "boolean" },
+      { path: "readers.outline.compact", label: "Compact (token-lean)", widget: "boolean" },
     ],
   },
   {

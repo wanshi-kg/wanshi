@@ -1,11 +1,16 @@
-import { default as DocumentOutline } from "document-outline-gen"
+import { default as DocumentOutline, formatOutline } from "document-outline-gen";
 
-/** Subset of document-outline-gen's GeneratorOptions we expose via config. */
+/**
+ * Subset of document-outline-gen's GeneratorOptions we expose via config, plus
+ * the ascii-tree `compact` formatter toggle.
+ */
 export interface OutlineGeneratorOptions {
   maxDepth?: number;
   includeLineNumbers?: boolean;
   includePrivate?: boolean;
   includeComments?: boolean;
+  /** Token-lean ascii-tree: drop the `(line N)` + metadata annotations. */
+  compact?: boolean;
 }
 
 export class DocumentOutlineGenerator {
@@ -13,65 +18,15 @@ export class DocumentOutlineGenerator {
     content: string,
     extension: string,
     options?: OutlineGeneratorOptions
-  ) {
+  ): Promise<string> {
+    const { compact, ...genOptions } = options ?? {};
     const generator = new DocumentOutline();
-    // Skip extensions the generator can't handle (e.g. .txt, and languages the
-    // installed build doesn't cover yet) instead of letting generateFromContent
-    // throw a "No generator found" per chunk — that warning was pure noise on a
-    // heterogeneous corpus (KG-17). This is the kg-gen-side stand-in for the
-    // upstream `generateFromContentSafe` (see docs/inbox outline-gen wiring note,
-    // task #1); swap to that once the rebuilt document-outline-gen is merged.
-    if (!generator.isSupported(extension)) return "";
-    const outline = await generator.generateFromContent(content, extension, options);
-    return DocumentOutlineGenerator.formatAsTree(outline);
-  }
-
-  private static formatMetadata(metadata: Record<string, any>): string {
-    const parts: string[] = [];
-
-    if (metadata.visibility && metadata.visibility !== "public") {
-      parts.push(metadata.visibility);
-    }
-
-    if (metadata.isStatic) {
-      parts.push("static");
-    }
-
-    if (metadata.isAbstract) {
-      parts.push("abstract");
-    }
-
-    if (metadata.parameters && metadata.parameters.length > 0) {
-      const params = metadata.parameters.map((p: any) => p.name).join(", ");
-      parts.push(`params: ${params}`);
-    }
-
-    if (metadata.dataType) {
-      parts.push(`type: ${metadata.dataType}`);
-    }
-
-    return parts.length > 0 ? ` (${parts.join(", ")})` : "";
-  }
-
-  private static formatAsTree(nodes: any[], depth: number = 0): string {
-    let result = "";
-    const indent = "  ".repeat(depth);
-
-    for (const node of nodes) {
-      const line = node.line ? ` (line ${node.line})` : "";
-      const metadata = node.metadata
-        ? DocumentOutlineGenerator.formatMetadata(node.metadata)
-        : "";
-      result += `${indent}├─ ${node.title} [${node.type}]${line}${metadata}\n`;
-
-      if (node.children && node.children.length > 0) {
-        result += DocumentOutlineGenerator.formatAsTree(
-          node.children,
-          depth + 1
-        );
-      }
-    }
-
-    return result;
+    // The Safe variant returns [] for unknown extensions / parse failures instead
+    // of throwing — exactly what a heterogeneous corpus wants (no per-chunk
+    // "No generator found" warning, KG-17). Rendering goes through upstream's
+    // canonical ascii-tree formatter so kg-gen no longer carries its own copy;
+    // `compact` drops line numbers + metadata for token-lean prompts.
+    const outline = await generator.generateFromContentSafe(content, extension, genOptions);
+    return formatOutline(outline, "ascii-tree", { compact: compact === true });
   }
 }
