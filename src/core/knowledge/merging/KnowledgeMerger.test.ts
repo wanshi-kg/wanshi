@@ -307,3 +307,46 @@ describe("KnowledgeMerger — relation hygiene (cheap wins)", () => {
     expect(merged.relations).toHaveLength(2);
   });
 });
+
+describe("KnowledgeMerger — type election + files[] union (KG-13)", () => {
+  const ent = (name: string, entityType: string, file: string) => ({
+    name,
+    entityType,
+    files: [file],
+    observations: [{ text: `${name} in ${file}`, source: file, createdAt: "2026-01-01T00:00:00Z" }],
+  });
+
+  it("elects a specific type over the catch-all and over the longer string", async () => {
+    // Alice appears as person (twice) and organization (once) and other (once).
+    // Old heuristic: 'organization'(12) wins by length. New: 'person' wins by vote.
+    const graphs: KnowledgeGraph[] = [
+      { entities: [ent("Alice", "person", "a.txt")], relations: [] },
+      { entities: [ent("Alice", "organization", "b.txt")], relations: [] },
+      { entities: [ent("Alice", "person", "c.txt")], relations: [] },
+      { entities: [ent("Alice", "other", "d.txt")], relations: [] },
+    ];
+    const merged = await mergeKnowledgeGraphs(graphs, opts, stubEmbed, stubLogger());
+    const alice = merged.entities.find((e) => e.name === "Alice")!;
+    expect(alice.entityType).toBe("person");
+  });
+
+  it("a specific type beats `other` even when `other` is the majority", async () => {
+    const graphs: KnowledgeGraph[] = [
+      { entities: [ent("Widget", "other", "a.txt")], relations: [] },
+      { entities: [ent("Widget", "other", "b.txt")], relations: [] },
+      { entities: [ent("Widget", "class", "c.txt")], relations: [] },
+    ];
+    const merged = await mergeKnowledgeGraphs(graphs, opts, stubEmbed, stubLogger());
+    expect(merged.entities.find((e) => e.name === "Widget")!.entityType).toBe("class");
+  });
+
+  it("writes back the cross-file files[] union on a merged entity", async () => {
+    const graphs: KnowledgeGraph[] = [
+      { entities: [ent("Shared", "concept", "a.txt")], relations: [] },
+      { entities: [ent("Shared", "concept", "b.txt")], relations: [] },
+    ];
+    const merged = await mergeKnowledgeGraphs(graphs, opts, stubEmbed, stubLogger());
+    const shared = merged.entities.find((e) => e.name === "Shared")!;
+    expect([...shared.files].sort()).toEqual(["a.txt", "b.txt"]);
+  });
+});

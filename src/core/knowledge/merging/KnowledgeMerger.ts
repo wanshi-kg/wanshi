@@ -445,6 +445,33 @@ async function mergeWithinFile(
   };
 }
 
+const ENTITY_CATCH_ALL = "other";
+
+/**
+ * Elect a merged entity's type from all the types its fused surface forms carried
+ * (KG-13): a specific type always beats the `other` catch-all, then majority vote
+ * wins (ties broken by first occurrence, so it's deterministic). Replaces the old
+ * "longest string wins" heuristic, under which `other`(5) beat `file`(4) and
+ * `organization` always beat `person`.
+ */
+function electEntityType(types: string[]): string {
+  const specific = types.filter((t) => t && t !== ENTITY_CATCH_ALL);
+  const pool = specific.length > 0 ? specific : types.filter(Boolean);
+  if (pool.length === 0) return ENTITY_CATCH_ALL;
+  const counts = new Map<string, number>();
+  for (const t of pool) counts.set(t, (counts.get(t) ?? 0) + 1);
+  let best = pool[0];
+  let bestN = 0;
+  for (const t of pool) {
+    const n = counts.get(t)!;
+    if (n > bestN) {
+      bestN = n;
+      best = t;
+    }
+  }
+  return best;
+}
+
 // Global merge across different files. The sole referential-integrity gate (KG-04):
 // the within-file pass defers here, where every entity across all files is visible.
 async function mergeGlobally(
@@ -459,6 +486,8 @@ async function mergeGlobally(
 
   // Track which files each entity appears in
   const entityFileMap = new Map<string, Set<string>>();
+  // Every entityType each fused surface form carried → elected at end-of-merge (KG-13).
+  const entityTypeVotes = new Map<string, string[]>();
 
   const globalSimilarityThreshold =
     options.entitySimilarityThreshold || DefaultSimilarityThreshold;
@@ -506,26 +535,20 @@ async function mergeGlobally(
           );
         }
 
-        // Merge entity types (prefer more specific one)
-        if (
-          entity.entityType &&
-          entity.entityType.length > existing.entityType.length
-        ) {
-          existing.entityType = entity.entityType;
-        }
+        // Record this surface form's type as a vote; the winner is elected at
+        // end-of-merge (KG-13) — a specific type beats `other`, then majority.
+        entityTypeVotes.get(similarEntityName)!.push(entity.entityType);
 
-        // Track files this entity appears in
+        // Track files this entity appears in (union written back at end-of-merge).
         if (!entityFileMap.has(similarEntityName)) {
           entityFileMap.set(
             similarEntityName,
-            new Set([existing.files[0] || "unknown"])
+            new Set(existing.files.length ? existing.files : ["unknown"])
           );
         }
-        entityFileMap.get(similarEntityName)!.add(entity.files[0] || "unknown");
-
-        // Update file information to include multiple files
-        // const files = Array.from(entityFileMap.get(similarEntityName)!);
-        // existing.files[0] = files.length === 1 ? files[0] : files.join(",");
+        for (const f of entity.files.length ? entity.files : ["unknown"]) {
+          entityFileMap.get(similarEntityName)!.add(f);
+        }
 
         // Merge chunk information (keep ranges)
         if (entity.chunk !== undefined) {
@@ -544,7 +567,11 @@ async function mergeGlobally(
         // Add as new entity
         rename.set(entity.name, entity.name);
         entityMap.set(entity.name, { ...entity });
-        entityFileMap.set(entity.name, new Set([entity.files[0] || "unknown"]));
+        entityFileMap.set(
+          entity.name,
+          new Set(entity.files.length ? entity.files : ["unknown"])
+        );
+        entityTypeVotes.set(entity.name, [entity.entityType]);
       }
     }
   }
@@ -608,6 +635,17 @@ async function mergeGlobally(
     crossFileEntities.forEach(([entityName, files]) => {
       logger?.debug(`  ${entityName}: ${Array.from(files).join(", ")}`);
     });
+  }
+
+  // Finalize each merged entity: elect its type from all votes (specific beats
+  // `other`, then majority) and write back the cross-file files[] union (KG-13).
+  for (const [key, entity] of entityMap) {
+    entity.entityType = electEntityType(entityTypeVotes.get(key) ?? [entity.entityType]);
+    const files = entityFileMap.get(key);
+    if (files && files.size > 0) {
+      entity.files = Array.from(files).filter((f) => f !== "unknown");
+      if (entity.files.length === 0) entity.files = Array.from(files);
+    }
   }
 
   return {
