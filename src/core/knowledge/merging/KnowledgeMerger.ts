@@ -171,6 +171,25 @@ function findSimilarEntity(
   return best;
 }
 
+/**
+ * Cross-file linking health, emitted once per merge (KG-04). Unlike the post-hoc
+ * `danglingEndpointCount` on a saved graph — which is ~0 by design because the
+ * global stage enforces referential integrity — these are *merge-time* counts: the
+ * dropped edges are by definition absent from the final graph, so this is the only
+ * place the recall signal exists. A high `droppedDanglingEdges` means the model is
+ * inventing endpoints; a healthy `crossFileEdges` means retrieval-driven cross-file
+ * linking is actually surviving to the output (the whole point of retrieval context).
+ */
+export interface MergeStats {
+  /** Edges in the final graph whose endpoints were first defined in different
+   *  files — the cross-file links the within-file gate used to destroy before
+   *  the global merge ever saw them. */
+  crossFileEdges: number;
+  /** Edges dropped at the global stage because an endpoint resolved to no entity
+   *  anywhere in the merged graph (true danglers / hallucinated endpoints). */
+  droppedDanglingEdges: number;
+}
+
 /** Options the hierarchical merge needs (narrow slice of the merging config). */
 export interface MergeOptions {
   entitySimilarityThreshold?: number;
@@ -179,6 +198,8 @@ export interface MergeOptions {
   enableSimilarityMerging?: boolean;
   /** Called once per fusion of two differently-named surface forms (merge-log seam). */
   onMergeRecord?: (record: MergeRecord) => void;
+  /** Called once at end-of-merge with the cross-file linking health (KG-04). */
+  onMergeStats?: (stats: MergeStats) => void;
 }
 
 /** Emit a merge-log record for one fusion (same JSONL shape as canon's merges.jsonl). */
@@ -264,11 +285,23 @@ export async function mergeKnowledgeGraphs(
   );
 
   const globalGraphs = Array.from(mergedByFile.values());
-  const finalResult = await mergeGlobally(globalGraphs, options, embeddingService, logger);
+  const { graph: finalResult, stats } = await mergeGlobally(
+    globalGraphs,
+    options,
+    embeddingService,
+    logger
+  );
 
   logger?.info(
     `Hierarchical merge complete: ${finalResult.entities.length} entities, ${finalResult.relations.length} relations`
   );
+
+  // Cross-file linking health (KG-04) — the recall signal "0 dangling" used to hide.
+  logger?.info(
+    `Cross-file linking: ${stats.crossFileEdges} edge(s) link entities across files; ` +
+      `${stats.droppedDanglingEdges} relation(s) dropped as dangling at the global stage`
+  );
+  options.onMergeStats?.(stats);
 
   logVocabularyFit(finalResult, logger);
 
@@ -375,8 +408,13 @@ async function mergeWithinFile(
     }
   }
 
-  // Merge relations within the file, re-keying endpoints through the rename map
-  let droppedRelations = 0;
+  // Merge relations within the file, re-keying endpoints through the rename map.
+  // Referential integrity is NOT enforced here (KG-04): a relation may legitimately
+  // point at an entity defined in ANOTHER file — the v5 cross-file contract — and
+  // those endpoints aren't visible until the global stage, where the full entity
+  // universe is known. Dropping them here destroyed every compliant cross-file edge
+  // before global merge ever saw it. So pass all (re-keyed, non-self-loop) relations
+  // through; mergeGlobally is the sole endpoint-existence gate.
   for (const graph of fileGraphs) {
     for (const relation of graph.relations) {
       const fromEntity = rename.get(relation.from) ?? relation.from;
@@ -386,29 +424,19 @@ async function mergeWithinFile(
       // create one when both endpoints collapse to the same entity.
       if (fromEntity === toEntity) continue;
 
-      // Only keep relations where both entities exist in the file's merged graph
-      if (entityMap.has(fromEntity) && entityMap.has(toEntity)) {
-        const relationType = canonicalizeRelationType(relation.relationType);
-        const relationKey = `${fromEntity}->${toEntity}:${relationType.join(",")}`;
-        if (!relationSet.has(relationKey)) {
-          relationSet.add(relationKey);
-          relations.push({
-            from: fromEntity,
-            to: toEntity,
-            relationType,
-            ...(relation.sourceSpan ? { sourceSpan: relation.sourceSpan } : {}),
-            ...(relation.validAt ? { validAt: relation.validAt } : {}),
-          });
-        }
-      } else {
-        droppedRelations++;
+      const relationType = canonicalizeRelationType(relation.relationType);
+      const relationKey = `${fromEntity}->${toEntity}:${relationType.join(",")}`;
+      if (!relationSet.has(relationKey)) {
+        relationSet.add(relationKey);
+        relations.push({
+          from: fromEntity,
+          to: toEntity,
+          relationType,
+          ...(relation.sourceSpan ? { sourceSpan: relation.sourceSpan } : {}),
+          ...(relation.validAt ? { validAt: relation.validAt } : {}),
+        });
       }
     }
-  }
-  if (droppedRelations > 0) {
-    logger?.debug(
-      `[${fileName}] Dropped ${droppedRelations} relation(s) whose endpoints were never extracted as entities`
-    );
   }
 
   return {
@@ -417,13 +445,14 @@ async function mergeWithinFile(
   };
 }
 
-// Global merge across different files
+// Global merge across different files. The sole referential-integrity gate (KG-04):
+// the within-file pass defers here, where every entity across all files is visible.
 async function mergeGlobally(
   fileGraphs: KnowledgeGraph[],
   options: MergeOptions,
   embeddingService: IEmbeddingProvider,
   logger: Logger,
-): Promise<KnowledgeGraph> {
+): Promise<{ graph: KnowledgeGraph; stats: MergeStats }> {
   const entityMap = new Map<string, Entity>();
   const relationSet = new Set<string>();
   const relations: Relation[] = [];
@@ -520,8 +549,13 @@ async function mergeGlobally(
     }
   }
 
-  // Merge relations across files, re-keying endpoints through the rename map
-  let droppedRelations = 0;
+  // Merge relations across files, re-keying endpoints through the rename map. This
+  // is the sole endpoint-existence gate (KG-04): an endpoint missing here resolved
+  // to no entity in ANY file, so it's a true dangler. Cross-file edges — endpoints
+  // first surfaced in different files — survive here precisely because the within-
+  // file pass no longer destroys them.
+  let droppedDanglingEdges = 0;
+  let crossFileEdges = 0;
   for (const graph of fileGraphs) {
     for (const relation of graph.relations) {
       const fromEntity = rename.get(relation.from) ?? relation.from;
@@ -531,12 +565,18 @@ async function mergeGlobally(
       // mapping can also collapse both endpoints onto the same entity.
       if (fromEntity === toEntity) continue;
 
-      // Only keep relations where both entities exist in final graph
-      if (entityMap.has(fromEntity) && entityMap.has(toEntity)) {
+      const fromNode = entityMap.get(fromEntity);
+      const toNode = entityMap.get(toEntity);
+      if (fromNode && toNode) {
         const relationType = canonicalizeRelationType(relation.relationType);
         const relationKey = `${fromEntity}->${toEntity}:${relationType.join(",")}`;
         if (!relationSet.has(relationKey)) {
           relationSet.add(relationKey);
+          // Count once per unique surviving edge whose endpoints were first defined
+          // in different files — the cross-file links the old within-file gate killed.
+          if ((fromNode.files?.[0] ?? "") !== (toNode.files?.[0] ?? "")) {
+            crossFileEdges++;
+          }
           relations.push({
             from: fromEntity,
             to: toEntity,
@@ -546,13 +586,13 @@ async function mergeGlobally(
           });
         }
       } else {
-        droppedRelations++;
+        droppedDanglingEdges++;
       }
     }
   }
-  if (droppedRelations > 0) {
+  if (droppedDanglingEdges > 0) {
     logger?.info(
-      `Global merge dropped ${droppedRelations} relation(s) whose endpoints were never extracted as entities`
+      `Global merge dropped ${droppedDanglingEdges} relation(s) whose endpoints resolved to no entity (true danglers)`
     );
   }
 
@@ -571,7 +611,10 @@ async function mergeGlobally(
   }
 
   return {
-    entities: Array.from(entityMap.values()),
-    relations: relations,
+    graph: {
+      entities: Array.from(entityMap.values()),
+      relations: relations,
+    },
+    stats: { crossFileEdges, droppedDanglingEdges },
   };
 }

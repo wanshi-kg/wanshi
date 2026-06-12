@@ -2,6 +2,7 @@ import {
   mergeKnowledgeGraphs,
   canonicalizeRelationType,
   normalizeEntityName,
+  MergeStats,
 } from "./KnowledgeMerger";
 import { MergeRecord } from "../MergeRecord";
 import { JsonExportStrategy, McpExportStrategy } from "../../export/strategies";
@@ -226,6 +227,53 @@ describe("KnowledgeMerger — relation re-keying via rename map", () => {
 
     expect(merged.relations).toHaveLength(1);
     expect(merged.relations[0]).toMatchObject({ from: "Cooc", to: "black_pepper" });
+  });
+});
+
+describe("KnowledgeMerger — cross-file linking (KG-04)", () => {
+  it("keeps a relation pointing at an entity defined in another file", async () => {
+    // The v5 contract: file A links to "Graph Store" (defined in file B) by name
+    // without re-emitting it. The old within-file gate destroyed this edge before
+    // the global merge could see file B's entity.
+    const fileA: KnowledgeGraph = {
+      entities: [mkEnt("Orchestrator", "service", "a.txt")],
+      relations: [{ from: "Orchestrator", to: "Graph Store", relationType: ["produces"] }],
+    };
+    const fileB: KnowledgeGraph = {
+      entities: [mkEnt("Graph Store", "service", "b.txt")],
+      relations: [],
+    };
+
+    const stats: MergeStats[] = [];
+    const merged = await mergeKnowledgeGraphs(
+      [fileA, fileB],
+      { ...opts, onMergeStats: (s) => stats.push(s) },
+      stubEmbed,
+      stubLogger()
+    );
+
+    expect(merged.relations).toHaveLength(1);
+    expect(merged.relations[0]).toMatchObject({ from: "Orchestrator", to: "Graph Store" });
+    expect(stats).toHaveLength(1);
+    expect(stats[0]).toEqual({ crossFileEdges: 1, droppedDanglingEdges: 0 });
+  });
+
+  it("still drops a relation whose endpoint no file extracted (referential integrity)", async () => {
+    const g: KnowledgeGraph = {
+      entities: [mkEnt("Orchestrator", "service", "a.txt")],
+      relations: [{ from: "Orchestrator", to: "Nonexistent", relationType: ["produces"] }],
+    };
+
+    const stats: MergeStats[] = [];
+    const merged = await mergeKnowledgeGraphs(
+      [g],
+      { ...opts, onMergeStats: (s) => stats.push(s) },
+      stubEmbed,
+      stubLogger()
+    );
+
+    expect(merged.relations).toHaveLength(0);
+    expect(stats[0]).toEqual({ crossFileEdges: 0, droppedDanglingEdges: 1 });
   });
 });
 
