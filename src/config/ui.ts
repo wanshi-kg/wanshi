@@ -163,6 +163,7 @@ export const CONFIG_GROUPS: ConfigGroupMeta[] = [
       { path: "merging.entitySimilarityThreshold", label: "Entity similarity threshold", widget: "number" },
       { path: "merging.observationSimilarityThreshold", label: "Observation similarity threshold", widget: "number" },
       { path: "merging.enableSimilarityMerging", label: "Enable similarity merging", widget: "boolean" },
+      { path: "merging.supersession", label: "Supersession (bi-temporal)", widget: "select" },
     ],
   },
   {

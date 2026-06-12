@@ -46,6 +46,7 @@ export const ContentClassifierModeEnum = z.enum([
 ]);
 export const GroundingModeEnum = z.enum(["disabled", "flag", "drop"]);
 export const GroundingCheckerEnum = z.enum(["keyword", "minicheck"]);
+export const SupersessionModeEnum = z.enum(["disabled", "heuristic", "llm"]);
 export const CorpusProfilingModeEnum = z.enum(["disabled", "enabled"]);
 export const ExportFormatEnum = z.enum([
   "json",
@@ -128,6 +129,7 @@ const MergingSchema = z
     entitySimilarityThreshold: num(0.9).describe("Jaro-Winkler threshold for entity-name merging, applied uniformly within-file and globally; fuzzy merging never crosses a digit mismatch (Table 1 ≠ Table 2) and cross-type matches need near-exact similarity"),
     observationSimilarityThreshold: num(0.9).describe("Embedding cosine threshold for observation merging"),
     enableSimilarityMerging: z.boolean().default(true).describe("Allow fuzzy (Jaro-Winkler) entity-name merging; false ⇒ only normalized-exact name matches merge"),
+    supersession: SupersessionModeEnum.default("disabled").describe("Merge-time supersession (KG-10): a newer fact contradicting an older one invalidates the older (sets invalidAt/expiredAt) instead of deleting it. disabled | heuristic (antonyms+negation) | llm"),
   })
   .strict();
 

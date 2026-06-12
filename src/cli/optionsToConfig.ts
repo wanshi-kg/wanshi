@@ -66,6 +66,7 @@ export const FLAG_TO_PATH: Record<string, string> = {
   entitySimilarityThreshold: "merging.entitySimilarityThreshold",
   observationSimilarityThreshold: "merging.observationSimilarityThreshold",
   enableSimilarityMerging: "merging.enableSimilarityMerging",
+  supersession: "merging.supersession",
   // export
   exportFormat: "export.format",
   // logging

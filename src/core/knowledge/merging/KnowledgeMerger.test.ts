@@ -408,3 +408,63 @@ describe("KnowledgeMerger — name+file entity identity (KG-13b)", () => {
     expect(merged.entities.filter((e) => e.name === "cosine_similarity")).toHaveLength(1);
   });
 });
+
+describe("KnowledgeMerger — supersession at merge (KG-10)", () => {
+  // contradicts iff one side says "enabled" and the other "disabled"
+  const checker = {
+    check: async (a: string, b: string) => ({
+      contradicts: /enabled/.test(a) !== /enabled/.test(b),
+      checker: "heuristic" as const,
+    }),
+  };
+
+  it("invalidates the older contradicted fact instead of deleting it", async () => {
+    const g: KnowledgeGraph = {
+      entities: [
+        {
+          name: "feature_x",
+          entityType: "concept",
+          files: ["a.txt"],
+          observations: [
+            { text: "feature_x is enabled", source: "a.txt", validAt: "2025-01-01T00:00:00Z", speaker: "s1" },
+            { text: "feature_x is disabled", source: "b.txt", validAt: "2025-06-01T00:00:00Z", speaker: "s2" },
+          ],
+        },
+      ],
+      relations: [],
+    };
+    const merged = await mergeKnowledgeGraphs(
+      [g],
+      { ...opts, contradictionChecker: checker },
+      stubEmbed,
+      stubLogger()
+    );
+    const obs = merged.entities[0].observations;
+    expect(obs).toHaveLength(2); // both kept (invalidate, never delete)
+    const older = obs.find((o) => o.text.includes("enabled") && !o.text.includes("disabled"))!;
+    const newer = obs.find((o) => o.text.includes("disabled"))!;
+    expect(older.invalidAt).toBe("2025-06-01T00:00:00Z"); // stopped holding when the new fact began
+    expect(older.expiredAt).toBeDefined(); // transaction time of supersession
+    expect(newer.invalidAt).toBeUndefined(); // newer is current
+    expect(newer.expiredAt).toBeUndefined();
+  });
+
+  it("is a no-op without a contradiction checker (default)", async () => {
+    const g: KnowledgeGraph = {
+      entities: [
+        {
+          name: "feature_x",
+          entityType: "concept",
+          files: ["a.txt"],
+          observations: [
+            { text: "feature_x is enabled", source: "a.txt", validAt: "2025-01-01T00:00:00Z", speaker: "s1" },
+            { text: "feature_x is disabled", source: "b.txt", validAt: "2025-06-01T00:00:00Z", speaker: "s2" },
+          ],
+        },
+      ],
+      relations: [],
+    };
+    const merged = await mergeKnowledgeGraphs([g], opts, stubEmbed, stubLogger());
+    expect(merged.entities[0].observations.every((o) => !o.invalidAt && !o.expiredAt)).toBe(true);
+  });
+});

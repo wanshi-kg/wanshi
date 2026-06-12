@@ -6,6 +6,7 @@ import {
   IKnowledgeGraphMerger,
   IProgressEmitter,
   IGroundingChecker,
+  IContradictionChecker,
 } from "../../types";
 import { DIContainer } from "./DIContainer";
 import { EmbeddingService } from "../llm";
@@ -467,6 +468,21 @@ export class ContainerFactory {
         TYPES.EmbeddingService
       );
 
+      // Merge-time supersession checker (KG-10): heuristic (cheap, default off) or
+      // LLM-backed; off ⇒ no supersession. The LLM checker reuses the generation
+      // provider (resolved lazily so a heuristic/disabled run needs no LLM).
+      let contradictionChecker: IContradictionChecker | undefined;
+      if (options.merging.supersession === "heuristic") {
+        const { HeuristicContradictionChecker } = await import(
+          "../knowledge/contradiction"
+        );
+        contradictionChecker = new HeuristicContradictionChecker();
+      } else if (options.merging.supersession === "llm") {
+        const { LlmContradictionChecker } = await import("../knowledge/contradiction");
+        const llm = await c.resolve<ILLMProvider>(TYPES.LLMService);
+        contradictionChecker = new LlmContradictionChecker(llm, logger);
+      }
+
       // Return a wrapper that implements the interface
       return {
         merge: async (graphs) => {
@@ -478,6 +494,7 @@ export class ContainerFactory {
               observationSimilarityThreshold:
                 options.merging.observationSimilarityThreshold,
               enableSimilarityMerging: options.merging.enableSimilarityMerging,
+              contradictionChecker,
               onMergeRecord: options.inspection.emitMergeLog
                 ? (r) => records.push(r)
                 : undefined,

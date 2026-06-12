@@ -149,6 +149,10 @@ program
     "how similar observation embeddings needs to be so they are considered same"
   )
   .option("--enable-similarity-merging", "set similarity merging for entities and observations")
+  .option(
+    "--supersession <mode>",
+    "merge-time supersession (KG-10): disabled | heuristic | llm — invalidate an older contradicted fact instead of deleting it"
+  )
 
   // Export Options
   .option("--export-format <format>", "export format (json|jsonl|mcp-jsonl|dot|kblam|lora|graphiti)")

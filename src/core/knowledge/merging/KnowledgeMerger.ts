@@ -1,5 +1,5 @@
 import * as crypto from "crypto";
-import { KnowledgeGraph, Entity, Relation, IEmbeddingProvider, Observation, obsText } from "../../../types";
+import { KnowledgeGraph, Entity, Relation, IEmbeddingProvider, Observation, obsText, IContradictionChecker } from "../../../types";
 import { jaroWinklerSimilarity , cosineSimilarity } from "../../../shared/utils";
 import { Logger } from "../../../shared";
 import { MergeRecord } from "../MergeRecord";
@@ -210,6 +210,38 @@ export interface MergeOptions {
   onMergeRecord?: (record: MergeRecord) => void;
   /** Called once at end-of-merge with the cross-file linking health (KG-04). */
   onMergeStats?: (stats: MergeStats) => void;
+  /** When set, run merge-time supersession (KG-10): a newer fact contradicting an
+   *  older one invalidates the older (bi-temporal `invalidAt`/`expiredAt`) rather
+   *  than deleting it. Off ⇒ no supersession (default). */
+  contradictionChecker?: IContradictionChecker;
+}
+
+/**
+ * Merge-time supersession (KG-10, Graphiti "invalidate, don't delete"): for each
+ * pair of an entity's observations the checker flags as contradictory AND that
+ * carry orderable `validAt`, stamp the OLDER one's `invalidAt` (= when the newer
+ * fact began holding) and `expiredAt` (= now, when we recorded the supersession).
+ * Both observations are kept — history is preserved, the newer is current.
+ */
+async function applySupersession(
+  observations: Observation[],
+  checker: IContradictionChecker,
+  now: string
+): Promise<void> {
+  for (let i = 0; i < observations.length; i++) {
+    for (let j = i + 1; j < observations.length; j++) {
+      const a = observations[i];
+      const b = observations[j];
+      if (!a.validAt || !b.validAt || a.validAt === b.validAt) continue;
+      if (a.expiredAt || b.expiredAt) continue; // already superseded
+      const { contradicts } = await checker.check(a.text, b.text);
+      if (!contradicts) continue;
+      const older = a.validAt < b.validAt ? a : b;
+      const newer = older === a ? b : a;
+      older.invalidAt = newer.validAt;
+      older.expiredAt = now;
+    }
+  }
 }
 
 /** Emit a merge-log record for one fusion (same JSONL shape as canon's merges.jsonl). */
@@ -709,13 +741,18 @@ async function mergeGlobally(
   }
 
   // Finalize each merged entity: elect its type from all votes (specific beats
-  // `other`, then majority) and write back the cross-file files[] union (KG-13).
+  // `other`, then majority), write back the cross-file files[] union (KG-13), and
+  // run merge-time supersession over its observations when enabled (KG-10).
+  const supersessionNow = new Date().toISOString();
   for (const [key, entity] of entityMap) {
     entity.entityType = electEntityType(entityTypeVotes.get(key) ?? [entity.entityType]);
     const files = entityFileMap.get(key);
     if (files && files.size > 0) {
       entity.files = Array.from(files).filter((f) => f !== "unknown");
       if (entity.files.length === 0) entity.files = Array.from(files);
+    }
+    if (options.contradictionChecker) {
+      await applySupersession(entity.observations, options.contradictionChecker, supersessionNow);
     }
   }
 
