@@ -104,6 +104,37 @@ describe("TranscriptReader", () => {
     expect(res.chunks[0].provenance?.occurredAt).toBe("2025-01-01T00:00:00Z");
   });
 
+  it("never packs two conversations into one chunk; stamps per-conversation time (KG-10)", async () => {
+    // Two short conversations that would fit in a single chunk if flattened.
+    const p = write(
+      "conversations.json",
+      JSON.stringify([
+        {
+          chat_messages: [
+            { sender: "human", created_at: "2025-01-01T00:00:00Z", text: "conv one alpha" },
+            { sender: "assistant", created_at: "2025-01-01T00:00:05Z", text: "conv one beta" },
+          ],
+        },
+        {
+          chat_messages: [
+            { sender: "human", created_at: "2025-06-06T12:00:00Z", text: "conv two gamma" },
+            { sender: "assistant", created_at: "2025-06-06T12:00:05Z", text: "conv two delta" },
+          ],
+        },
+      ])
+    );
+    const res = await reader().read(p);
+    // One chunk per conversation — no cross-conversation bleed.
+    expect(res.chunks).toHaveLength(2);
+    expect(res.chunks[0].content).toContain("conv one");
+    expect(res.chunks[0].content).not.toContain("conv two");
+    expect(res.chunks[1].content).toContain("conv two");
+    expect(res.chunks[1].content).not.toContain("conv one");
+    // Distinct per-conversation occurredAt → distinct validAt downstream.
+    expect(res.chunks[0].provenance?.occurredAt).toBe("2025-01-01T00:00:00Z");
+    expect(res.chunks[1].provenance?.occurredAt).toBe("2025-06-06T12:00:00Z");
+  });
+
   it("defers non-transcript files (plain .txt and ordinary .json)", async () => {
     const txt = write("notes.txt", "just some prose without speakers");
     const json = write("data.json", JSON.stringify({ a: 1, b: [2, 3] }));

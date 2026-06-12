@@ -9,6 +9,10 @@ interface Turn {
   speaker: string;
   text: string;
   occurredAt?: string; // ISO-8601 wall-clock time, when known
+  // 0-based conversation index (KG-10): a chat export holds many conversations;
+  // turns from different conversations must never share a chunk. Undefined ⇒ a
+  // single-conversation source (recua/speaker-text), so no boundary splitting.
+  conversation?: number;
 }
 
 /** Speaker-labeled plain-text transcripts (recua `.parakeet.txt`, etc.). */
@@ -148,7 +152,7 @@ export class TranscriptReader extends FileReader {
 
   private parseChatExport(convs: any[]): Turn[] {
     const turns: Turn[] = [];
-    for (const conv of convs) {
+    convs.forEach((conv, convIndex) => {
       for (const msg of conv.chat_messages ?? []) {
         const text = this.chatMessageText(msg);
         if (!text) continue;
@@ -156,9 +160,12 @@ export class TranscriptReader extends FileReader {
           speaker: String(msg.sender ?? "unknown"),
           text,
           occurredAt: typeof msg.created_at === "string" ? msg.created_at : undefined,
+          // Tag each turn with its conversation so chunkTurns never packs two
+          // conversations together (cross-conversation fact bleed, KG-10).
+          conversation: convIndex,
         });
       }
-    }
+    });
     return turns;
   }
 
@@ -220,6 +227,12 @@ export class TranscriptReader extends FileReader {
 
     for (const turn of turns) {
       if (!turn.text) continue;
+      // Conversation boundary (KG-10): a chat export's conversations must never
+      // share a chunk, so flush before a turn from a different conversation —
+      // regardless of remaining budget — keeping validAt/speaker per-conversation.
+      if (buf.length > 0 && buf[buf.length - 1].conversation !== turn.conversation) {
+        flush();
+      }
       if (renderLen(turn) > this.maxChunkSize) {
         flush();
         await flushOversized(turn);
