@@ -20,7 +20,9 @@ import {
 import { PromptManager } from "./llm";
 import { AstSeedService } from "./processor/ast";
 import { toRelPathId } from "./corpus";
-import { buildReferenceGraph } from "./knowledge/references/ReferenceResolver";
+import { buildReferenceGraph, resolveInternalTarget } from "./knowledge/references/ReferenceResolver";
+import { isExternalTarget, RawLink, RawReferences } from "./processor/readers/referenceExtraction";
+import { ProcessedRegistry } from "./processor/ProcessedRegistry";
 import {
   PipelineRunner,
   GroundingTransform,
@@ -64,6 +66,13 @@ export class FileDiscoveryService implements IFileDiscoveryService {
     return files;
   }
 } 
+
+/** Per-file processing result: the extracted graphs + the file's internal links
+ * (surfaced so reference-driven ingestion can follow them). */
+interface ProcessFileResult {
+  graphs: KnowledgeGraph[];
+  internalLinks: RawLink[];
+}
 
 /**
  * Refactored DirectoryProcessor using dependency injection
@@ -165,30 +174,77 @@ export class DirectoryProcessor implements IDirectoryProcessor {
         : undefined;
     await astSeed?.loadCache();
 
-    // Reference & link resolution (Phase 0): when internal-link resolution is on,
-    // precompute the corpus-relative path set once so each file's links resolve
-    // against the full file universe. Citations need no corpus set.
-    const corpusRelPaths = options.references.internalLinks.enabled
-      ? new Set(files.map((f) => toRelPathId(options.input, f)))
-      : new Set<string>();
+    // Reference & link resolution: the corpus-relative path set drives link
+    // resolution (resolved-flag + follow targets). In follow mode it spans the
+    // WHOLE input tree (links can point outside the glob); otherwise the glob set.
+    const follow = options.references.follow.enabled;
+    const internalLinksOn = options.references.internalLinks.enabled || follow;
+    let corpusRelPaths: Set<string>;
+    if (follow) {
+      const allInput = await new FileDiscoveryService(
+        { input: options.input, filter: ["**/*"], exclude: options.exclude },
+        logger
+      )
+        .discover()
+        .catch(() => [] as string[]);
+      corpusRelPaths = new Set(allInput.map((f) => toRelPathId(options.input, f)));
+    } else {
+      corpusRelPaths = internalLinksOn
+        ? new Set(files.map((f) => toRelPathId(options.input, f)))
+        : new Set<string>();
+    }
 
-    const total = files.length;
+    // Worklist with a processed-file registry: the same file is read/extracted at
+    // most once however it's reached (overlapping globs, reference-following). The
+    // queue is seeded from follow.seeds (a crawl) or the discovered glob set, and
+    // (in follow mode) grows as internal links are resolved to existing files.
+    const registry = new ProcessedRegistry();
+    const queued = new Set<string>();
+    const queue: Array<{ file: string; depth: number }> = [];
+    const enqueue = (file: string, depth: number) => {
+      const id = toRelPathId(options.input, file);
+      if (registry.has(id) || queued.has(id)) return;
+      queued.add(id);
+      queue.push({ file, depth });
+    };
+
+    const seeds = options.references.follow.seeds;
+    if (follow && seeds.length) {
+      for (const s of seeds) {
+        const abs = path.resolve(options.input, s);
+        if (fs.existsSync(abs)) enqueue(abs, 0);
+        else logger.warn(`reference-follow seed not found, skipping: ${s}`);
+      }
+    } else {
+      for (const f of files) enqueue(f, 0);
+    }
+
+    const { maxFiles, maxDepth } = options.references.follow;
     let index = 0;
-    for (const file of files) {
-      index += 1;
+    while (queue.length > 0) {
       // Cooperative interrupt: stop before starting the next file so the
       // partial graph accumulated so far can still be merged and exported.
       if (shutdown.isRequested()) {
-        logger.warn(`Interrupted — stopping before ${file}; flushing partial graph`);
+        logger.warn(`Interrupted — flushing partial graph (${registry.size} files processed)`);
+        break;
+      }
+      if (follow && registry.size >= maxFiles) {
+        logger.warn(`reference-follow reached maxFiles=${maxFiles}; stopping discovery`);
         break;
       }
 
+      const { file, depth } = queue.shift()!;
+      const id = toRelPathId(options.input, file);
+      if (registry.has(id)) continue; // already processed via another path
+
+      index += 1;
+      const total = registry.size + queue.length + 1;
       progress.emit({ type: "file_start", index, total, path: file });
       try {
         // Retrieval sees prior output + graphs built so far this run; merge sees
         // only what's built this run (knowledgeGraphs).
         const retrievalContext = [...priorGraphs, ...knowledgeGraphs];
-        const fileGraphs = await this.processFile(
+        const { graphs: fileGraphs, internalLinks } = await this.processFile(
           file,
           options,
           fileProcessor,
@@ -199,7 +255,21 @@ export class DirectoryProcessor implements IDirectoryProcessor {
           astSeed,
           corpusRelPaths
         );
+        registry.mark(id);
         knowledgeGraphs.push(...fileGraphs);
+
+        // Reference-driven ingestion: enqueue resolved internal-link targets that
+        // exist in the corpus and haven't been processed/queued. Network-free —
+        // external targets are skipped (that's Phase 1).
+        if (follow && (maxDepth === 0 || depth < maxDepth)) {
+          for (const link of internalLinks) {
+            if (isExternalTarget(link.target)) continue;
+            const rel = resolveInternalTarget(link, id, corpusRelPaths);
+            if (rel && !registry.has(rel) && !queued.has(rel)) {
+              enqueue(path.resolve(options.input, rel), depth + 1);
+            }
+          }
+        }
 
         const entities = fileGraphs.reduce((n, g) => n + g.entities.length, 0);
         const relations = fileGraphs.reduce((n, g) => n + g.relations.length, 0);
@@ -209,8 +279,9 @@ export class DirectoryProcessor implements IDirectoryProcessor {
           await this.writeIntermediateResults(knowledgeGraphs, options.output);
         }
       } catch (error) {
+        registry.mark(id); // don't retry a hard-failing file in this run
         this.handleFileError(file, error, options.logging.debug, logger);
-        progress.emit({ type: "file_complete", index, total, path: file, entities: 0, relations: 0 });
+        progress.emit({ type: "file_complete", index, total: registry.size + queue.length, path: file, entities: 0, relations: 0 });
       }
     }
 
@@ -309,7 +380,7 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     corpusProfile?: CorpusProfile,
     astSeed?: AstSeedService,
     corpusRelPaths: Set<string> = new Set()
-  ): Promise<KnowledgeGraph[]> {
+  ): Promise<ProcessFileResult> {
     logger.info(`Processing: ${file}`);
 
     // Reuse the pre-pass's cached classification for this file when available.
@@ -321,7 +392,7 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     // read into a per-file error.
     if (processedFile.metadata?.skip) {
       logger.info(`Skipped ${file} (binary / no extractable text)`);
-      return [];
+      return { graphs: [], internalLinks: [] };
     }
     this.validateProcessedFile(processedFile, file, logger);
 
@@ -357,16 +428,21 @@ export class DirectoryProcessor implements IDirectoryProcessor {
 
     // Deterministic reference edges (Phase 0, network-free): internal links +
     // citations the document already contains, resolved against the corpus.
-    // Merges with the LLM graphs like the AST seed above.
-    if (options.references.internalLinks.enabled || options.references.citations.enabled) {
+    // Merges with the LLM graphs like the AST seed above. Following auto-implies
+    // internal-link resolution (you can't follow links you didn't extract).
+    const internalLinksOn =
+      options.references.internalLinks.enabled || options.references.follow.enabled;
+    if (internalLinksOn || options.references.citations.enabled) {
       const refGraph = buildReferenceGraph(processedFile, corpusRelPaths, options.input, {
-        internalLinks: options.references.internalLinks.enabled,
+        internalLinks: internalLinksOn,
         citations: options.references.citations.enabled,
       });
       if (refGraph) graphs.push(refGraph);
     }
 
-    return graphs;
+    const internalLinks =
+      (processedFile.metadata?.references as RawReferences | undefined)?.internalLinks ?? [];
+    return { graphs, internalLinks };
   }
 
   /**

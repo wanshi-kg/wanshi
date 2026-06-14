@@ -93,8 +93,12 @@ export function buildReferenceGraph(
   return { entities: Array.from(entities.values()), relations };
 }
 
-/** Resolve an internal link target to a corpus-relative path, or null if absent. */
-function resolveInternalTarget(
+/**
+ * Resolve an internal link target to a corpus-relative path, or null if absent.
+ * Exported so reference-driven ingestion (the follow worklist) resolves link
+ * targets with the exact same normalization used to emit `links_to` edges.
+ */
+export function resolveInternalTarget(
   link: RawLink,
   fileRel: string,
   corpus: Set<string>

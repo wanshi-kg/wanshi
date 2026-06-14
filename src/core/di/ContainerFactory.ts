@@ -247,7 +247,9 @@ export class ContainerFactory {
           new DoclingReader(undefined, undefined, undefined, "./temp", chunker, logger)
         );
       } else {
-        const refLinks = options.references.internalLinks.enabled;
+        // Reference-following needs links extracted, so it auto-implies internalLinks.
+        const refLinks =
+          options.references.internalLinks.enabled || options.references.follow.enabled;
         const refCites = options.references.citations.enabled;
         factory.registerReader(new RtfReader(chunker, logger));
         factory.registerReader(
