@@ -247,15 +247,17 @@ export class ContainerFactory {
           new DoclingReader(undefined, undefined, undefined, "./temp", chunker, logger)
         );
       } else {
+        const refLinks = options.references.internalLinks.enabled;
+        const refCites = options.references.citations.enabled;
         factory.registerReader(new RtfReader(chunker, logger));
         factory.registerReader(
-          new MarkdownReader(chunker, logger, options.readers.stripReferences)
+          new MarkdownReader(chunker, logger, options.readers.stripReferences, refLinks, refCites)
         );
-        factory.registerReader(new HtmlReader(chunker, logger));
+        factory.registerReader(new HtmlReader(chunker, logger, refLinks));
         factory.registerReader(new ImageReader(chunker, logger));
         factory.registerReader(new OfficeReader(chunker, logger));
         factory.registerReader(
-          new PdfReader(chunker, logger, options.readers.stripReferences)
+          new PdfReader(chunker, logger, options.readers.stripReferences, refCites)
         );
       }
 

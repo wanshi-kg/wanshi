@@ -4,6 +4,11 @@ import { Logger } from "../../../shared";
 import { ProcessedChunk } from "../../../types";
 import { TextChunker } from "../chunking";
 import { splitTrailingReferences } from "./stripReferences";
+import {
+  extractCitations,
+  extractMarkdownLinks,
+  RawReferences,
+} from "./referenceExtraction";
 
 /**
  * Represents markdown content with extracted images
@@ -40,7 +45,9 @@ export class MarkdownReader extends FileReader {
   constructor(
     chunker: TextChunker,
     logger: Logger,
-    private readonly stripReferences: boolean = false
+    private readonly stripReferences: boolean = false,
+    private readonly extractLinks: boolean = false,
+    private readonly extractCites: boolean = false
   ) {
     super([".md", ".markdown"], chunker, logger);
   }
@@ -56,16 +63,31 @@ export class MarkdownReader extends FileReader {
       this.logger.debug(`Reading markdown file: ${filePath}`);
 
       const markdownContent = await MarkdownProcessor.processFile(filePath);
+      const fullText = markdownContent.text; // pre-strip, for reference extraction
 
-      if (this.stripReferences) {
-        const split = splitTrailingReferences(markdownContent.text);
-        if (split.references) {
-          this.logger.info(
-            `Quarantined trailing references section of ${filePath} (${split.references.length} chars)`
-          );
-          markdownContent.text = split.body;
-        }
+      // Detect the trailing bibliography once if either consumer needs it.
+      const split =
+        this.stripReferences || this.extractCites
+          ? splitTrailingReferences(markdownContent.text)
+          : undefined;
+      if (this.stripReferences && split?.references) {
+        this.logger.info(
+          `Quarantined trailing references section of ${filePath} (${split.references.length} chars)`
+        );
+        markdownContent.text = split.body;
       }
+
+      // Phase 0 reference extraction (network-free), gated by config.
+      const references: RawReferences = {};
+      if (this.extractLinks) {
+        const links = extractMarkdownLinks(fullText);
+        if (links.length) references.internalLinks = links;
+      }
+      if (this.extractCites) {
+        const cites = extractCitations(split?.references, fullText);
+        if (cites.length) references.citations = cites;
+      }
+      const hasRefs = !!(references.internalLinks || references.citations);
 
       const chunks = await this.chunker.chunk(markdownContent.text);
 
@@ -83,6 +105,7 @@ export class MarkdownReader extends FileReader {
           encoding: "utf-8",
           size: markdownContent.text.length,
           imageCount: markdownContent.images.length,
+          ...(hasRefs ? { references } : {}),
         },
       };
     } catch (error) {

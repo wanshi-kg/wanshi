@@ -31,6 +31,8 @@
     ]
   },
   "dependencies": {
+    "@citation-js/core": "^0.7.21",
+    "@citation-js/plugin-bibtex": "^0.7.21",
     "@huggingface/transformers": "^3.5.2",
     "@langchain/core": "^0.3.57",
     "@langchain/textsplitters": "^0.1.0",

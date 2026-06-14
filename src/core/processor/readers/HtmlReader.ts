@@ -6,6 +6,7 @@ import { Logger } from '../../../shared';
 import { TextChunker } from '../chunking';
 import languageEncoding from "detect-file-encoding-and-language";
 import { Iconv } from 'iconv';
+import { extractHtmlLinks, RawReferences } from './referenceExtraction';
 
 /**
  * Features:
@@ -19,7 +20,11 @@ import { Iconv } from 'iconv';
  * Supported formats: .html, .htm, .xhtml
  */
 export class HtmlReader extends FileReader {
-  constructor(chunker: TextChunker, logger: Logger) {
+  constructor(
+    chunker: TextChunker,
+    logger: Logger,
+    private readonly extractLinks: boolean = false
+  ) {
     super(['.html', '.htm', '.xhtml', '.php'], chunker, logger);
   }
 
@@ -93,9 +98,18 @@ export class HtmlReader extends FileReader {
         // Content classification
         hasMainContent: !!htmlToTextResult.text && htmlToTextResult.text.length > 100,
         contentType: this.classifyContent(cheerioResult.$),
-        
+
         status: 'success'
       };
+
+      // Phase 0 reference extraction (network-free), gated by config.
+      if (this.extractLinks) {
+        const links = extractHtmlLinks(rawHtml);
+        if (links.length) {
+          const references: RawReferences = { internalLinks: links };
+          (metadata as Record<string, any>).references = references;
+        }
+      }
 
       this.logger.debug(`Successfully processed HTML file ${filePath} in ${processingTime}ms`);
 

@@ -2,6 +2,7 @@ import { Logger } from "../../../shared";
 import { TextChunker } from "../chunking";
 import { FileReader, FileReadResult } from "./FileReader";
 import { splitPagesAtReferences } from "./stripReferences";
+import { extractCitations, RawReferences } from "./referenceExtraction";
 import PDFParser from "pdf2json";
 
 /**
@@ -20,7 +21,8 @@ export class PdfReader extends FileReader {
   constructor(
     chunker: TextChunker,
     logger: Logger,
-    private readonly stripReferences: boolean = false
+    private readonly stripReferences: boolean = false,
+    private readonly extractCites: boolean = false
   ) {
     super([".pdf"], chunker, logger);
   }
@@ -41,15 +43,28 @@ export class PdfReader extends FileReader {
       // from body text, which is full of OTHER papers' arXiv IDs (citations).
       const arxivId = extractArxivId(content.slice(0, 2).join("\n"));
 
-      if (this.stripReferences) {
-        const split = splitPagesAtReferences(content);
-        if (split.references) {
-          this.logger.info(
-            `Quarantined trailing references section of ${filePath} ` +
-              `(${split.references.length} chars, ${content.length - split.pages.length} page(s) dropped)`
-          );
-          content = split.pages;
-        }
+      // Detect the trailing bibliography once if either consumer needs it.
+      const split =
+        this.stripReferences || this.extractCites
+          ? splitPagesAtReferences(content)
+          : undefined;
+
+      // Phase 0 citation extraction (network-free), gated by config. Drop the
+      // paper's OWN arXiv id (the host identity, not a citation).
+      let references: RawReferences | undefined;
+      if (this.extractCites) {
+        const cites = extractCitations(split?.references, content.join("\n")).filter(
+          (c) => !arxivId || c.arxivId !== arxivId
+        );
+        if (cites.length) references = { citations: cites };
+      }
+
+      if (this.stripReferences && split?.references) {
+        this.logger.info(
+          `Quarantined trailing references section of ${filePath} ` +
+            `(${split.references.length} chars, ${content.length - split.pages.length} page(s) dropped)`
+        );
+        content = split.pages;
       }
 
       const chunks = content.map((page, index) => {
@@ -70,6 +85,7 @@ export class PdfReader extends FileReader {
           fileName: filePath,
           ...(arxivId ? { arxivId } : {}),
           ...(title ? { title } : {}),
+          ...(references ? { references } : {}),
         },
       };
     } catch (error) {

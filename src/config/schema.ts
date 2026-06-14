@@ -221,6 +221,37 @@ const ReadersSchema = z
   })
   .strict();
 
+// Reference & link resolution (Phase 0, network-free). Turns the references a
+// document already contains into graph edges. Both axes default OFF — a default
+// run's output shape is unchanged until opted in. Network classes (external web,
+// citation span-fetch) are later phases and live behind their own opt-in.
+const ReferencesSchema = z
+  .object({
+    internalLinks: z
+      .object({
+        enabled: z
+          .boolean()
+          .default(false)
+          .describe(
+            "Resolve internal links ([x](./other.md), [[wikilinks]], HTML href) to corpus files as links_to edges"
+          ),
+      })
+      .strict()
+      .default({}),
+    citations: z
+      .object({
+        enabled: z
+          .boolean()
+          .default(false)
+          .describe(
+            "Parse the bibliography + inline arXiv/DOI/PMID into cites edges (network-free; fetch/resolution is a later phase)"
+          ),
+      })
+      .strict()
+      .default({}),
+  })
+  .strict();
+
 const DotSchema = z
   .object({
     layout: z.enum(["dot", "neato", "fdp", "sfdp", "circo", "twopi"]).default("dot"),
@@ -463,6 +494,7 @@ export const ConfigSchema = z
     ast: AstSchema.default({}),
     classifier: ClassifierSchema.default({}),
     readers: ReadersSchema.default({}),
+    references: ReferencesSchema.default({}),
     export: ExportSchema.default({}),
     resume: ResumeSchema.default({}),
     logging: LoggingSchema.default({}),

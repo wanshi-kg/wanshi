@@ -47,6 +47,9 @@ export const FLAG_TO_PATH: Record<string, string> = {
   stripReferences: "readers.stripReferences",
   jsonStrategy: "readers.json.strategy",
   images: "readers.images",
+  // references (Phase 0, network-free; off by default)
+  referenceLinks: "references.internalLinks.enabled",
+  referenceCitations: "references.citations.enabled",
   // classifier
   classifier: "classifier.mode",
   // retrieval
