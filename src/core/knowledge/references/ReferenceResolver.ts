@@ -71,8 +71,8 @@ export function buildReferenceGraph(
   // Source file node — guarantees the `from` endpoint always exists.
   ensureDoc(fileRel, processedFile.path);
 
-  if (opts.internalLinks && refs.internalLinks?.length) {
-    for (const link of refs.internalLinks) {
+  if (opts.internalLinks && refs.links?.length) {
+    for (const link of refs.links) {
       if (isExternalTarget(link.target)) continue; // external web is Phase 1
       const resolved = resolveInternalTarget(link, fileRel, corpusRelPaths);
       const target = resolved ?? link.target;

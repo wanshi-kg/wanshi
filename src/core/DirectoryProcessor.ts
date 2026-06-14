@@ -71,7 +71,9 @@ export class FileDiscoveryService implements IFileDiscoveryService {
  * (surfaced so reference-driven ingestion can follow them). */
 interface ProcessFileResult {
   graphs: KnowledgeGraph[];
-  internalLinks: RawLink[];
+  /** All links the file contains (internal + external); the worklist follows the
+   * internal ones and the web fetcher takes the external ones. */
+  links: RawLink[];
 }
 
 /**
@@ -244,7 +246,7 @@ export class DirectoryProcessor implements IDirectoryProcessor {
         // Retrieval sees prior output + graphs built so far this run; merge sees
         // only what's built this run (knowledgeGraphs).
         const retrievalContext = [...priorGraphs, ...knowledgeGraphs];
-        const { graphs: fileGraphs, internalLinks } = await this.processFile(
+        const { graphs: fileGraphs, links: fileLinks } = await this.processFile(
           file,
           options,
           fileProcessor,
@@ -260,9 +262,9 @@ export class DirectoryProcessor implements IDirectoryProcessor {
 
         // Reference-driven ingestion: enqueue resolved internal-link targets that
         // exist in the corpus and haven't been processed/queued. Network-free —
-        // external targets are skipped (that's Phase 1).
+        // external targets are skipped (that's the web fetcher below).
         if (follow && (maxDepth === 0 || depth < maxDepth)) {
-          for (const link of internalLinks) {
+          for (const link of fileLinks) {
             if (isExternalTarget(link.target)) continue;
             const rel = resolveInternalTarget(link, id, corpusRelPaths);
             if (rel && !registry.has(rel) && !queued.has(rel)) {
@@ -392,7 +394,7 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     // read into a per-file error.
     if (processedFile.metadata?.skip) {
       logger.info(`Skipped ${file} (binary / no extractable text)`);
-      return { graphs: [], internalLinks: [] };
+      return { graphs: [], links: [] };
     }
     this.validateProcessedFile(processedFile, file, logger);
 
@@ -440,9 +442,9 @@ export class DirectoryProcessor implements IDirectoryProcessor {
       if (refGraph) graphs.push(refGraph);
     }
 
-    const internalLinks =
-      (processedFile.metadata?.references as RawReferences | undefined)?.internalLinks ?? [];
-    return { graphs, internalLinks };
+    const links =
+      (processedFile.metadata?.references as RawReferences | undefined)?.links ?? [];
+    return { graphs, links };
   }
 
   /**

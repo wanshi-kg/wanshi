@@ -1,9 +1,34 @@
 import {
+  extractBareUrls,
   extractCitations,
   extractHtmlLinks,
   extractMarkdownLinks,
   isExternalTarget,
 } from "./referenceExtraction";
+
+describe("extractBareUrls", () => {
+  it("captures web-clip `> source:` frontmatter and bare URLs, deduped", () => {
+    const md = [
+      "# Title | Letta",
+      "> source: https://www.letta.com/blog/sleep-time-compute",
+      "> kind: article",
+      "Source: https://youtu.be/abc?si=xyz",
+      "see https://www.letta.com/blog/sleep-time-compute again", // dup
+    ].join("\n");
+    const urls = extractBareUrls(md).map((l) => l.target);
+    expect(urls).toEqual([
+      "https://www.letta.com/blog/sleep-time-compute",
+      "https://youtu.be/abc?si=xyz",
+    ]);
+    expect(extractBareUrls(md).every((l) => l.kind === "url")).toBe(true);
+  });
+
+  it("trims trailing punctuation", () => {
+    expect(extractBareUrls("ref: https://example.com/p.").map((l) => l.target)).toEqual([
+      "https://example.com/p",
+    ]);
+  });
+});
 
 describe("isExternalTarget", () => {
   it("flags protocol/protocol-relative/mailto targets as external", () => {

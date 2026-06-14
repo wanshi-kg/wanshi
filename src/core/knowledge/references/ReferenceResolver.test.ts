@@ -19,7 +19,7 @@ describe("buildReferenceGraph — internal links", () => {
 
   it("resolves a relative link to a corpus file (links_to, resolved:true)", () => {
     const g = buildReferenceGraph(
-      file("docs/a.md", { internalLinks: [{ target: "./b.md", kind: "markdown" }] }),
+      file("docs/a.md", { links: [{ target: "./b.md", kind: "markdown" }] }),
       corpus,
       ROOT,
       opts
@@ -34,7 +34,7 @@ describe("buildReferenceGraph — internal links", () => {
 
   it("resolves a parent-relative link and adds .md when extensionless", () => {
     const g = buildReferenceGraph(
-      file("docs/a.md", { internalLinks: [{ target: "../notes/some-note", kind: "markdown" }] }),
+      file("docs/a.md", { links: [{ target: "../notes/some-note", kind: "markdown" }] }),
       corpus,
       ROOT,
       opts
@@ -44,7 +44,7 @@ describe("buildReferenceGraph — internal links", () => {
 
   it("emits a stub node + resolved:false for a missing target", () => {
     const g = buildReferenceGraph(
-      file("docs/a.md", { internalLinks: [{ target: "./missing.md", kind: "markdown" }] }),
+      file("docs/a.md", { links: [{ target: "./missing.md", kind: "markdown" }] }),
       corpus,
       ROOT,
       opts
@@ -56,7 +56,7 @@ describe("buildReferenceGraph — internal links", () => {
 
   it("resolves a wikilink by file basename", () => {
     const g = buildReferenceGraph(
-      file("docs/a.md", { internalLinks: [{ target: "Some Note", kind: "wikilink" }] }),
+      file("docs/a.md", { links: [{ target: "Some Note", kind: "wikilink" }] }),
       corpus,
       ROOT,
       opts
@@ -66,7 +66,7 @@ describe("buildReferenceGraph — internal links", () => {
 
   it("skips external targets (left for the network phase)", () => {
     const g = buildReferenceGraph(
-      file("docs/a.md", { internalLinks: [{ target: "https://example.com", kind: "markdown" }] }),
+      file("docs/a.md", { links: [{ target: "https://example.com", kind: "markdown" }] }),
       corpus,
       ROOT,
       opts
@@ -76,7 +76,7 @@ describe("buildReferenceGraph — internal links", () => {
 
   it("drops a self-link", () => {
     const g = buildReferenceGraph(
-      file("docs/a.md", { internalLinks: [{ target: "./a.md", kind: "markdown" }] }),
+      file("docs/a.md", { links: [{ target: "./a.md", kind: "markdown" }] }),
       corpus,
       ROOT,
       opts

@@ -39,7 +39,7 @@ function loadCite(): CiteCtor | null {
   return citeCtor;
 }
 
-export type LinkKind = "markdown" | "wikilink" | "html";
+export type LinkKind = "markdown" | "wikilink" | "html" | "url";
 
 export interface RawLink {
   /** Target exactly as written (href / link destination), pre-resolution. */
@@ -59,7 +59,10 @@ export interface RawCitation {
 }
 
 export interface RawReferences {
-  internalLinks?: RawLink[];
+  /** All extracted links — internal (markdown/wikilink/relative href) AND external
+   * (absolute http(s) URLs + bare URLs). Consumers filter via `isExternalTarget`:
+   * the Phase-0 resolver keeps internal ones; the Phase-1 web fetcher takes external. */
+  links?: RawLink[];
   citations?: RawCitation[];
 }
 
@@ -116,6 +119,25 @@ export function extractHtmlLinks(html: string): RawLink[] {
     links.push({ target, text: text || undefined, kind: "html" });
   }
   return links;
+}
+
+/**
+ * Bare absolute URLs anywhere in the text — `> source: https://…` web-clip
+ * frontmatter, `Source: …` lines, and inline bare links the markdown-link regex
+ * misses (web clips often flatten `[t](u)` to plain text + a source header).
+ * These are external by construction; the Phase-1 fetcher consumes them (gated
+ * by the allowlist), the Phase-0 resolver ignores them.
+ */
+export function extractBareUrls(text: string): RawLink[] {
+  const seen = new Set<string>();
+  const out: RawLink[] = [];
+  for (const m of text.matchAll(/\bhttps?:\/\/[^\s)<>"'\]}|]+/gi)) {
+    const target = m[0].replace(/[.,;:]+$/, "");
+    if (seen.has(target)) continue;
+    seen.add(target);
+    out.push({ target, kind: "url" });
+  }
+  return out;
 }
 
 // --- Citations ----------------------------------------------------------------

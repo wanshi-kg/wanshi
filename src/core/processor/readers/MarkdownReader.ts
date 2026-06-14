@@ -5,6 +5,7 @@ import { ProcessedChunk } from "../../../types";
 import { TextChunker } from "../chunking";
 import { splitTrailingReferences } from "./stripReferences";
 import {
+  extractBareUrls,
   extractCitations,
   extractMarkdownLinks,
   RawReferences,
@@ -77,17 +78,22 @@ export class MarkdownReader extends FileReader {
         markdownContent.text = split.body;
       }
 
-      // Phase 0 reference extraction (network-free), gated by config.
+      // Reference extraction, gated by config. Markdown `[t](u)`/`[[wiki]]` links
+      // PLUS bare URLs (web-clip `> source:` headers etc.); external ones feed the
+      // Phase-1 fetcher, internal ones the Phase-0 resolver.
       const references: RawReferences = {};
       if (this.extractLinks) {
-        const links = extractMarkdownLinks(fullText);
-        if (links.length) references.internalLinks = links;
+        const seen = new Set<string>();
+        const links = [...extractMarkdownLinks(fullText), ...extractBareUrls(fullText)].filter(
+          (l) => (seen.has(l.target) ? false : (seen.add(l.target), true))
+        );
+        if (links.length) references.links = links;
       }
       if (this.extractCites) {
         const cites = extractCitations(split?.references, fullText);
         if (cites.length) references.citations = cites;
       }
-      const hasRefs = !!(references.internalLinks || references.citations);
+      const hasRefs = !!(references.links || references.citations);
 
       const chunks = await this.chunker.chunk(markdownContent.text);
 

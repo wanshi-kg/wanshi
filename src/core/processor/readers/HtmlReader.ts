@@ -106,7 +106,7 @@ export class HtmlReader extends FileReader {
       if (this.extractLinks) {
         const links = extractHtmlLinks(rawHtml);
         if (links.length) {
-          const references: RawReferences = { internalLinks: links };
+          const references: RawReferences = { links };
           (metadata as Record<string, any>).references = references;
         }
       }
