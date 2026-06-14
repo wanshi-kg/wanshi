@@ -1,6 +1,6 @@
-# kg-gen frontend
+# wanshi frontend
 
-A Next.js (App Router) dashboard to configure a kg-gen run, launch it, and watch
+A Next.js (App Router) dashboard to configure a wanshi run, launch it, and watch
 **live progress** — file/chunk bars, running entity/relation counts, a live log
 tail, and graceful cancel. The design system is ported from `gol-eval`
 (shadcn/ui "new-york", Tailwind v4, OKLch tokens) for a consistent look.
@@ -8,9 +8,9 @@ tail, and graceful cancel. The design system is ported from `gol-eval`
 ## How it works
 
 There is **no separate backend**. Next route handlers under `app/api/runs/`
-are the backend: they spawn the kg-gen CLI as a child process, parse its
+are the backend: they spawn the wanshi CLI as a child process, parse its
 `--progress-ndjson` stdout stream, and re-stream it to the browser over SSE.
-`frontend/` never imports kg-gen, so none of its native deps touch this build.
+`frontend/` never imports wanshi, so none of its native deps touch this build.
 
 - `POST /api/runs` — start a run (writes a temp JSON config, spawns the CLI).
 - `GET  /api/runs` · `GET /api/runs/:id` — list / status.
@@ -20,7 +20,7 @@ are the backend: they spawn the kg-gen CLI as a child process, parse its
 
 ## Running it
 
-The dashboard launches the **built** kg-gen CLI, so build the repo first:
+The dashboard launches the **built** wanshi CLI, so build the repo first:
 
 ```bash
 # from the repo root
@@ -39,11 +39,11 @@ graph — same requirement as the CLI.
 
 | Var          | Default                         | Purpose                                            |
 | ------------ | ------------------------------- | -------------------------------------------------- |
-| `KG_GEN_CMD` | `node dist/index.js`            | How to launch the CLI. Single process so one SIGINT reaches its graceful-shutdown handler (an `npx` wrapper would double-signal it into a force-quit). |
-| `KG_GEN_CWD` | repo root (parent of `frontend/`) | Working directory the CLI runs in.               |
+| `WANSHI_CMD` | `node dist/index.js`            | How to launch the CLI. Single process so one SIGINT reaches its graceful-shutdown handler (an `npx` wrapper would double-signal it into a force-quit). |
+| `WANSHI_CWD` | repo root (parent of `frontend/`) | Working directory the CLI runs in.               |
 
 To run from source instead of a build, install `ts-node` in the repo and set
-e.g. `KG_GEN_CMD="node -r ts-node/register src/index.ts"`.
+e.g. `WANSHI_CMD="node -r ts-node/register src/index.ts"`.
 
 ## Status
 

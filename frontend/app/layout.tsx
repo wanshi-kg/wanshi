@@ -4,7 +4,7 @@ import { Providers } from "./providers"
 import { AppShell } from "@/components/layout/app-shell"
 
 export const metadata: Metadata = {
-  title: "kg-gen",
+  title: "Wan Shi",
   description: "Configure, run, and watch knowledge-graph generation.",
 }
 
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const noFlashScript = `
 (function () {
   try {
-    var t = localStorage.getItem("kg-gen-theme") || "system";
+    var t = localStorage.getItem("wanshi-theme") || "system";
     var dark = t === "dark" || (t === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
     document.documentElement.classList.add(dark ? "dark" : "light");
   } catch (e) {}

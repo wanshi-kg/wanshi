@@ -1,5 +1,5 @@
 /**
- * Frontend mirror of kg-gen's knowledge-graph data model
+ * Frontend mirror of wanshi's knowledge-graph data model
  * (src/types/KnowledgeGraph.ts + src/types/Observation.ts). The graph-loader
  * normalizes every export format (json/jsonl/mcp-jsonl) into this shape.
  */

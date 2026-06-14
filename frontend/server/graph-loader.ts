@@ -10,7 +10,7 @@ import type {
 export class UnsupportedFormatError extends Error {}
 
 /**
- * Load a kg-gen output file and normalize it into a {@link KnowledgeGraph},
+ * Load a wanshi output file and normalize it into a {@link KnowledgeGraph},
  * regardless of which export format wrote it:
  *  - .json        → a single { entities, relations } object
  *  - .jsonl       → type-prefixed lines, rich observations

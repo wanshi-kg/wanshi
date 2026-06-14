@@ -12,12 +12,12 @@ import type { StoredRun } from "@/types"
 
 /**
  * Durable run history. Each run is its own JSON file under a cwd-INDEPENDENT
- * directory (default ~/.kg-gen/runs), so history survives a server restart no
+ * directory (default ~/.wanshi/runs), so history survives a server restart no
  * matter where the app is launched from — and a corrupt write loses one run,
- * not all of them. Override the location with KG_GEN_DATA_DIR.
+ * not all of them. Override the location with WANSHI_DATA_DIR.
  */
 function dataDir(): string {
-  return process.env.KG_GEN_DATA_DIR || path.join(os.homedir(), ".kg-gen")
+  return process.env.WANSHI_DATA_DIR || path.join(os.homedir(), ".wanshi")
 }
 function runsDir(): string {
   return path.join(dataDir(), "runs")

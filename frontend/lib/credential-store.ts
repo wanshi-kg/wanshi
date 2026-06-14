@@ -5,8 +5,8 @@
  * ported from gol-eval. AES-GCM via the Web Crypto API — obfuscation, not true
  * security against local access. Keyed by host so multiple endpoints coexist.
  */
-const STORAGE_KEY = "kg-gen-api-credentials"
-const SALT = new TextEncoder().encode("kg-gen-credential-salt-v1")
+const STORAGE_KEY = "wanshi-api-credentials"
+const SALT = new TextEncoder().encode("wanshi-credential-salt-v1")
 
 export interface StoredCredential {
   host: string
@@ -16,7 +16,7 @@ export interface StoredCredential {
 async function deriveKey(): Promise<CryptoKey> {
   const material = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode((navigator.userAgent || "kg-gen").slice(0, 64)),
+    new TextEncoder().encode((navigator.userAgent || "wanshi").slice(0, 64)),
     "PBKDF2",
     false,
     ["deriveKey"]

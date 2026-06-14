@@ -8,7 +8,7 @@ import {
 } from "@/lib/config-schema"
 
 /**
- * Build a kg-gen config object from the form values — the nested shape the CLI
+ * Build a wanshi config object from the form values — the nested shape the CLI
  * reads via `--config`. API keys are stripped (don't bake secrets into a
  * shareable file); the frontend-internal resume/progressNdjson flags aren't
  * added here either (they're applied only when launching a run).

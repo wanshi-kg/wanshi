@@ -4,7 +4,7 @@
  * Favorite models, persisted as a plain JSON set of `provider:modelId` keys in
  * localStorage. Ported from gol-eval. Favorites sort to the top of the picker.
  */
-const STORAGE_KEY = "kg-gen-favorite-models"
+const STORAGE_KEY = "wanshi-favorite-models"
 
 function readStore(): Set<string> {
   if (typeof window === "undefined") return new Set()

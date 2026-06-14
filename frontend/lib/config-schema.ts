@@ -1,6 +1,6 @@
 /**
  * The config form is driven entirely by the backend schema — there is no
- * hardcoded option list here anymore. `kg-gen schema` (served via
+ * hardcoded option list here anymore. `wanshi schema` (served via
  * `/api/config-schema`) returns the JSON Schema + UI group metadata; this module
  * adapts that payload into the form's `ConfigGroup`/`ConfigField` shapes and
  * converts between the flat form values (keyed by nested dotted path, e.g.
@@ -45,7 +45,7 @@ export interface ConfigGroup {
   fields: ConfigField[]
 }
 
-// ── backend payload shapes (from `kg-gen schema --json`) ────────────────────
+// ── backend payload shapes (from `wanshi schema --json`) ────────────────────
 
 interface JsonSchemaNode {
   type?: string | string[]

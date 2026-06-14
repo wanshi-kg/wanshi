@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 
-const STORAGE_PREFIX = "kg-gen"
+const STORAGE_PREFIX = "wanshi"
 
 interface LocalStorageOptions<T> {
   sanitize?: (value: unknown) => T

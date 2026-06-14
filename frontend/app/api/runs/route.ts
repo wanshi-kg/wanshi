@@ -10,7 +10,7 @@ export async function GET() {
 }
 
 /**
- * Start a run from a nested kg-gen config (the same shape the CLI validates).
+ * Start a run from a nested wanshi config (the same shape the CLI validates).
  * We do a light presence check here for a fast 400; the CLI is the authority on
  * full schema validation (and will reject anything malformed at launch).
  */

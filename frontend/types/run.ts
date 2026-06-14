@@ -1,6 +1,6 @@
 /**
  * A run's lifecycle state, mirroring the gol-eval job state machine (minus
- * "paused", which kg-gen doesn't support).
+ * "paused", which wanshi doesn't support).
  */
 export type RunState =
   | "pending"
@@ -10,8 +10,8 @@ export type RunState =
   | "cancelled"
 
 /**
- * Structured progress events emitted by the kg-gen CLI in `--progress-ndjson`
- * mode. Mirrors `src/types/IProgressEmitter.ts` in the kg-gen core — keep the
+ * Structured progress events emitted by the wanshi CLI in `--progress-ndjson`
+ * mode. Mirrors `src/types/IProgressEmitter.ts` in the wanshi core — keep the
  * two in sync.
  */
 export type ProgressEvent =
@@ -52,7 +52,7 @@ export type ProgressEvent =
     }
   | { type: "error"; message: string }
 
-/** A line on the kg-gen stdout NDJSON stream: either a progress event or a log. */
+/** A line on the wanshi stdout NDJSON stream: either a progress event or a log. */
 export type StreamLine =
   | { channel: "progress"; ts: number; event: ProgressEvent }
   | { channel: "log"; ts: number; level: string; message: string }
@@ -77,7 +77,7 @@ export interface RunListItem extends RunSummary {
 }
 
 /**
- * A run as persisted on disk (`~/.kg-gen/runs/<id>.json`). Carries the FULL
+ * A run as persisted on disk (`~/.wanshi/runs/<id>.json`). Carries the FULL
  * config so a past run can be reconstructed for Resume/Restart.
  */
 export interface StoredRun {

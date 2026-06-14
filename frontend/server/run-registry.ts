@@ -53,19 +53,19 @@ function isTerminal(state: RunState): boolean {
   return TERMINAL.includes(state)
 }
 
-/** Repo root that holds the kg-gen CLI. Next runs with cwd = `frontend/`. */
+/** Repo root that holds the wanshi CLI. Next runs with cwd = `frontend/`. */
 export function repoCwd(): string {
-  return process.env.KG_GEN_CWD || path.resolve(process.cwd(), "..")
+  return process.env.WANSHI_CWD || path.resolve(process.cwd(), "..")
 }
 /**
  * How to launch the CLI. Defaults to the built binary — a single node process,
  * so one SIGINT reaches the CLI's graceful-shutdown handler directly. (An `npx`
  * wrapper would forward the signal too, double-counting it into a force-quit.)
- * Requires `npm run build` in the repo root; override with KG_GEN_CMD to point
+ * Requires `npm run build` in the repo root; override with WANSHI_CMD to point
  * at a ts-node invocation if you prefer running from source.
  */
 export function launchCmd(): string[] {
-  return (process.env.KG_GEN_CMD || "node dist/index.js").split(/\s+/)
+  return (process.env.WANSHI_CMD || "node dist/index.js").split(/\s+/)
 }
 
 /**
@@ -80,7 +80,7 @@ export function resolveAgainstRunDir(p: string): string {
 
 /**
  * Resolve the output to an absolute path so the graph (and its checkpoint
- * sidecar) never land in the kg-gen repo root via the CLI's cwd. An absolute
+ * sidecar) never land in the wanshi repo root via the CLI's cwd. An absolute
  * output is used as-is; a relative one resolves against the input directory.
  */
 function resolveOutputPath(input: string, output: string): string {
@@ -179,7 +179,7 @@ export function startRun(req: KgGenConfig): RunSummary {
 
   // The CLI runs with cwd = repo root, so a *relative* output (the form default
   // is "knowledge-graph.json") — and its "<output>.checkpoint.jsonl" sidecar —
-  // would land in the kg-gen project root. Resolve it to an absolute path next
+  // would land in the wanshi project root. Resolve it to an absolute path next
   // to the input directory instead, where a project's graph is expected to live.
   const config = buildKgConfig(req)
   const input = cfgStr(config, "input") ?? "."
@@ -189,7 +189,7 @@ export function startRun(req: KgGenConfig): RunSummary {
 
   // Write the request as a temp JSON config; the CLI reads it via --config so
   // array fields (filter/exclude) and nested groups survive intact.
-  const dir = mkdtempSync(path.join(tmpdir(), "kg-gen-run-"))
+  const dir = mkdtempSync(path.join(tmpdir(), "wanshi-run-"))
   const cfgPath = path.join(dir, "config.json")
   writeFileSync(cfgPath, JSON.stringify(config, null, 2))
 
@@ -238,7 +238,7 @@ export function startRun(req: KgGenConfig): RunSummary {
     pushLog(record, {
       ts: Date.now(),
       level: "error",
-      message: `Failed to launch kg-gen: ${err.message}`,
+      message: `Failed to launch wanshi: ${err.message}`,
     })
     finalize(record, "failed", err.message)
   })

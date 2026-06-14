@@ -25,7 +25,7 @@ export type ExportFormat = (typeof EXPORT_FORMATS)[number]
 export class NoGraphError extends Error {}
 
 /**
- * Re-export a run's graph into another format by reusing kg-gen's `--export-only`
+ * Re-export a run's graph into another format by reusing wanshi's `--export-only`
  * CLI (same strategies as the pipeline; pure transforms). The source graph is
  * normalized first, so a json/jsonl/mcp original re-exports fine.
  */
@@ -41,7 +41,7 @@ export async function exportGraph(
   // Normalize the source (handles json/jsonl/mcp) into a plain graph JSON.
   const graph = loadGraph(output)
 
-  const dir = mkdtempSync(path.join(tmpdir(), "kg-gen-export-"))
+  const dir = mkdtempSync(path.join(tmpdir(), "wanshi-export-"))
   try {
     const srcPath = path.join(dir, "graph.json")
     const outPath = path.join(dir, `export.${format}`)

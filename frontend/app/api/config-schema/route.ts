@@ -8,7 +8,7 @@ const execFileAsync = promisify(execFile)
 export const dynamic = "force-dynamic"
 
 /**
- * The kg-gen config schema, fetched from the backend so the frontend never
+ * The wanshi config schema, fetched from the backend so the frontend never
  * duplicates the option list. We spawn the CLI's `schema` command (the same
  * launch mechanism as a run) and return its `{ jsonSchema, groups,
  * controlledPaths }` payload. The schema only changes when the backend is
@@ -41,7 +41,7 @@ export async function GET() {
     return NextResponse.json(
       {
         error:
-          "Could not load the config schema from the kg-gen CLI. Build the backend (`npm run build` in the repo root), or set KG_GEN_CMD.",
+          "Could not load the config schema from the wanshi CLI. Build the backend (`npm run build` in the repo root), or set WANSHI_CMD.",
         detail: err instanceof Error ? err.message : String(err),
       },
       { status: 500 }

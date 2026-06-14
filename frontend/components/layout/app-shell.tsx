@@ -35,7 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Brand */}
         <div className="flex h-14 items-center gap-2 border-b px-4">
           <Network className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-sm">kg-gen</span>
+          <span className="font-semibold text-sm">Wan Shi</span>
         </div>
 
         {/* Navigation */}
@@ -71,7 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Mobile header */}
         <header className="flex h-14 items-center gap-4 border-b px-4 md:hidden">
           <Network className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-sm flex-1">kg-gen</span>
+          <span className="font-semibold text-sm flex-1">Wan Shi</span>
           <ThemeToggle />
         </header>
 

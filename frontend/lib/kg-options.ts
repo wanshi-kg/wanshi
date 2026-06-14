@@ -1,7 +1,7 @@
 import { setPath } from "@/lib/config-schema"
 
 /**
- * The nested kg-gen config object (the shape the CLI validates via its Zod
+ * The nested wanshi config object (the shape the CLI validates via its Zod
  * schema and reads through `--config`). The frontend builds it from the form
  * (`valuesToConfig`) or imports it from a YAML/JSON file; it is no longer a
  * hand-maintained subset — the schema is the single source of truth.
