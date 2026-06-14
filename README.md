@@ -1,4 +1,4 @@
-# Wan Shi
+# ![Wan Shi](./docs/assets/readme-banner.png)
 
 > A local-first CLI that reads ten thousand things — code, docs, PDFs, audio, transcripts — and builds one knowledge graph that remembers where every fact came from.
 
