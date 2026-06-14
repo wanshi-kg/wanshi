@@ -25,20 +25,29 @@ function buildGraphSchema(allowedTypes?: string[], allowedRelationTypes?: string
           .describe("Entity type — pick the closest; use 'other' if none fit")
       : z.string().describe("Entity description");
 
+  // v5's prompt asks for "one canonical predicate", so instruction-following models
+  // (e.g. gemma4) emit relationType as a scalar string ("depends_on") rather than a
+  // one-element array. Coerce scalar → [scalar] before validating so a compliant model
+  // isn't rejected; the array path is unchanged.
+  const toRelationArray = (v: unknown) => (Array.isArray(v) ? v : v == null ? [] : [v]);
   const relationType =
     allowedRelationTypes && allowedRelationTypes.length > 0
       ? z
-          .array(z.enum(allowedRelationTypes as [string, ...string[]]))
+          .preprocess(toRelationArray, z.array(z.enum(allowedRelationTypes as [string, ...string[]])))
           .describe("One canonical predicate; use 'related_to' if none fit")
-      : z.array(z.string()).describe("List of relation types");
+      : z.preprocess(toRelationArray, z.array(z.string())).describe("List of relation types");
 
   return z.object({
     entities: z.array(
       z.object({
         name: z.string().describe("Unique entity name"),
         entityType,
+        // Models often emit referenced-but-undescribed entities with no observations
+        // field at all; default to [] so a missing array doesn't reject the whole chunk
+        // (and so observations drops out of the JSON-schema `required` list).
         observations: z
           .array(z.string())
+          .default([])
           .describe("List of facts and observations about entity"),
       })
     ),
@@ -54,8 +63,15 @@ function buildGraphSchema(allowedTypes?: string[], allowedRelationTypes?: string
 
 const DEFAULT_GRAPH_SCHEMA = buildGraphSchema();
 
-/** What the LLM returns: observations are still bare strings here. */
-type RawGraph = z.infer<typeof DEFAULT_GRAPH_SCHEMA>;
+/**
+ * What the LLM returns: observations are still bare strings here. Declared
+ * explicitly (not `z.infer`) because the `relationType` scalar→array coercion uses
+ * `z.preprocess`, whose output type doesn't survive `z.infer` through `z.object`.
+ */
+type RawGraph = {
+  entities: { name: string; entityType: string; observations: string[] }[];
+  relations: { from: string; to: string; relationType: string[] }[];
+};
 
 export interface BuilderOptions {
   llmService: ILLMProvider;
@@ -157,19 +173,25 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
   }
 
   /**
-   * Everything that affects a chunk's extraction *other than its own text* (KG-07),
-   * folded into the checkpoint key's `extra` so toggling any of it between
+   * The *deterministic* extraction inputs other than the chunk's own text (KG-07),
+   * folded into the checkpoint key's `extra` so toggling any of them between
    * `--resume` runs re-extracts the affected chunks instead of silently reusing a
    * graph built under different settings: the grounding signature (Phase 5), the
    * rendered system prompt (which already encodes the resolved entity/relation
-   * vocabulary + domain examples → the "schema shape"), the corpus glossary, the
-   * classifier classes, and this chunk's retrieved context.
+   * vocabulary + domain examples → the "schema shape"), the corpus glossary, and
+   * the classifier classes.
+   *
+   * Deliberately EXCLUDES the chunk's retrieved context: retrieval pulls from the
+   * graph built by *prior* (temperature>0, non-deterministic) extractions, so it
+   * differs on every run. Folding it into the key made the key unstable across runs
+   * and defeated `--resume` entirely whenever retrieval was on (the default) — a
+   * re-run after a crash matched nothing and re-extracted (and re-billed) every
+   * chunk. The key must hash deterministic *inputs*, never volatile *outputs*.
    */
   private extractionExtra(
     systemPrompt: string,
     glossary: CorpusGlossary | undefined,
-    contentClasses: ClassificationResult[] | undefined,
-    retrievedContext: unknown
+    contentClasses: ClassificationResult[] | undefined
   ): string {
     const h = crypto.createHash('sha1');
     for (const part of [
@@ -177,10 +199,9 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
       systemPrompt,
       glossary ? JSON.stringify(glossary) : '',
       contentClasses ? JSON.stringify(contentClasses) : '',
-      retrievedContext ? JSON.stringify(retrievedContext) : '',
     ]) {
       h.update(part);
-      h.update(' ');
+      h.update('\x00');
     }
     return h.digest('hex');
   }
@@ -240,7 +261,7 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
             entity.chunk = chunk.index;
             entity.totalChunks = chunk.totalChunks;
           },
-          this.extractionExtra(systemPrompt, glossary, contentClasses, retrievedContext)
+          this.extractionExtra(systemPrompt, glossary, contentClasses)
         );
 
         graphs.push(kg);
@@ -269,7 +290,7 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
         (entity) => {
           entity.files = [processedFile.path];
         },
-        this.extractionExtra(systemPrompt, glossary, contentClasses, retrievedContext)
+        this.extractionExtra(systemPrompt, glossary, contentClasses)
       );
 
       graphs.push(kg);
@@ -704,9 +725,9 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
     // Let failures propagate (generateStructured already retries 3× then throws).
     // buildChunk catches, records the failed chunk, and skips its checkpoint so
     // --resume retries it — do NOT swallow into an empty graph here (KG-02).
-    const result = await this.llmService.generateStructured(
+    const result = await this.llmService.generateStructured<RawGraph>(
       messages,
-      buildGraphSchema(allowedTypes, allowedRelationTypes)
+      buildGraphSchema(allowedTypes, allowedRelationTypes) as unknown as z.ZodType<RawGraph>
     );
 
     // Ensure arrays exist

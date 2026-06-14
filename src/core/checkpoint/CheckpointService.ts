@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as path from "path";
 import * as crypto from "crypto";
 import { KnowledgeGraph } from "../../types";
 import { Logger } from "../../shared";
@@ -45,6 +46,7 @@ export class CheckpointService {
   private readonly context?: CheckpointContext;
   private records: Map<string, KnowledgeGraph> = new Map();
   private loaded = false;
+  private dirEnsured = false;
 
   constructor(checkpointPath: string, logger: Logger, context?: CheckpointContext) {
     this.path = checkpointPath;
@@ -182,6 +184,13 @@ export class CheckpointService {
    */
   async append(record: CheckpointRecord): Promise<void> {
     this.records.set(record.key, record.kg);
+    // Ensure the parent dir exists: when --resume writes to a not-yet-created output
+    // subdir, the per-chunk append would otherwise ENOENT and every chunk would be
+    // lost (the final graph save creates the dir, but only at the very end).
+    if (!this.dirEnsured) {
+      await fs.promises.mkdir(path.dirname(this.path), { recursive: true });
+      this.dirEnsured = true;
+    }
     await fs.promises.appendFile(this.path, JSON.stringify(record) + "\n");
   }
 }

@@ -109,7 +109,8 @@ describe("KnowledgeGraphBuilder", () => {
     // Pre-Phase-2 the relation enum excluded the domain predicates the hints and
     // gold examples teach, so an emitted `treats`/`diagnosed_with` failed Zod
     // validation → empty graph. They must now be in the enum.
-    const relationType = capturedSchema.shape.relations.element.shape.relationType;
+    // relationType is wrapped in z.preprocess (scalar→array coercion); unwrap to the array.
+    const relationType = capturedSchema.shape.relations.element.shape.relationType._def.schema;
     expect(relationType.element.options).toEqual(
       expect.arrayContaining(["treats", "diagnosed_with", "related_to"])
     );
@@ -160,7 +161,8 @@ describe("KnowledgeGraphBuilder", () => {
     );
     // relationType is now a closed enum unioning glossary predicates + base set +
     // the "related_to" catch-all
-    const relationType = capturedSchema.shape.relations.element.shape.relationType;
+    // relationType is wrapped in z.preprocess (scalar→array coercion); unwrap to the array.
+    const relationType = capturedSchema.shape.relations.element.shape.relationType._def.schema;
     expect(relationType.element.options).toEqual(
       expect.arrayContaining(["assumes", "uses", "related_to"])
     );
@@ -193,7 +195,8 @@ describe("KnowledgeGraphBuilder", () => {
     await builder.build(processedFile, "s");
 
     const entityType = capturedSchema.shape.entities.element.shape.entityType;
-    const relationType = capturedSchema.shape.relations.element.shape.relationType;
+    // relationType is wrapped in z.preprocess (scalar→array coercion); unwrap to the array.
+    const relationType = capturedSchema.shape.relations.element.shape.relationType._def.schema;
     expect(entityType.options).toEqual(expect.arrayContaining(["function", "other"]));
     expect(relationType.element.options).toEqual(
       expect.arrayContaining(["depends_on", "related_to"])
@@ -379,12 +382,12 @@ describe("KnowledgeGraphBuilder", () => {
       get: () => undefined,
       append: async () => {},
     } as any;
-    const build = async (opts: any, systemPrompt: string, glossary?: any) => {
+    const build = async (opts: any, systemPrompt: string, glossary?: any, retrieve?: any) => {
       const builder = new KnowledgeGraphBuilder(
         { llmService: hallucinatingLlm(), promptManager: promptStub(), model: "m", resume: true, checkpoint, ...opts },
         stubLogger()
       );
-      await builder.build(oneChunkFile(), systemPrompt, undefined, glossary);
+      await builder.build(oneChunkFile(), systemPrompt, retrieve, glossary);
     };
 
     await build({}, "sysA"); // [0] baseline
@@ -392,10 +395,17 @@ describe("KnowledgeGraphBuilder", () => {
     await build({}, "sysA", { entityNames: ["X"], entityTypes: [], relationTypes: [] }); // [2] glossary differs
     await build({ groundingSignature: "drop|minicheck|0.5" }, "sysA"); // [3] grounding differs
     await build({}, "sysB"); // [4] system prompt (schema/vocab) differs
+    await build({}, "sysA", undefined, async () => ["retrieved ctx A"]); // [5] retrieval on, context A
+    await build({}, "sysA", undefined, async () => ["totally different ctx B"]); // [6] retrieval on, context B
 
     expect(extras[1]).toBe(extras[0]); // identical inputs → identical key
     expect(extras[2]).not.toBe(extras[0]); // glossary change re-keys
     expect(extras[3]).not.toBe(extras[0]); // grounding change re-keys
     expect(extras[4]).not.toBe(extras[0]); // system-prompt/schema change re-keys
+    // Retrieved context is a non-deterministic OUTPUT of prior extractions, not a
+    // config input: it must NOT re-key, or --resume re-extracts everything when
+    // retrieval is on (the default). Differing context, same key as the baseline.
+    expect(extras[5]).toBe(extras[0]);
+    expect(extras[6]).toBe(extras[5]);
   });
 });
