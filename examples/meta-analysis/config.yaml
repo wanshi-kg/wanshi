@@ -1,0 +1,55 @@
+# End-to-end pipeline smoke test on a fresh, deliberately cross-referential corpus:
+# Alex's projects meta-analysis catalog (101 markdown overviews + INDEX/QUESTIONS).
+# Purpose: exercise the Phase 5-9 stack on real, unseen input.
+#   - corpus profiling glossary (closed cross-project vocab)
+#   - v5 closed-vocab + topology hygiene prompts (default)
+#   - grounding gate in FLAG mode (annotate, don't drop -- observe first)
+#   - document-outline injection on markdown (Phase 8 doc-outline-gen 1.0)
+#   - name+file identity merging + vote-based type election (Phase 6)
+#
+# Run from repo root:
+#   npx ts-node ./src/index.ts --config examples/meta-analysis/config.yaml
+# Resume-safe: re-run the same command to continue after an interrupt.
+# Re-export (json -> dot/mcp-jsonl) without re-extracting:
+#   npx ts-node ./src/index.ts export examples/meta-analysis/output/graph.json --format dot
+
+input: /Volumes/2TB/repos/my-projects-meta-analysis
+filter: ["**/*.md"]
+exclude: []
+output: ./examples/meta-analysis/output/graph.json
+
+description: "Stage-1 meta-analysis catalog of Alex's (AlexSabaka) software projects: one markdown overview per repo (tech stack, state, MoARE relevance, cross-project lineage) plus an INDEX constellation map and an aggregated QUESTIONS file."
+
+# Generation on Ollama cloud (no API key needed, generous limits). Embeddings stay local.
+llm:
+  provider: ollama
+  model: gemma4:31b-cloud
+  temperature: 0.1
+  contextLength: 16384
+  promptVersion: v5
+
+embeddings:
+  provider: ollama
+  model: mxbai-embed-large:335m
+
+# Each project overview is a coherent unit -- keep it whole. At 4000 chars all but
+# INDEX.md (~6 chunks) and QUESTIONS.md (~2) stay single-chunk, so the model sees a
+# project's frontmatter + body + open-questions together.
+chunking:
+  size: 4000
+  overlap: 150
+
+# The showcase feature for a cross-project corpus: build a controlled entity/relation
+# vocabulary up front (one LLM call, cached sidecar) and thread it as the closed vocab.
+corpus:
+  profiling: enabled
+
+# First clean run: annotate grounding scores, keep everything, inspect before enforcing.
+grounding:
+  mode: flag
+
+resume:
+  enabled: true
+
+export:
+  format: json
