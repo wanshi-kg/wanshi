@@ -183,8 +183,8 @@ interface KnowledgeGraph {
 validation + **all defaults** (`parseConfig`), and the JSON Schema served to the
 frontend (`configJsonSchema` / the `wanshi schema` command). The shape is
 **nested** (`llm`, `embeddings`, `chunking`, `retrieval`, `merging`, `grounding`,
-`corpus`, `classifier`, `readers`, `export`, `resume`, `logging`, `runtime`; with
-`input`/`filter`/`exclude`/`output`/`description` top-level). Config files use
+`corpus`, `classifier`, `readers`, `references`, `export`, `resume`, `logging`,
+`runtime`; with `input`/`filter`/`exclude`/`output`/`description` top-level). Config files use
 this nested shape — a legacy flat key errors with a migration hint (`src/config/
 legacyHints.ts`, docs/MIGRATION.md). **CLI flags stay flat** and ergonomic; `cli/
 optionsToConfig.ts` (`FLAG_TO_PATH`) maps them onto nested paths, merged as
@@ -256,6 +256,34 @@ When a classifier runs, the detected `ContentClass` is used in **two separate wa
 
 1. `src/core/processor/classifier/NER_DOMAIN_EXAMPLES.ts` — update `primaryEntityTypes` / `primaryRelationTypes` for the domain
 2. `src/core/llm/prompts/templates/partials/examples/<class>.md` — add/improve worked examples (2+ input→output pairs in the standard format)
+
+### 8. Reference & link resolution (Phase 0, network-free, default OFF)
+
+Turns the references a document *already contains* into deterministic edges (no LLM, no
+network), gated by the nested `references` group (`internalLinks.enabled` /
+`citations.enabled`, both default false; flags `--reference-links` / `--reference-citations`).
+Two stages, mirroring the AST-seed pattern:
+
+- **Readers extract → `metadata.references`.** `referenceExtraction.ts` (pure): markdown
+  `[t](u)` + `[[wikilinks]]`, HTML `href`, and a hybrid citation parser — Citation.js
+  (lazy `require`) for BibTeX blocks, regex fallback (arXiv/DOI/PMID + entry splitting) for
+  prose bibliographies + inline ids. Wired into `MarkdownReader` (links+cites), `HtmlReader`
+  (links), `PdfReader` (cites; drops the paper's own arXiv id). The `splitTrailingReferences`
+  block is now *parsed*, not only discarded. Off ⇒ readers skip extraction entirely.
+- **`ReferenceResolver.buildReferenceGraph()`** (pure module, called per-file in
+  `DirectoryProcessor.processFile` after the AST seed): resolves internal links against a
+  corpus-relpath set (`toRelPathId`) → `links_to` edges between path-keyed `document` nodes
+  (`resolved:true`), or a stub node + `resolved:false` for a missing target; citations →
+  `cites` edges (`resolved:false`; fetch is Phase 1/2) with stated ids/title as observations.
+  Both endpoints are always emitted so the merger's dangling-edge gate never drops a reference
+  edge. Edge types are **around-schema** plain strings (not in `BASE_RELATION_TYPES` → no LLM
+  instruction creep). `Relation` carries `source` (emitting doc) + `resolved`, preserved
+  through merge. *Known debt:* path-keyed `document` nodes overlap with
+  `documentIdentityGraph`'s title-named node — consolidation is a follow-up.
+
+Phases 1 (gated network fetcher, external web) and 2 (citation span-fetch + MiniCheck
+faithfulness) are deferred; Phase 2 is gated by the OA-resolvability probe
+(`examples/sandbox/oa-resolvability-probe.ts`). Briefs in `docs/inbox/2026-06-14-*reference-resolution*`.
 
 ## LLM Providers & Resume
 
