@@ -23,13 +23,45 @@ import * as path from "path";
 import {
   extractCitations,
   RawCitation,
+  RawReferences,
 } from "../../src/core/processor/readers/referenceExtraction";
 import { splitTrailingReferences } from "../../src/core/processor/readers/stripReferences";
+import { PdfReader } from "../../src/core/processor/readers/PdfReader";
+import { TextChunker } from "../../src/core/processor/chunking/TextChunker";
+
+// Quiet logger for the readers (this is a standalone diagnostic, not the pipeline).
+const noopLogger = {
+  debug: () => undefined,
+  info: () => undefined,
+  warn: () => undefined,
+  error: () => undefined,
+  fatal: () => undefined,
+  trace: () => undefined,
+} as any;
+
+// Deterministic PDF citation extraction (no LLM): PdfReader splits the trailing
+// bibliography + parses arXiv/DOI/PMID and drops the paper's own arXiv id.
+const pdfReader = new PdfReader(
+  new TextChunker({ enabled: true, maxChunkSize: 4000, overlapSize: 0 }, noopLogger),
+  noopLogger,
+  false,
+  true // extractCites
+);
+async function pdfCitations(file: string): Promise<RawCitation[]> {
+  try {
+    const res = await pdfReader.read(file);
+    return (res.metadata?.references as RawReferences | undefined)?.citations ?? [];
+  } catch {
+    console.warn(`  skipped (PDF parse failed): ${path.basename(file)}`);
+    return [];
+  }
+}
 
 // ── args ──────────────────────────────────────────────────────────────────────
 const argv = process.argv.slice(2);
 const corpusDir = argv.find((a) => !a.startsWith("--"));
 const LIVE = argv.includes("--live");
+const DUMP = argv.includes("--dump");
 const SAMPLE = Number(argv[argv.indexOf("--sample") + 1]) || 25;
 const TEXT_EXT = new Set([".md", ".markdown", ".txt", ".tex", ".rst"]);
 const UNPAYWALL_EMAIL = process.env.UNPAYWALL_EMAIL;
@@ -47,27 +79,34 @@ function walk(dir: string): string[] {
     if (ent.isDirectory()) {
       if (ent.name === "node_modules" || ent.name.startsWith(".")) continue;
       out.push(...walk(full));
-    } else if (TEXT_EXT.has(path.extname(ent.name).toLowerCase())) {
-      out.push(full);
+    } else {
+      const ext = path.extname(ent.name).toLowerCase();
+      if (TEXT_EXT.has(ext) || ext === ".pdf") out.push(full);
     }
   }
   return out;
 }
 
-function collect(): RawCitation[] {
+async function collect(): Promise<RawCitation[]> {
   const files = walk(corpusDir!);
   const byKey = new Map<string, RawCitation>();
   let scanned = 0;
   for (const f of files) {
-    let text: string;
-    try {
-      text = fs.readFileSync(f, "utf-8");
-    } catch {
-      continue;
+    let cites: RawCitation[];
+    if (path.extname(f).toLowerCase() === ".pdf") {
+      cites = await pdfCitations(f);
+    } else {
+      let text: string;
+      try {
+        text = fs.readFileSync(f, "utf-8");
+      } catch {
+        continue;
+      }
+      const { references } = splitTrailingReferences(text);
+      cites = extractCitations(references, text);
     }
     scanned++;
-    const { references } = splitTrailingReferences(text);
-    for (const c of extractCitations(references, text)) {
+    for (const c of cites) {
       const key =
         c.arxivId?.toLowerCase() ??
         c.doi?.toLowerCase() ??
@@ -77,7 +116,7 @@ function collect(): RawCitation[] {
       if (key && !byKey.has(key)) byKey.set(key, c);
     }
   }
-  console.log(`Scanned ${scanned} text file(s) under ${corpusDir}`);
+  console.log(`Scanned ${scanned} file(s) under ${corpusDir}`);
   return Array.from(byKey.values());
 }
 
@@ -135,24 +174,37 @@ function pct(n: number, d: number): string {
 
 // ── main ────────────────────────────────────────────────────────────────────────
 (async () => {
-  const cites = collect();
+  const cites = await collect();
   const total = cites.length;
   const withArxiv = cites.filter((c) => c.arxivId).length;
   const withDoi = cites.filter((c) => !c.arxivId && c.doi).length;
   const withPmid = cites.filter((c) => !c.arxivId && !c.doi && c.pmid).length;
   const withId = cites.filter((c) => c.arxivId || c.doi || c.pmid).length;
 
-  console.log("\n=== (a) OFFLINE id coverage ===");
-  console.log(`citations (deduped):   ${total}`);
-  console.log(`carrying a hard id:    ${withId}  (${pct(withId, total)})`);
-  console.log(`  · arXiv-id:          ${withArxiv}`);
-  console.log(`  · DOI:               ${withDoi}`);
-  console.log(`  · PMID:              ${withPmid}`);
+  const nFiles = walk(corpusDir!).length;
+  console.log("\n=== (a) OFFLINE — resolvable-id citations (the fetchable set) ===");
+  console.log(`resolvable citations (arXiv/DOI/PMID): ${withId}`);
+  console.log(`  · arXiv-id: ${withArxiv}    · DOI: ${withDoi}    · PMID: ${withPmid}`);
+  console.log(`across ${nFiles} doc(s) → ~${(withId / Math.max(nFiles, 1)).toFixed(0)} resolvable refs/doc`);
+  // NOTE: total raw "citations" includes one-word fragments from PDF text (pdf2json
+  // emits text run-by-run, so a bibliography splits into thousands of non-entries).
+  // The id-bearing count above is regex-reliable; the raw total is NOT a usable
+  // denominator for a coverage fraction, so we don't report one.
+  console.log(`(raw fragments scanned: ${total} — unreliable from PDF; no coverage-% reported)`);
+
+  if (DUMP) {
+    console.log("\n--- sample id-bearing citations ---");
+    for (const c of cites.filter((x) => x.arxivId || x.doi || x.pmid).slice(0, 10))
+      console.log(`  [id] ${c.arxivId ?? c.doi ?? c.pmid}  ::  ${c.raw.slice(0, 80)}`);
+    console.log("--- sample id-LESS citations (denominator noise check) ---");
+    for (const c of cites.filter((x) => !(x.arxivId || x.doi || x.pmid)).slice(0, 12))
+      console.log(`  [   ] ${JSON.stringify(c.raw.slice(0, 80))}`);
+  }
 
   if (!LIVE) {
     console.log("\n(skipping live OA check — pass --live to run it)");
     console.log(
-      "\nGO/NO-GO: id coverage is the ceiling on Phase-2 yield. Run --live for the OA fraction."
+      `\nGO/NO-GO: ${withId} resolvable citations found; run --live for the OA-resolvable fraction.`
     );
     return;
   }
@@ -175,11 +227,14 @@ function pct(n: number, d: number): string {
   const checked = sample.length - unknown;
   console.log(`OA full text resolvable: ${oa}/${checked}  (${pct(oa, checked)})` + (unknown ? `   [${unknown} unknown]` : ""));
 
-  const projected = total ? (withId / total) * (checked ? oa / checked : 0) : 0;
-  console.log(`\nGO/NO-GO — projected corpus OA-fulltext yield ≈ ${(100 * projected).toFixed(1)}%`);
+  const oaFrac = checked ? oa / checked : 0;
   console.log(
-    projected >= 0.2
-      ? "→ Worth a Phase-2 brief: enough citations resolve to OA full text to span-fetch."
-      : "→ Low yield: Phase-2 span-fetch likely not worth building on this corpus."
+    `\nGO/NO-GO — ${withId} resolvable citations (~${(withId / Math.max(nFiles, 1)).toFixed(0)}/doc), ` +
+      `${(100 * oaFrac).toFixed(0)}% OA-resolvable in the sample`
+  );
+  console.log(
+    oaFrac >= 0.5 && withId >= 50
+      ? "→ GO: substantial OA-resolvable citation signal — the span-fetch apex has real yield."
+      : "→ Low yield: id-bearing citations are sparse or rarely OA; reconsider Phase 2."
   );
 })();
