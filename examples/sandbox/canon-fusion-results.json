@@ -1,0 +1,518 @@
+{
+  "model": "mxbai-embed-large:335m",
+  "bandLow": 0.72,
+  "blockNs": [
+    5,
+    10
+  ],
+  "corpora": [
+    {
+      "name": "telegram-sink (mixed: ML+hardware+cuisine)",
+      "separation": [
+        {
+          "channel": "cosine",
+          "auc": 0.692,
+          "dprime": 0.538
+        },
+        {
+          "channel": "trigram-jaccard",
+          "auc": 0.591,
+          "dprime": 0.353
+        },
+        {
+          "channel": "trigram-overlap",
+          "auc": 0.707,
+          "dprime": 0.756
+        },
+        {
+          "channel": "token-jaccard",
+          "auc": 0.731,
+          "dprime": 0.836
+        },
+        {
+          "channel": "weighted(cos,trigram-jaccard)",
+          "auc": 0.668,
+          "dprime": 0.537
+        },
+        {
+          "channel": "weighted(cos,trigram-overlap)",
+          "auc": 0.74,
+          "dprime": 0.767
+        }
+      ],
+      "gate": [
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 5,
+          "lexical": "trigram-jaccard",
+          "fusion": "rrf",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 2650,
+          "candidatePairsBaseline": 2644
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 5,
+          "lexical": "trigram-jaccard",
+          "fusion": "weighted",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 2604,
+          "candidatePairsBaseline": 2644
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 5,
+          "lexical": "trigram-jaccard",
+          "fusion": "or",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 4163,
+          "candidatePairsBaseline": 2644
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 5,
+          "lexical": "trigram-overlap",
+          "fusion": "rrf",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 2647,
+          "candidatePairsBaseline": 2644
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 5,
+          "lexical": "trigram-overlap",
+          "fusion": "weighted",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 2611,
+          "candidatePairsBaseline": 2644
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 5,
+          "lexical": "trigram-overlap",
+          "fusion": "or",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 4303,
+          "candidatePairsBaseline": 2644
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 5,
+          "lexical": "token-jaccard",
+          "fusion": "rrf",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 2804,
+          "candidatePairsBaseline": 2644
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 5,
+          "lexical": "token-jaccard",
+          "fusion": "weighted",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 2630,
+          "candidatePairsBaseline": 2644
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 5,
+          "lexical": "token-jaccard",
+          "fusion": "or",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 4576,
+          "candidatePairsBaseline": 2644
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 10,
+          "lexical": "trigram-jaccard",
+          "fusion": "rrf",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 5155,
+          "candidatePairsBaseline": 5234
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 10,
+          "lexical": "trigram-jaccard",
+          "fusion": "weighted",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 5134,
+          "candidatePairsBaseline": 5234
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 10,
+          "lexical": "trigram-jaccard",
+          "fusion": "or",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 8443,
+          "candidatePairsBaseline": 5234
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 10,
+          "lexical": "trigram-overlap",
+          "fusion": "rrf",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 5202,
+          "candidatePairsBaseline": 5234
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 10,
+          "lexical": "trigram-overlap",
+          "fusion": "weighted",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 5150,
+          "candidatePairsBaseline": 5234
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 10,
+          "lexical": "trigram-overlap",
+          "fusion": "or",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 8694,
+          "candidatePairsBaseline": 5234
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 10,
+          "lexical": "token-jaccard",
+          "fusion": "rrf",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 5648,
+          "candidatePairsBaseline": 5234
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 10,
+          "lexical": "token-jaccard",
+          "fusion": "weighted",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 5161,
+          "candidatePairsBaseline": 5234
+        },
+        {
+          "corpus": "telegram-sink (mixed: ML+hardware+cuisine)",
+          "blockTopN": 10,
+          "lexical": "token-jaccard",
+          "fusion": "or",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 16,
+          "aliasesBaselineCandidate": 16,
+          "siblingsPromoted": 0,
+          "candidatePairs": 9572,
+          "candidatePairsBaseline": 5234
+        }
+      ],
+      "vetoHolds": true
+    },
+    {
+      "name": "wanshi self (code/technical)",
+      "separation": [
+        {
+          "channel": "cosine",
+          "auc": 0.532,
+          "dprime": 0.227
+        },
+        {
+          "channel": "trigram-jaccard",
+          "auc": 0.675,
+          "dprime": 0.636
+        },
+        {
+          "channel": "trigram-overlap",
+          "auc": 0.802,
+          "dprime": 1.093
+        },
+        {
+          "channel": "token-jaccard",
+          "auc": 0.778,
+          "dprime": 1.492
+        },
+        {
+          "channel": "weighted(cos,trigram-jaccard)",
+          "auc": 0.619,
+          "dprime": 0.537
+        },
+        {
+          "channel": "weighted(cos,trigram-overlap)",
+          "auc": 0.722,
+          "dprime": 0.846
+        }
+      ],
+      "gate": [
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 5,
+          "lexical": "trigram-jaccard",
+          "fusion": "rrf",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 2528,
+          "candidatePairsBaseline": 2474
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 5,
+          "lexical": "trigram-jaccard",
+          "fusion": "weighted",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 2486,
+          "candidatePairsBaseline": 2474
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 5,
+          "lexical": "trigram-jaccard",
+          "fusion": "or",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 3985,
+          "candidatePairsBaseline": 2474
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 5,
+          "lexical": "trigram-overlap",
+          "fusion": "rrf",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 2561,
+          "candidatePairsBaseline": 2474
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 5,
+          "lexical": "trigram-overlap",
+          "fusion": "weighted",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 2467,
+          "candidatePairsBaseline": 2474
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 5,
+          "lexical": "trigram-overlap",
+          "fusion": "or",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 4072,
+          "candidatePairsBaseline": 2474
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 5,
+          "lexical": "token-jaccard",
+          "fusion": "rrf",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 6,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 3137,
+          "candidatePairsBaseline": 2474
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 5,
+          "lexical": "token-jaccard",
+          "fusion": "weighted",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 2491,
+          "candidatePairsBaseline": 2474
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 5,
+          "lexical": "token-jaccard",
+          "fusion": "or",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 5415,
+          "candidatePairsBaseline": 2474
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 10,
+          "lexical": "trigram-jaccard",
+          "fusion": "rrf",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 4942,
+          "candidatePairsBaseline": 4815
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 10,
+          "lexical": "trigram-jaccard",
+          "fusion": "weighted",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 4797,
+          "candidatePairsBaseline": 4815
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 10,
+          "lexical": "trigram-jaccard",
+          "fusion": "or",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 7933,
+          "candidatePairsBaseline": 4815
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 10,
+          "lexical": "trigram-overlap",
+          "fusion": "rrf",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 4935,
+          "candidatePairsBaseline": 4815
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 10,
+          "lexical": "trigram-overlap",
+          "fusion": "weighted",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 4803,
+          "candidatePairsBaseline": 4815
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 10,
+          "lexical": "trigram-overlap",
+          "fusion": "or",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 8016,
+          "candidatePairsBaseline": 4815
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 10,
+          "lexical": "token-jaccard",
+          "fusion": "rrf",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 8,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 6256,
+          "candidatePairsBaseline": 4815
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 10,
+          "lexical": "token-jaccard",
+          "fusion": "weighted",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 4790,
+          "candidatePairsBaseline": 4815
+        },
+        {
+          "corpus": "wanshi self (code/technical)",
+          "blockTopN": 10,
+          "lexical": "token-jaccard",
+          "fusion": "or",
+          "aliasesRescued": 0,
+          "aliasesTotalCandidate": 9,
+          "aliasesBaselineCandidate": 9,
+          "siblingsPromoted": 0,
+          "candidatePairs": 10892,
+          "candidatePairsBaseline": 4815
+        }
+      ],
+      "vetoHolds": true
+    }
+  ]
+}
