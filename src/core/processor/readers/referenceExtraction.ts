@@ -12,8 +12,32 @@
  * blocks; a regex fallback handles prose bibliographies (the common case) and
  * inline ids. Citation.js throwing on prose is expected and caught.
  */
-import { Cite } from "@citation-js/core";
-import "@citation-js/plugin-bibtex";
+
+// Citation.js ships no type declarations and we use a thin slice of it, so it's
+// required lazily (only when a BibTeX-looking block is parsed → zero cost on the
+// prose/no-citation path) and typed locally. A plain `require` also keeps this
+// resolvable under both `tsc` and a `ts-node` sandbox run without an ambient
+// .d.ts on the include path.
+interface CslEntry {
+  type?: string;
+  title?: string;
+  DOI?: string;
+  [key: string]: unknown;
+}
+type CiteCtor = new (data: unknown) => { data: CslEntry[] };
+
+let citeCtor: CiteCtor | null | undefined;
+function loadCite(): CiteCtor | null {
+  if (citeCtor !== undefined) return citeCtor;
+  try {
+    const core = require("@citation-js/core") as { Cite: CiteCtor };
+    require("@citation-js/plugin-bibtex"); // side-effect: registers the @biblatex input
+    citeCtor = core.Cite;
+  } catch {
+    citeCtor = null;
+  }
+  return citeCtor;
+}
 
 export type LinkKind = "markdown" | "wikilink" | "html";
 
@@ -121,6 +145,8 @@ function extractIds(s: string): Pick<RawCitation, "arxivId" | "doi" | "pmid"> {
 /** Structured parse via Citation.js; returns [] (not throw) on non-BibTeX input. */
 function parseStructured(block: string): RawCitation[] {
   if (!/@\w+\s*\{/.test(block)) return []; // cheap guard: looks like BibTeX?
+  const Cite = loadCite();
+  if (!Cite) return [];
   try {
     const entries = new Cite(block).data ?? [];
     return entries
@@ -194,6 +220,9 @@ export function extractCitations(
   }
   for (const m of bodyText.matchAll(new RegExp(DOI_RE.source, "gi"))) {
     add({ raw: m[0], doi: trimTrailingPunct(m[0]) });
+  }
+  for (const m of bodyText.matchAll(new RegExp(PMID_RE.source, "gi"))) {
+    add({ raw: m[0], pmid: m[1] });
   }
 
   return Array.from(out.values());
