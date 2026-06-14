@@ -27,6 +27,19 @@ export interface Relation {
   // source span; `grounded === false` marks an ungrounded edge that `drop` removes.
   grounded?: boolean;
   groundingScore?: number; // 0..1 grounding score for the verbalized triple
+  /**
+   * Reference-resolution edges (Phase 0, `links_to`/`cites`/`references`): the
+   * document the edge was emitted from (corpus-relative path id). Distinct from
+   * `sourceSpan` — this is provenance for a deterministic edge, not LLM output.
+   */
+  source?: string;
+  /**
+   * Reference-resolution edges: whether the target was found in the corpus
+   * (internal links) or is otherwise a live, in-graph node. `false` marks a
+   * bare edge to a stub node (e.g. an external/missing target) — never fabricate
+   * the target's content. Absent on ordinary LLM-extracted relations.
+   */
+  resolved?: boolean;
 }
 
 export interface KnowledgeGraph {

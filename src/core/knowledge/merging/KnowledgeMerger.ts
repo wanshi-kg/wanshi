@@ -476,6 +476,8 @@ async function mergeWithinFile(
           relationType,
           ...(relation.sourceSpan ? { sourceSpan: relation.sourceSpan } : {}),
           ...(relation.validAt ? { validAt: relation.validAt } : {}),
+          ...(relation.source ? { source: relation.source } : {}),
+          ...(relation.resolved !== undefined ? { resolved: relation.resolved } : {}),
         });
       }
     }
@@ -713,6 +715,8 @@ async function mergeGlobally(
             relationType,
             ...(relation.sourceSpan ? { sourceSpan: relation.sourceSpan } : {}),
             ...(relation.validAt ? { validAt: relation.validAt } : {}),
+            ...(relation.source ? { source: relation.source } : {}),
+            ...(relation.resolved !== undefined ? { resolved: relation.resolved } : {}),
           });
         }
       } else {
