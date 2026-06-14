@@ -20,6 +20,7 @@ import {
 import { PromptManager } from "./llm";
 import { AstSeedService } from "./processor/ast";
 import { toRelPathId } from "./corpus";
+import { buildReferenceGraph } from "./knowledge/references/ReferenceResolver";
 import {
   PipelineRunner,
   GroundingTransform,
@@ -164,6 +165,13 @@ export class DirectoryProcessor implements IDirectoryProcessor {
         : undefined;
     await astSeed?.loadCache();
 
+    // Reference & link resolution (Phase 0): when internal-link resolution is on,
+    // precompute the corpus-relative path set once so each file's links resolve
+    // against the full file universe. Citations need no corpus set.
+    const corpusRelPaths = options.references.internalLinks.enabled
+      ? new Set(files.map((f) => toRelPathId(options.input, f)))
+      : new Set<string>();
+
     const total = files.length;
     let index = 0;
     for (const file of files) {
@@ -188,7 +196,8 @@ export class DirectoryProcessor implements IDirectoryProcessor {
           retrievalContext,
           logger,
           corpusProfile,
-          astSeed
+          astSeed,
+          corpusRelPaths
         );
         knowledgeGraphs.push(...fileGraphs);
 
@@ -298,7 +307,8 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     existingGraphs: KnowledgeGraph[],
     logger: Logger,
     corpusProfile?: CorpusProfile,
-    astSeed?: AstSeedService
+    astSeed?: AstSeedService,
+    corpusRelPaths: Set<string> = new Set()
   ): Promise<KnowledgeGraph[]> {
     logger.info(`Processing: ${file}`);
 
@@ -344,6 +354,17 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     // LLM's per-chunk graphs — the model augments the symbol set, not originates it.
     const seed = astSeed ? await astSeed.seedGraph(processedFile) : null;
     if (seed) graphs.push(seed);
+
+    // Deterministic reference edges (Phase 0, network-free): internal links +
+    // citations the document already contains, resolved against the corpus.
+    // Merges with the LLM graphs like the AST seed above.
+    if (options.references.internalLinks.enabled || options.references.citations.enabled) {
+      const refGraph = buildReferenceGraph(processedFile, corpusRelPaths, options.input, {
+        internalLinks: options.references.internalLinks.enabled,
+        citations: options.references.citations.enabled,
+      });
+      if (refGraph) graphs.push(refGraph);
+    }
 
     return graphs;
   }
