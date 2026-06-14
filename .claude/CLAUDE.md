@@ -289,14 +289,27 @@ it's reached. With follow on it seeds from `follow.seeds` (e.g. `INDEX.md`) — 
 set — and after each file enqueues its resolved internal-link targets (reusing
 `resolveInternalTarget` over the **whole input tree**, not just the glob), bounded by
 `follow.maxDepth` (0 = unlimited) and `follow.maxFiles`. Cycles are impossible (registry);
-external targets are skipped (network = Phase 1); follow auto-implies `internalLinks`. The
-registry is the gate the Phase-1 fetcher will also consult. Distinct from the resume
-checkpoint (per-*chunk* extraction dedup across runs; the registry is per-*file* read dedup
-within a run — they compose).
+external targets are skipped (handled by the web fetcher below); follow auto-implies
+`internalLinks`. Distinct from the resume checkpoint (per-*chunk* extraction dedup across
+runs; the registry is per-*file* read dedup within a run — they compose).
 
-Phases 1 (gated network fetcher, external web) and 2 (citation span-fetch + MiniCheck
-faithfulness) are deferred; Phase 2 is gated by the OA-resolvability probe
-(`examples/sandbox/oa-resolvability-probe.ts`). Briefs in `docs/inbox/2026-06-14-*reference-resolution*`.
+**Phase 1 — gated web fetcher (`references.web`, `--reference-web`, default OFF, opt-in
+NETWORK).** Class-3 external links → `references` edges. `src/core/knowledge/references/web/`:
+`GatedFetcher` applies layered, always-on guards (allowlist [empty ⇒ no fetch, the master
+switch] → rejectlist → robots.txt → per-run `maxFetches` budget → timed `fetch` →
+content-type [html only; pdf is Phase 2] → `maxBytes` → **LLM relevance pre-check** on
+title/meta), staging passing bodies to `./temp`. `WebReferenceProcessor` (run per file in the
+worklist when enabled) fetches each external link, extracts the page through the normal
+reader+builder (depth-1, content only), and emits a `references` edge `citingDoc → url`
+(`resolved:true`; gated/blocked ⇒ bare `resolved:false` + stub url node, never fabricated).
+`FetchCacheService` (`<output>.fetch-cache.jsonl`, `CheckpointService`-style) makes a URL
+fetched at most once across runs. Note: `extractBareUrls` is what captures web-clip
+`> source:` URLs (markdown-link extraction alone misses them). Default run = offline,
+byte-identical.
+
+Phase 2 (citation span-fetch + MiniCheck faithfulness) is still deferred — gated by the
+OA-resolvability probe (`examples/sandbox/oa-resolvability-probe.ts`). Briefs in
+`docs/inbox/2026-06-14-*reference-resolution*`.
 
 ## LLM Providers & Resume
 
