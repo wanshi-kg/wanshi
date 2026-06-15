@@ -14,6 +14,7 @@ import { FileReaderFactory, TextChunker } from "../processor";
 import type { CheckpointService } from "../checkpoint";
 import { IContentClassifier } from "../processor/classifier";
 import { LlmContentClassifier } from "../processor/classifier/LlmContentClassifier";
+import { configureDomainGate } from "../knowledge/vocabulary";
 
 /**
  * Service identifiers for dependency injection
@@ -78,10 +79,20 @@ export class ContainerFactory {
   static createContainer(config: ContainerConfig): DIContainer {
     const container = new DIContainer();
 
+    const processingOptions = config.processingOptions as ProcessingOptions;
+
+    // Apply run-global domain-gate thresholds (A1) before any lazy factory — the
+    // enum path, prompt hints, cascade, and harness then all gate on the same
+    // configured values (KG-05 single source).
+    configureDomainGate({
+      lowConfidence: processingOptions.classifier?.lowConfidenceThreshold,
+      mixedDomain: processingOptions.classifier?.mixedDomainThreshold,
+    });
+
     // Register configuration
     container.registerValue<ProcessingOptions>(
       TYPES.ProcessingOptions,
-      config.processingOptions as ProcessingOptions
+      processingOptions
     );
 
     // Register logger
@@ -329,6 +340,7 @@ export class ContainerFactory {
     container.register<IContentClassifier | undefined>(TYPES.ContentClassifier, async (c) => {
       const {
         HeuristicContentClassifier,
+        CascadeContentClassifier,
       } = await import("../processor/classifier");
       const options = await c.resolve<ProcessingOptions>(
         TYPES.ProcessingOptions
@@ -339,14 +351,35 @@ export class ContainerFactory {
           // Not implemented — fail clearly at wiring time rather than throwing
           // partway through a run. The CLI also rejects this earlier.
           throw new Error(
-            "The 'bert' classifier is not implemented. Use --classifier heuristic|llm, or disabled."
+            "The 'bert' classifier is not implemented. Use --classifier heuristic|llm|cascade, or disabled."
           );
-        case "heuristic": return new HeuristicContentClassifier(logger);
+        case "heuristic":
+          return new HeuristicContentClassifier(
+            logger,
+            options.classifier.temperature,
+            options.classifier.crossValidationFactor
+          );
         case "llm": {
           // Share the selected generation provider (KG-15) so --classifier llm
           // works on cloud (OpenAI-compatible) backends, not just local Ollama.
           const llm = await c.resolve<ILLMProvider>(TYPES.LLMService);
           return new LlmContentClassifier(llm, logger);
+        }
+        case "cascade": {
+          // Phase-B cascade: heuristic decides the easy majority; only top-2 ties
+          // escalate to the LLM (same shared provider). Degrades to heuristic-multi
+          // when the budget is spent or the provider is unreachable.
+          const llm = await c.resolve<ILLMProvider>(TYPES.LLMService);
+          return new CascadeContentClassifier(
+            new HeuristicContentClassifier(
+              logger,
+              options.classifier.temperature,
+              options.classifier.crossValidationFactor
+            ),
+            new LlmContentClassifier(llm, logger),
+            logger,
+            options.classifier.maxEscalations
+          );
         }
         default: return undefined;
       }

@@ -134,7 +134,14 @@ export const CONFIG_GROUPS: ConfigGroupMeta[] = [
   {
     id: "classifier",
     title: "Classifier (experimental)",
-    fields: [{ path: "classifier.mode", label: "Classifier", widget: "select" }],
+    fields: [
+      { path: "classifier.mode", label: "Classifier", widget: "select" },
+      { path: "classifier.temperature", label: "Softmax temperature", widget: "number", placeholder: "2.0" },
+      { path: "classifier.crossValidationFactor", label: "Cross-validation factor", widget: "number", placeholder: "0.15" },
+      { path: "classifier.maxEscalations", label: "Cascade max escalations", widget: "number", placeholder: "50" },
+      { path: "classifier.lowConfidenceThreshold", label: "Domain floor", widget: "number", placeholder: "0.25" },
+      { path: "classifier.mixedDomainThreshold", label: "Mixed-domain margin", widget: "number", placeholder: "0.15" },
+    ],
   },
   {
     id: "retrieval",

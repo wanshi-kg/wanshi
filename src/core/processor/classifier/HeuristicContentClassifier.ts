@@ -1,21 +1,50 @@
 import { IContentClassifier } from "./IContentTypeClassifier";
 import {
   ClassificationResult,
+  ContentClass,
   ContentPattern,
   ContentClassConfig,
 } from "../../../types";
 import { CONTENT_CLASSES } from "./CONTENT_CLASSES";
-import { Logger } from "../../../shared";
+import { Logger, softmax } from "../../../shared";
 
 
 interface ClassConfigWithNegatives extends ContentClassConfig {
   negativePatterns: ContentPattern[];
 }
 
+/** Per-class raw score with its three contributions kept for debug/explainability. */
+interface RawClassScore {
+  class: ContentClass;
+  fileScore: number;
+  contentScore: number;
+  negativeScore: number;
+  total: number;
+}
+
+/**
+ * Softmax temperature applied to the raw per-class scores to turn them into a
+ * comparable distribution (S2). Lower = sharper (decisive single-domain); higher
+ * = flatter (more ties → the cascade's "close" branch in `activeDomainClasses`).
+ * Tuned on the A3 harness; overridable via `classifier.temperature` (A1).
+ */
+export const DEFAULT_SOFTMAX_TEMPERATURE = 2.0;
+
+/**
+ * Magnitude of the cross-validation penalty: each class subtracts every *other*
+ * class's positive patterns at this fraction of their weight. Overridable via
+ * `classifier.crossValidationFactor` (A1).
+ */
+export const DEFAULT_CROSS_VALIDATION_FACTOR = 0.15;
+
 export class HeuristicContentClassifier implements IContentClassifier {
   private crossValidatedClasses: Record<string, ClassConfigWithNegatives> = {};
 
-  constructor(private logger: Logger) {
+  constructor(
+    private logger: Logger,
+    private readonly temperature: number = DEFAULT_SOFTMAX_TEMPERATURE,
+    private readonly crossValidationFactor: number = DEFAULT_CROSS_VALIDATION_FACTOR
+  ) {
     this.initializeCrossValidation();
   }
 
@@ -31,7 +60,7 @@ export class HeuristicContentClassifier implements IContentClassifier {
           for (const pattern of otherConfig.contentPatterns) {
             negativePatterns.push({
               pattern: pattern.pattern,
-              weight: -pattern.weight * 0.15, // Negative weight, reduced magnitude
+              weight: -pattern.weight * this.crossValidationFactor, // negative, reduced magnitude
             });
           }
         }
@@ -45,22 +74,50 @@ export class HeuristicContentClassifier implements IContentClassifier {
   }
 
   async classify(content: string, path: string): Promise<ClassificationResult[]> {
-    const results = Object.values(this.crossValidatedClasses).map(config => 
-      this.calculateDensityScore(content, path, config)
+    const raw = Object.values(this.crossValidatedClasses).map((config) =>
+      this.rawScore(content, path, config)
     );
 
-    return results
-      .filter(result => result.confidence > 0.7) // Basic threshold
-      .sort((a, b) => b.confidence - a.confidence);
+    // Softmax over the raw scores → a comparable distribution across classes (S2),
+    // not 12 independent squashes. We return *all* classes ranked and let the single
+    // downstream gate (`activeDomainClasses`) decide abstain/single/multi — the old
+    // `> 0.7` self-filter is gone (S3), so the classifier ranks and the consumer gates.
+    const confidences = softmax(
+      raw.map((r) => r.total),
+      this.temperature
+    );
+
+    const results: ClassificationResult[] = raw.map((r, i) => ({
+      class: r.class,
+      confidence: confidences[i],
+    }));
+
+    for (let i = 0; i < raw.length; i++) {
+      const r = raw[i];
+      this.logger.debug(
+        `[heuristic] ${r.class}: file=${r.fileScore.toFixed(2)} content=${r.contentScore.toFixed(2)} ` +
+          `neg=${r.negativeScore.toFixed(2)} total=${r.total.toFixed(2)} p=${confidences[i].toFixed(3)}`
+      );
+    }
+
+    return results.sort((a, b) => b.confidence - a.confidence);
   }
 
-  private calculateDensityScore(content: string, path: string, config: ClassConfigWithNegatives): ClassificationResult {
-    let totalScore = 0;
+  private rawScore(
+    content: string,
+    path: string,
+    config: ClassConfigWithNegatives
+  ): RawClassScore {
+    // Track the three contributions separately so a debug run can explain *why*
+    // a file scored the way it did (the seam for tuning weights/thresholds).
+    let fileScore = 0;
+    let contentScore = 0;
+    let negativeScore = 0;
 
     // File pattern scoring
     for (const { pattern, weight } of config.filePatterns) {
       if (pattern.test(path)) {
-        totalScore += weight;
+        fileScore += weight;
       }
     }
 
@@ -69,7 +126,7 @@ export class HeuristicContentClassifier implements IContentClassifier {
       const matches = content.match(pattern) || [];
       const score = Math.log(matches.length + 1) * weight;
       if (score > 0) {
-        totalScore += score;
+        contentScore += score;
       }
     }
 
@@ -78,17 +135,16 @@ export class HeuristicContentClassifier implements IContentClassifier {
       const matches = content.match(pattern) || [];
       const score = Math.log(matches.length + 1) * weight; // weight is negative
       if (score < 0) {
-        totalScore += score;
+        negativeScore += score;
       }
     }
 
-    // Score normalization
-    const normalizedScore = totalScore / 15;
-    const confidence = Math.max(0.05, Math.min(0.95, 0.5 * (1 + Math.tanh(normalizedScore))));
-
     return {
       class: config.name,
-      confidence: confidence,
+      fileScore,
+      contentScore,
+      negativeScore,
+      total: fileScore + contentScore + negativeScore,
     };
   }
 }

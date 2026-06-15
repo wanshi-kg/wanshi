@@ -115,7 +115,7 @@ program
   )
 
   // Content Classification
-  .option("--classifier <mode>", "content classifier mode (disabled|heuristic|llm)")
+  .option("--classifier <mode>", "content classifier mode (disabled|heuristic|llm|cascade)")
 
   // Enable Image Processing
   .option("--images <mode>", "enable image processing (disabled|auto|enabled)")

@@ -6,7 +6,7 @@ import { ClassificationResult, ContentClass, CorpusGlossary, OutlineOptions } fr
 import {
   activeDomainClasses,
   domainVocabulary,
-  LOW_CONFIDENCE_THRESHOLD,
+  domainGateThresholds,
 } from '../../knowledge/vocabulary';
 
 export interface PromptContext {
@@ -30,11 +30,11 @@ const CLASS_TO_PARTIAL: Record<ContentClass, string> = {
   medical:       'medical.md',
   legal:         'legal.md',
   technical:     'logs.md',
-  research:      'generic.md',
+  research:      'research.md',
   transcript:    'transcript.md',
   tabular:       'tabular.md',
-  communication: 'generic.md',
-  documentation: 'generic.md',
+  communication: 'communication.md',
+  documentation: 'documentation.md',
   narrative:     'article.md',
   reference:     'notes.md',
 };
@@ -248,7 +248,7 @@ export class PromptManager {
   ): ClassificationResult | undefined {
     if (!contentClasses || contentClasses.length === 0) return undefined;
     const top = contentClasses[0]; // already sorted descending by confidence
-    return top.confidence >= LOW_CONFIDENCE_THRESHOLD ? top : undefined;
+    return top.confidence >= domainGateThresholds().lowConfidence ? top : undefined;
   }
 
   /**

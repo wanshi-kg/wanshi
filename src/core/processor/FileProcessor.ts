@@ -9,6 +9,7 @@ import {
 import { FileReaderFactory, FileReadResult } from "./readers";
 import { Logger } from "../../shared";
 import { IContentClassifier } from "./classifier/IContentTypeClassifier";
+import { mergeChunkClassifications } from "./classifier/mergeClassifications";
 
 /**
  * Main file processor that coordinates reading and chunking
@@ -126,52 +127,21 @@ export class FileProcessor implements IFileProcessor {
   }
 
   private async classifyContent(filePath: string, readResult: FileReadResult) {
-    let classes: ClassificationResult[] | undefined = undefined;
+    const classifier = this.classifier;
+    if (!classifier) return undefined;
     try {
-      if (this.classifier) {
-        const results = await Promise.all(
-          readResult.chunks.map((chunk) =>
-            this.classifier?.classify(chunk.content, filePath)
-          )
-        );
-        const mergeClassificationResults = (
-          a: ClassificationResult[],
-          b: ClassificationResult[]
-        ): ClassificationResult[] => {
-          const uniqueClasses = Array.from(
-            new Set([...a.map((c) => c.class), ...b.map((c) => c.class)])
-          );
-          const merged = uniqueClasses.map((cls) => {
-            const resultsByClass = [
-              ...a.filter((x) => x.class === cls),
-              ...b.filter((x) => x.class === cls),
-            ];
-            const confidenceSum = resultsByClass.reduce(
-              (acc, curr) => acc + curr.confidence,
-              0
-            );
-            return {
-              class: cls,
-              confidence: confidenceSum / resultsByClass.length,
-            } as ClassificationResult;
-          });
-          return merged;
-        };
-
-        classes = results
-          .reduce<ClassificationResult[]>(
-            (acc, curr) => mergeClassificationResults(acc, curr || []),
-            []
-          )
-          .sort((a, b) => b.confidence - a.confidence);
-
-        // classes = await this.classifier?.classify(readResult.chunks[0].content, filePath);
-      }
+      // Classify every chunk, then prevalence-weight across the whole file so a
+      // pervasive domain outranks a single off-topic chunk (see mergeChunkClassifications).
+      const perChunk = await Promise.all(
+        readResult.chunks.map((chunk) =>
+          classifier.classify(chunk.content, filePath)
+        )
+      );
+      return mergeChunkClassifications(perChunk);
     } catch (error) {
       this.logger.error("Unable to classify file content.", error);
+      return undefined;
     }
-
-    return classes;
   }
 
   /**

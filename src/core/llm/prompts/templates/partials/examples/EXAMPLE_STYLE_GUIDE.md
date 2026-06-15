@@ -13,8 +13,13 @@ arrays (e.g. `["contains", "uses"]`, `["used_to_create"]` is fine; `["develops",
 "announces"]` should split into the single most accurate predicate) and remove the
 one self-loop in `notes.md` (`Cursor-based Pagination → Cursor-based Pagination`).
 
-**Need a full rewrite (rebuilt in v5 form):** `generic.md` ✅ done, `financial.md`
-✅ done, `medical.md` ✅ done, `legal.md` ✅ done, `logs.md` ✅ done.
+**Need a full rewrite (rebuilt in v5 form):** `financial.md` ✅ done, `medical.md`
+✅ done, `legal.md` ✅ done, `logs.md` ✅ done.
+
+**Dedicated examples (replaced the shared `generic.md` fallback):** `research.md`,
+`communication.md`, `documentation.md` ✅ done. Every `ContentClass` now routes to
+its own example file (`CLASS_TO_PARTIAL`); there is no generic catch-all — the
+KG-05 test in `vocabulary.test.ts` requires every example file to be reachable.
 
 ## The seven rules
 

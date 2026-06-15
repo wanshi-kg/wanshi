@@ -42,6 +42,7 @@ export const ContentClassifierModeEnum = z.enum([
   "disabled",
   "heuristic",
   "llm",
+  "cascade",
   "bert",
 ]);
 export const GroundingModeEnum = z.enum(["disabled", "flag", "drop"]);
@@ -178,6 +179,34 @@ const CorpusSchema = z
 const ClassifierSchema = z
   .object({
     mode: ContentClassifierModeEnum.default("disabled").describe("Content classifier mode (experimental)"),
+    temperature: z.coerce
+      .number()
+      .positive()
+      .default(2.0)
+      .describe("Heuristic softmax temperature: lower = sharper/more decisive, higher = flatter/more ties"),
+    crossValidationFactor: z.coerce
+      .number()
+      .min(0)
+      .default(0.15)
+      .describe("Heuristic cross-validation negative-pattern weight factor"),
+    maxEscalations: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .default(50)
+      .describe("Cascade mode: max LLM tie-break escalations per run (cost guard)"),
+    lowConfidenceThreshold: z.coerce
+      .number()
+      .min(0)
+      .max(1)
+      .default(0.25)
+      .describe("Domain-gate floor: min top-1 confidence to route any domain"),
+    mixedDomainThreshold: z.coerce
+      .number()
+      .min(0)
+      .max(1)
+      .default(0.15)
+      .describe("Domain-gate margin: max top1−top2 gap to also route the second domain"),
   })
   .strict();
 

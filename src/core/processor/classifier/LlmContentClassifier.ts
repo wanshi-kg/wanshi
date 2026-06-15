@@ -71,6 +71,13 @@ export class LlmContentClassifier implements IContentClassifier {
     content: string,
     path: string
   ): Promise<ClassificationResult[]> {
+    // Returns a single `{class, confidence}` (the model's pick) — consumed by the
+    // exact same gate as the heuristic (`vocabulary.ts:activeDomainClasses`). After
+    // S2/S3 both classifiers feed that gate a comparable [0,1] confidence and there
+    // is no classifier-internal threshold: the heuristic emits a softmax
+    // distribution, the LLM emits the model's own probability, and the single
+    // downstream gate decides abstain/single/multi for both.
+    //
     // Route through the provider-agnostic ILLMProvider (KG-15). Previously this
     // hardcoded an Ollama client + host, so with `provider: openai` every call
     // hit `/api/chat` on a cloud base URL and 404'd. generateStructured already

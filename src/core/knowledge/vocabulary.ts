@@ -36,17 +36,75 @@ export const BASE_RELATION_TYPES = [
 export const ENTITY_TYPE_ESCAPE = "other";
 export const RELATION_TYPE_ESCAPE = "related_to";
 
-/** Minimum confidence to treat a classification as a domain signal. */
-export const LOW_CONFIDENCE_THRESHOLD = 0.3;
-
-/** If the top-2 class confidences are within this delta, treat as mixed domain. */
-export const MIXED_DOMAIN_THRESHOLD = 0.2;
+/**
+ * Default minimum top-1 confidence to treat a classification as a domain signal.
+ *
+ * Calibrated for the softmax-probability confidences both classifiers now emit
+ * (S2): ~3× the 1/12 uniform baseline (≈0.083). A clearly-dominant-but-weak class
+ * (e.g. financial prose with no `$` smoking-gun lands at ~0.31, next at ~0.07)
+ * still routes; a flat/uniform distribution (garbage or empty content, p1 ≲ 0.15)
+ * abstains. The pre-S2 value (0.3) was tuned for the old *independent* tanh scores.
+ */
+export const DEFAULT_LOW_CONFIDENCE_THRESHOLD = 0.25;
 
 /**
- * The domain class(es) a classification actually activates: the top class (when
- * it clears {@link LOW_CONFIDENCE_THRESHOLD}), plus a close second within
- * {@link MIXED_DOMAIN_THRESHOLD}. This is the *one* selection both the enum and
- * the prompt hints use, so they can't disagree about which domain is active.
+ * Default max top1−top2 probability gap that still counts as a tie → activate both.
+ * Conservative on purpose: combined with the floor on the *second* class, multi
+ * only fires when two domains genuinely co-dominate (each ≥ floor and within this
+ * margin), which prevents the "doubling the enum" over-activation S2 flagged. The
+ * pre-S2 value (0.2) was tuned for tanh scores.
+ */
+export const DEFAULT_MIXED_DOMAIN_THRESHOLD = 0.15;
+
+/**
+ * Run-global domain-gate thresholds (A1). A module singleton — like
+ * `shared/shutdown.ts` — set once per run from
+ * `classifier.{lowConfidenceThreshold,mixedDomainThreshold}` by `ContainerFactory`.
+ *
+ * Keeping it module-global (rather than threading config through every pure gate
+ * function) guarantees the Zod enum path, the prompt hints, the cascade, and the
+ * eval harness all gate on **identical** thresholds — the KG-05 single-source
+ * invariant that would otherwise be one missed caller away from divergence.
+ */
+let lowConfidenceThreshold = DEFAULT_LOW_CONFIDENCE_THRESHOLD;
+let mixedDomainThreshold = DEFAULT_MIXED_DOMAIN_THRESHOLD;
+
+/** Override the gate thresholds for this run; `undefined` values keep the current. */
+export function configureDomainGate(opts: {
+  lowConfidence?: number;
+  mixedDomain?: number;
+}): void {
+  if (typeof opts.lowConfidence === "number") lowConfidenceThreshold = opts.lowConfidence;
+  if (typeof opts.mixedDomain === "number") mixedDomainThreshold = opts.mixedDomain;
+}
+
+/** The active gate thresholds (read by `activeDomainClasses` and `getTopClass`). */
+export function domainGateThresholds(): {
+  lowConfidence: number;
+  mixedDomain: number;
+} {
+  return { lowConfidence: lowConfidenceThreshold, mixedDomain: mixedDomainThreshold };
+}
+
+/** Restore the default thresholds — for tests that exercise a custom gate config. */
+export function resetDomainGate(): void {
+  lowConfidenceThreshold = DEFAULT_LOW_CONFIDENCE_THRESHOLD;
+  mixedDomainThreshold = DEFAULT_MIXED_DOMAIN_THRESHOLD;
+}
+
+/**
+ * The deterministic confidence cascade (S2/S3): the domain class(es) a
+ * classification activates from a calibrated softmax distribution —
+ *
+ *   - **abstain** (`[]`)      when the top class is below the low-confidence floor;
+ *   - **single** (`[c1]`)     when one class clears the floor and dominates;
+ *   - **multi**  (`[c1, c2]`) when a close second also clears the floor, within
+ *                             the mixed-domain margin.
+ *
+ * Thresholds come from the run-global {@link domainGateThresholds}. This is the
+ * *one* selection both the Zod enum and the prompt hints use, so they can't
+ * disagree about which domain is active. (Phase B inserts an LLM tie-break into
+ * the "close" branch before falling through to multi.)
  */
 export function activeDomainClasses(
   contentClasses?: ClassificationResult[]
@@ -54,12 +112,12 @@ export function activeDomainClasses(
   if (!contentClasses || contentClasses.length === 0) return [];
   const sorted = [...contentClasses].sort((a, b) => b.confidence - a.confidence);
   const top = sorted[0];
-  if (top.confidence < LOW_CONFIDENCE_THRESHOLD) return [];
+  if (top.confidence < lowConfidenceThreshold) return [];
   const active: ContentClass[] = [top.class];
   if (
     sorted.length > 1 &&
-    sorted[1].confidence >= LOW_CONFIDENCE_THRESHOLD &&
-    top.confidence - sorted[1].confidence <= MIXED_DOMAIN_THRESHOLD
+    sorted[1].confidence >= lowConfidenceThreshold &&
+    top.confidence - sorted[1].confidence <= mixedDomainThreshold
   ) {
     active.push(sorted[1].class);
   }
