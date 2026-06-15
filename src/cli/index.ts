@@ -229,15 +229,6 @@ program
       throw error;
     }
 
-    // The BERT classifier is not implemented; reject it early with a clear
-    // message rather than failing partway through a run.
-    if (options.classifier.mode === "bert") {
-      console.error(
-        "The 'bert' classifier is not implemented. Use --classifier heuristic|llm, or disabled."
-      );
-      process.exit(1);
-    }
-
     // Initialize DI container
     const container = ContainerFactory.createContainer({
       processingOptions: options,

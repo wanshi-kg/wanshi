@@ -1,4 +1,4 @@
-import { ContainerFactory, TYPES } from "./index";
+import { ContainerFactory } from "./index";
 import { makeConfig } from "../../__tests__/helpers";
 import { domainGateThresholds, resetDomainGate } from "../knowledge/vocabulary";
 
@@ -24,17 +24,11 @@ describe("ContainerFactory — domain-gate config (A1)", () => {
 });
 
 describe("ContainerFactory — classifier gating", () => {
-  it("rejects the unimplemented 'bert' classifier with a clear message", async () => {
-    const container = ContainerFactory.createContainer({
-      processingOptions: makeConfig({
-        classifier: { mode: "bert" },
-        logging: { level: "error", silent: true },
-        llm: { model: "x", host: "y" },
-      }),
-    });
-
-    await expect(container.resolve(TYPES.ContentClassifier)).rejects.toThrow(
-      /bert.*not implemented/i
-    );
+  it("rejects a removed/unknown classifier mode at config validation", () => {
+    // `bert` (the old triple-guarded stub) is gone: the closed enum now rejects it
+    // up front with the list of valid modes, instead of a deferred runtime throw.
+    expect(() =>
+      makeConfig({ classifier: { mode: "bert" } })
+    ).toThrow();
   });
 });

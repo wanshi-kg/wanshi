@@ -347,12 +347,6 @@ export class ContainerFactory {
       );
       const logger = await c.resolve<Logger>(TYPES.Logger);
       switch (options.classifier.mode) {
-        case "bert":
-          // Not implemented — fail clearly at wiring time rather than throwing
-          // partway through a run. The CLI also rejects this earlier.
-          throw new Error(
-            "The 'bert' classifier is not implemented. Use --classifier heuristic|llm|cascade, or disabled."
-          );
         case "heuristic":
           return new HeuristicContentClassifier(
             logger,

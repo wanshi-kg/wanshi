@@ -43,7 +43,6 @@ export const ContentClassifierModeEnum = z.enum([
   "heuristic",
   "llm",
   "cascade",
-  "bert",
 ]);
 export const GroundingModeEnum = z.enum(["disabled", "flag", "drop"]);
 export const GroundingCheckerEnum = z.enum(["keyword", "minicheck"]);
