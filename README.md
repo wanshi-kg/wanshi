@@ -41,7 +41,7 @@ Most text→KG tools stop at "extract triples." `wanshi` is built around the par
 Requires **Node.js 18+** and **[Ollama](https://ollama.ai)** running locally (needed for the default local generation + embeddings path; optional only if you point *both* at an OpenAI-compatible provider).
 
 ```bash
-git clone https://github.com/alex_sabaka/wanshi
+git clone https://github.com/AlexSabaka/wanshi
 cd wanshi
 npm install
 
@@ -352,7 +352,7 @@ Tests use Jest (`npm test`); mock the LLM via `ILLMProvider` for network-free un
 ## Development
 
 ```bash
-git clone https://github.com/alex_sabaka/wanshi && cd wanshi && npm install
+git clone https://github.com/AlexSabaka/wanshi && cd wanshi && npm install
 npx ts-node ./src/index.ts --config config.yaml   # run directly
 npm run build && node ./dist/index.js --config config.yaml   # or build first
 ```
