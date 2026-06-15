@@ -25,10 +25,14 @@ export class DoclingReader extends FileReader {
     maxPages = 1000,
     tempDir = "./temp",
     chunker: TextChunker,
-    logger: Logger
+    logger: Logger,
+    // When used as the `pdfEngine`, pass `[".pdf"]` so Docling claims only PDFs
+    // (office/markdown/etc. stay with their dedicated readers). Defaults to the
+    // full Docling format set for the standalone "docling for everything" use.
+    extensions?: string[]
   ) {
     super(
-      [
+      extensions ?? [
         // Document formats
         ".pdf",
         ".docx",

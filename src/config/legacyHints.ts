@@ -48,7 +48,8 @@ export const LEGACY_KEY_HINTS: Record<string, string> = {
   // classifier
   classifier: "classifier.mode",
   // readers
-  docling: "readers.docling",
+  docling: "readers.pdfEngine: docling",
+  pdfEngine: "readers.pdfEngine",
   images: "readers.images",
   jsonStrategy: "readers.json.strategy",
   jsonReader: "readers.json",

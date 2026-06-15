@@ -60,7 +60,7 @@ readers:
     whisperModel: medium
     language: auto
     translate: false
-  docling: false
+  pdfEngine: pdf2json
   json:
     strategy: structural
   outline:

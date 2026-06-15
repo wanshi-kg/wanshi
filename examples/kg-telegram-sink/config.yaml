@@ -55,7 +55,7 @@ readers:
     language: auto
     translate: false
 
-  docling: false   # built-in PdfReader/MarkdownReader so stripReferences + arXiv capture fire (DoclingReader has no parity yet)
+  pdfEngine: pdf2json   # built-in PdfReader/MarkdownReader so stripReferences + arXiv capture fire (other engines have no parity yet)
 
   json:
     strategy: structural

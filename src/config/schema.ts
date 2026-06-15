@@ -59,6 +59,10 @@ export const ExportFormatEnum = z.enum([
   "graphiti",
 ]);
 export const JsonStrategyEnum = z.enum(["structural", "raw"]);
+// PDF reading engine: `pdf2json` = built-in text extraction (default, no OCR,
+// portable); `docling`/`marker` = local Python tools (subprocess); `mistral` =
+// Mistral OCR HTTP API. Any non-default engine degrades to pdf2json on failure.
+export const PdfEngineEnum = z.enum(["pdf2json", "docling", "marker", "mistral"]);
 // AudioReader transcription engine: `whisper` = built-in single-model nodejs-whisper
 // (default, portable, network-free); `dual` = vendored Python audio-pipeline
 // (Silero VAD + Parakeet/Whisper dual-STT + diarization, Apple-Silicon only, opt-in).
@@ -266,9 +270,33 @@ const OutlineSchema = z
   })
   .strict();
 
+// marker-pdf engine (Python `marker_single` CLI subprocess; ~1GB models, slow on
+// CPU). Only consulted when `pdfEngine: marker`; failure degrades to pdf2json.
+const MarkerSchema = z
+  .object({
+    command: z.string().default("marker_single").describe("marker CLI executable (on PATH)"),
+    useLlm: z.boolean().default(false).describe("Marker --use_llm hybrid mode (reuses the openai-compatible llm config; higher table accuracy, costs LLM calls)"),
+    forceOcr: z.boolean().default(false).describe("Force OCR on every page (scanned PDFs)"),
+    timeoutMs: z.coerce.number().int().positive().default(900_000).describe("Per-file marker subprocess timeout (ms)"),
+  })
+  .strict();
+
+// Mistral OCR engine (HTTP API; ~$1-2/1k pages). Only consulted when
+// `pdfEngine: mistral`; missing key / HTTP error degrades to pdf2json.
+const MistralSchema = z
+  .object({
+    apiKey: z.string().optional().describe("Mistral API key (falls back to $MISTRAL_API_KEY)"),
+    host: z.string().default("https://api.mistral.ai").describe("Mistral API base URL"),
+    model: z.string().default("mistral-ocr-latest").describe("Mistral OCR model"),
+    timeoutMs: z.coerce.number().int().positive().default(300_000).describe("Per-file OCR request timeout (ms)"),
+  })
+  .strict();
+
 const ReadersSchema = z
   .object({
-    docling: z.boolean().default(false).describe("Use Docling for PDF/DOC/DOCX/PPT/PPTX"),
+    pdfEngine: PdfEngineEnum.default("pdf2json").describe("PDF reading engine: pdf2json (built-in) | docling | marker (Python subprocess) | mistral (HTTP OCR API)"),
+    marker: MarkerSchema.default({}),
+    mistral: MistralSchema.default({}),
     stripReferences: z.boolean().default(false).describe("Quarantine trailing references/bibliography sections before extraction (PDF + markdown)"),
     images: ImageProcessingModeEnum.default("auto").describe("Image processing mode"),
     json: JsonReaderSchema.default({}),

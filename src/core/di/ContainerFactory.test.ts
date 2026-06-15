@@ -1,4 +1,4 @@
-import { ContainerFactory } from "./index";
+import { ContainerFactory, TYPES } from "./index";
 import { makeConfig } from "../../__tests__/helpers";
 import { domainGateThresholds, resetDomainGate } from "../knowledge/vocabulary";
 
@@ -30,5 +30,41 @@ describe("ContainerFactory — classifier gating", () => {
     expect(() =>
       makeConfig({ classifier: { mode: "bert" } })
     ).toThrow();
+  });
+});
+
+describe("ContainerFactory — pdfEngine dispatch", () => {
+  const readerForPdf = async (pdfEngine?: string) => {
+    const container = ContainerFactory.createContainer({
+      processingOptions: makeConfig({
+        readers: pdfEngine ? { pdfEngine } : {},
+        logging: { level: "error", silent: true },
+      }),
+    });
+    const factory = await container.resolve<any>(TYPES.FileReaderFactory);
+    return factory.getReader("/corpus/datasheet.pdf")?.getName();
+  };
+
+  it("routes .pdf to pdf2json by default", async () => {
+    expect(await readerForPdf()).toBe("PdfReader");
+  });
+
+  it.each([
+    ["docling", "DoclingReader"],
+    ["marker", "MarkerPdfReader"],
+    ["mistral", "MistralOcrReader"],
+  ])("routes .pdf to the %s reader", async (engine, expected) => {
+    expect(await readerForPdf(engine)).toBe(expected);
+  });
+
+  it("keeps office docs on OfficeReader regardless of the PDF engine", async () => {
+    const container = ContainerFactory.createContainer({
+      processingOptions: makeConfig({
+        readers: { pdfEngine: "docling" },
+        logging: { level: "error", silent: true },
+      }),
+    });
+    const factory = await container.resolve<any>(TYPES.FileReaderFactory);
+    expect(factory.getReader("/corpus/report.docx")?.getName()).toBe("OfficeReader");
   });
 });

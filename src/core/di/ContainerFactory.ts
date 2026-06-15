@@ -241,6 +241,8 @@ export class ContainerFactory {
         BinaryReader,
         MarkdownReader,
         DoclingReader,
+        MarkerPdfReader,
+        MistralOcrReader,
         HtmlReader,
         ImageReader,
         JsonFileReader,
@@ -259,32 +261,69 @@ export class ContainerFactory {
       const chunker = await c.resolve<TextChunker>(TYPES.TextChunker);
       const factory = new FileReaderFactory(logger);
 
-      if (options.readers.docling) {
-        logger.info(`Using docling document reading pipeline`);
-        factory.registerReader(
-          new DoclingReader(undefined, undefined, undefined, "./temp", chunker, logger)
-        );
-      } else {
-        // Reference-following and web-fetch both need links extracted, so they
-        // auto-imply internalLinks extraction.
-        const refLinks =
-          options.references.internalLinks.enabled ||
-          options.references.follow.enabled ||
-          options.references.web.enabled;
-        // Citation span-fetch (Phase 2) needs the bibliography extracted to know
-        // what to resolve/fetch, so it auto-implies citation extraction.
-        const refCites =
-          options.references.citations.enabled || options.references.citations.fetch.enabled;
-        factory.registerReader(new RtfReader(chunker, logger));
-        factory.registerReader(
-          new MarkdownReader(chunker, logger, options.readers.stripReferences, refLinks, refCites)
-        );
-        factory.registerReader(new HtmlReader(chunker, logger, refLinks));
-        factory.registerReader(new ImageReader(chunker, logger));
-        factory.registerReader(new OfficeReader(chunker, logger));
-        factory.registerReader(
-          new PdfReader(chunker, logger, options.readers.stripReferences, refCites)
-        );
+      // Reference-following and web-fetch both need links extracted, so they
+      // auto-imply internalLinks extraction.
+      const refLinks =
+        options.references.internalLinks.enabled ||
+        options.references.follow.enabled ||
+        options.references.web.enabled;
+      // Citation span-fetch (Phase 2) needs the bibliography extracted to know
+      // what to resolve/fetch, so it auto-implies citation extraction.
+      const refCites =
+        options.references.citations.enabled || options.references.citations.fetch.enabled;
+
+      // Standard non-PDF readers are always registered; the PDF slot is chosen by
+      // readers.pdfEngine below (first-match-wins, so these win their own formats).
+      factory.registerReader(new RtfReader(chunker, logger));
+      factory.registerReader(
+        new MarkdownReader(chunker, logger, options.readers.stripReferences, refLinks, refCites)
+      );
+      factory.registerReader(new HtmlReader(chunker, logger, refLinks));
+      factory.registerReader(new ImageReader(chunker, logger));
+      factory.registerReader(new OfficeReader(chunker, logger));
+
+      // PDF engine selector. The built-in pdf2json reader doubles as the graceful
+      // fallback for the marker/mistral engines (any failure → pdf2json).
+      const pdf2json = new PdfReader(
+        chunker, logger, options.readers.stripReferences, refCites
+      );
+      switch (options.readers.pdfEngine) {
+        case "docling":
+          logger.info(`PDF engine: docling`);
+          factory.registerReader(
+            new DoclingReader(undefined, undefined, undefined, "./temp", chunker, logger, [".pdf"])
+          );
+          break;
+        case "marker": {
+          const m = options.readers.marker;
+          logger.info(`PDF engine: marker${m.useLlm ? " (--use_llm)" : ""}`);
+          factory.registerReader(
+            new MarkerPdfReader(
+              { command: m.command, useLlm: m.useLlm, forceOcr: m.forceOcr, timeoutMs: m.timeoutMs },
+              { apiKey: options.llm.apiKey, host: options.llm.host, model: options.llm.model },
+              pdf2json,
+              "./temp",
+              chunker,
+              logger
+            )
+          );
+          break;
+        }
+        case "mistral": {
+          const mi = options.readers.mistral;
+          logger.info(`PDF engine: mistral (${mi.model})`);
+          factory.registerReader(
+            new MistralOcrReader(
+              { apiKey: mi.apiKey ?? process.env.MISTRAL_API_KEY, host: mi.host, model: mi.model, timeoutMs: mi.timeoutMs },
+              pdf2json,
+              chunker,
+              logger
+            )
+          );
+          break;
+        }
+        default:
+          factory.registerReader(pdf2json);
       }
 
       // Transcript reader claims speaker-labeled text (.parakeet.txt, …) and

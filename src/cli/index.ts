@@ -93,8 +93,9 @@ program
   .option("--asr-models <which>", "dual engine: which ASR backends to run (both|parakeet|whisper)")
   .option("--num-speakers <n>", "dual engine: hint the diarizer's speaker count", (v) => parseInt(v, 10))
 
-  // Enable Docling PDF/DOC/DOCX/PPT/PPTX Processing
-  .option("--docling", "use docling for PDF/DOC/DOCX/PPT/PPTX documents processing (default: false)")
+  // PDF reading engine selection
+  .option("--pdf-engine <engine>", "PDF reading engine: pdf2json (built-in) | docling | marker (Python subprocess) | mistral (HTTP OCR API)")
+  .option("--marker-use-llm", "marker engine: enable --use_llm hybrid mode (better tables, costs LLM calls)")
 
   // Quarantine trailing references/bibliography sections before extraction
   .option("--strip-references", "quarantine trailing references/bibliography sections before extraction (PDF + markdown, default: false)")

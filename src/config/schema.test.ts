@@ -46,6 +46,29 @@ describe("config schema", () => {
     expect(message).toContain("MIGRATION.md");
   });
 
+  it("defaults the PDF engine to pdf2json and round-trips marker/mistral config", () => {
+    expect(parseConfig({}).readers.pdfEngine).toBe("pdf2json");
+    const c = parseConfig({
+      readers: { pdfEngine: "marker", marker: { useLlm: true }, mistral: { model: "mistral-ocr-2512" } },
+    });
+    expect(c.readers.pdfEngine).toBe("marker");
+    expect(c.readers.marker.useLlm).toBe(true);
+    expect(c.readers.marker.command).toBe("marker_single");
+    expect(c.readers.mistral.host).toBe("https://api.mistral.ai");
+    expect(c.readers.mistral.model).toBe("mistral-ocr-2512");
+  });
+
+  it("migrates the retired readers.docling key to readers.pdfEngine", () => {
+    let message = "";
+    try {
+      parseConfig({ readers: { docling: true } });
+    } catch (e) {
+      message = (e as ConfigError).message;
+    }
+    expect(message).toContain("docling");
+    expect(message).toContain("readers.pdfEngine");
+  });
+
   it("resolves precedence defaults < file < CLI", () => {
     const file = { llm: { model: "file-model", host: "file-host" } };
     const cli = cliArgsToConfig({ model: "cli-model" });
