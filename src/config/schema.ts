@@ -490,6 +490,26 @@ const TraceSchema = z
   })
   .strict();
 
+// Cost / token metering (off by default; zero overhead, byte-identical default run).
+// Records per-model token spend through ILLMProvider, prints a rough pre-run estimate
+// + an exact end-of-run tally, enforces a hard `maxCost` cap (graceful stop), and keeps
+// a resume-safe cumulative ledger sidecar. Setting `maxCost` auto-enables (ContainerFactory).
+const CostSchema = z
+  .object({
+    enabled: z.boolean().default(false).describe("Meter LLM token usage + cost; print estimate + tally"),
+    maxCost: z.coerce
+      .number()
+      .optional()
+      .describe("Hard spend cap (currency units) for THIS run; stops gracefully when exceeded (implies enabled)"),
+    currency: z.string().default("USD").describe("Currency label for cost output"),
+    prices: z
+      .record(z.object({ in: z.coerce.number(), out: z.coerce.number() }).strict())
+      .default({})
+      .describe("Per-model price overrides (USD per 1M tokens {in,out}); merged over the built-in map"),
+    ledgerPath: z.string().optional().describe("Cumulative cost ledger sidecar (default <output>.cost.json)"),
+  })
+  .strict();
+
 const LoggingSchema = z
   .object({
     level: LogLevelEnum.default("info").describe("Log level"),
@@ -707,6 +727,7 @@ export const ConfigSchema = z
     export: ExportSchema.default({}),
     resume: ResumeSchema.default({}),
     trace: TraceSchema.default({}),
+    cost: CostSchema.default({}),
     logging: LoggingSchema.default({}),
     runtime: RuntimeSchema.default({}),
 

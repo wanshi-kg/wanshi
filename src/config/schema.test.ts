@@ -12,6 +12,14 @@ describe("config schema", () => {
     expect(parseConfig({ trace: { enabled: true, path: "x.trace.jsonl" } }).trace.path).toBe("x.trace.jsonl");
   });
 
+  it("defaults cost metering off and coerces maxCost + price overrides", () => {
+    expect(parseConfig({}).cost.enabled).toBe(false);
+    expect(parseConfig({}).cost.currency).toBe("USD");
+    const c = parseConfig({ cost: { maxCost: "1.50", prices: { "my-model": { in: "2", out: "8" } } } });
+    expect(c.cost.maxCost).toBe(1.5);
+    expect(c.cost.prices["my-model"]).toEqual({ in: 2, out: 8 });
+  });
+
   it("applies nested defaults from an empty config", () => {
     const c = parseConfig({});
     expect(c.input).toBe(".");
