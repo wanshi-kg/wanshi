@@ -276,6 +276,23 @@ const EmailReaderSchema = z
   })
   .strict();
 
+// Chat-export reader knobs (WhatsApp .txt, Telegram/Discord/Slack .json). The
+// message text still flows through LLM extraction; these only govern parsing.
+const ChatReaderSchema = z
+  .object({
+    maxMessages: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(50000)
+      .describe("Max messages parsed from one chat export (warns + truncates beyond this)"),
+    skipSystem: z
+      .boolean()
+      .default(true)
+      .describe("Drop system/service noise (joins, encryption notices, <Media omitted>, …)"),
+  })
+  .strict();
+
 const OutlineSchema = z
   .object({
     enabled: z.boolean().default(true).describe("Generate a per-file structural outline and inject it into the prompt"),
@@ -318,6 +335,7 @@ const ReadersSchema = z
     images: ImageProcessingModeEnum.default("auto").describe("Image processing mode"),
     json: JsonReaderSchema.default({}),
     email: EmailReaderSchema.default({}),
+    chat: ChatReaderSchema.default({}),
     asr: AsrSchema.default({}),
     outline: OutlineSchema.default({}),
   })

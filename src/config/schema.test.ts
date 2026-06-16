@@ -33,6 +33,12 @@ describe("config schema", () => {
     expect(parseConfig({ readers: { email: { maxMessages: "50" } } }).readers.email.maxMessages).toBe(50);
   });
 
+  it("defaults the chat-export reader knobs", () => {
+    expect(parseConfig({}).readers.chat.maxMessages).toBe(50000);
+    expect(parseConfig({}).readers.chat.skipSystem).toBe(true);
+    expect(parseConfig({ readers: { chat: { skipSystem: false } } }).readers.chat.skipSystem).toBe(false);
+  });
+
   it("applies nested defaults from an empty config", () => {
     const c = parseConfig({});
     expect(c.input).toBe(".");
