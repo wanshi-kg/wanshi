@@ -30,11 +30,11 @@ Most text→KG tools stop at "extract triples." `wanshi` is built around the par
 | Markdown | `.md` | Markdown-aware parsing |
 | Transcripts | speaker-labeled `*.parakeet.txt`/`*.whisper.txt`, transcript/turn JSON, Claude/ChatGPT exports | Speaker-pure chunks with per-fact `speaker`/`occurredAt` |
 | JSON | `.json`, `.jsonl`, `.geojson` | Structure-aware chunking (splits on JSON structure, never mid-object) |
-| PDF | `.pdf` | Page text, or Docling for advanced parsing |
+| PDF | `.pdf` | Page text (`pdf2json`), or a richer engine via `--pdf-engine docling\|marker\|mistral` |
 | Office | `.docx`, `.xlsx`, `.pptx` | Via officeparser |
 | HTML / RTF | `.html`, `.htm`, `.rtf` | cheerio / RTF parsing |
 | Images | `.jpg`, `.png`, `.gif`, `.webp`, `.tiff`, `.heic`, `.avif` | Vision model required |
-| Audio / Video | `.mp3`, `.wav`, `.m4a`, `.flac`, `.mp4`, `.mkv`, `.webm`, … | Whisper transcription |
+| Audio / Video | `.mp3`, `.wav`, `.m4a`, `.flac`, `.mp4`, `.mkv`, `.webm`, … | Whisper transcription, or `--asr-engine dual` (VAD + dual-STT + diarization) |
 
 ## Install
 
@@ -194,8 +194,10 @@ wanshi --export-only -i ./knowledge-graph.json --export-format kblam -o ./kb.jso
 | `--language <lang>` | `auto` | Language code or `auto` |
 | `--translate` | `false` | Translate audio to English |
 | `--images <mode>` | `auto` | `enabled\|disabled\|auto` (vision model required) |
-| `--docling` | `false` | Docling for advanced PDF/Office parsing |
-| `--classifier <mode>` | `disabled` | `disabled\|heuristic\|llm` — drives domain prompt hints and scopes `entityType` to a per-domain enum *(experimental)* |
+| `--pdf-engine <engine>` | `pdf2json` | `pdf2json\|docling\|marker\|mistral` — PDF reading engine (non-default engines degrade to `pdf2json` on failure) |
+| `--asr-engine <engine>` | `whisper` | `whisper\|dual` — `dual` = vendored Python VAD + Parakeet/Whisper dual-STT + diarization (Apple-Silicon) |
+| `--classifier <mode>` | `disabled` | `disabled\|heuristic\|llm\|cascade` — drives domain prompt hints and scopes `entityType` to a per-domain enum *(experimental)* |
+| `--trace` | `false` | Emit a structured decision run-trace to `<output>.trace.jsonl` *(debug/observability)* |
 
 ### Merging, grounding, corpus glossary
 

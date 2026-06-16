@@ -59,7 +59,7 @@ longer duplicates the field list.
 | `corpusProfilePath` | `corpus.profilePath` |
 | `corpusClustering` | `corpus.clustering` |
 | `classifier` | `classifier.mode` |
-| `docling` | `readers.docling` |
+| `docling` | `readers.pdfEngine: docling` (the PDF slot is now an engine enum: `pdf2json\|docling\|marker\|mistral`) |
 | `images` | `readers.images` |
 | `jsonStrategy` / `jsonReader` | `readers.json` (`.strategy`, `.maxChunkSize`) |
 | `asr` | `readers.asr.mode` |

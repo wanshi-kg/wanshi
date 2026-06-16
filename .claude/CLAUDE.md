@@ -36,7 +36,7 @@ npx ts-node ./src/index.ts --config config.yaml
 # Benchmark extraction quality against CrossRE dataset
 npm run benchmark -- --dataset crossre --data-path ./data/crossre/crossre_data/ai-test.json --limit 20
 # Options: --dataset rebel|crossre  --limit N  --match-threshold 0.80
-#          --model <ollama-model>  --classifier disabled|heuristic|llm|bert
+#          --model <ollama-model>  --classifier disabled|heuristic|llm|cascade
 #          --output ./results/run.json  (saves full per-sample JSON report)
 ```
 
@@ -79,16 +79,18 @@ wanshi/
 │   │   │   └── CorpusProfileStore.ts     # Cached sidecar (<output>.corpus-profile.json)
 │   │   ├── processor/
 │   │   │   ├── FileProcessor.ts          # Read → chunk → classify pipeline
-│   │   │   ├── readers/                  # 11 file type readers (see below)
+│   │   │   ├── readers/                  # 13 file type readers (see below)
 │   │   │   ├── chunking/TextChunker.ts   # RecursiveCharacterTextSplitter wrapper
-│   │   │   └── classifier/               # Heuristic/BERT/LLM classifiers (experimental)
+│   │   │   └── classifier/               # Heuristic / LLM / cascade classifiers (opt-in)
 │   │   ├── knowledge/
 │   │   │   ├── KnowledgeGraphBuilder.ts  # LLM extraction with Zod schema validation
 │   │   │   ├── merging/KnowledgeMerger.ts # 3-level hierarchical merge
 │   │   │   └── search/KnowledgeGraphSearch.ts # Multi-strategy context retrieval
-│   │   └── export/
-│   │       ├── KnowledgeGraphExportService.ts # Export orchestrator (strategy pattern)
-│   │       └── strategies/               # json, jsonl, mcp-jsonl, dot implementations
+│   │   ├── export/
+│   │   │   ├── KnowledgeGraphExportService.ts # Export orchestrator (strategy pattern)
+│   │   │   └── strategies/               # json, jsonl, mcp-jsonl, dot implementations
+│   │   ├── trace/                        # Debug run-trace: TraceWriter singleton + mention-instance lineage (off by default)
+│   │   └── adapters/                     # Structured-emit adapters: IStructuredAdapter + registry (data-sink track)
 │   ├── types/
 │   │   ├── KnowledgeGraph.ts             # Entity, Relation, KnowledgeGraph types
 │   │   ├── ProcessingOptions.ts          # Full CLI/config options interface
@@ -105,6 +107,7 @@ wanshi/
 │   ├── kg-mail-assistant/                # Full Gmail-to-KG example
 │   ├── canon/                            # Canonicalization A/B arm configs
 │   └── sandbox/                          # Ad-hoc throwaway scripts (t3–t6)
+├── audio-pipeline/                       # Vendored Python subproject: Silero VAD + Parakeet/Whisper dual-STT + diarization (the `dual` ASR engine; Apple-Silicon/MLX)
 └── doc-classifier/                       # Related document classifier subproject (Python)
 ```
 
@@ -130,8 +133,17 @@ interface Observation {
   invalidAt?: string; // valid time end
   createdAt?: string; // transaction time: when extracted/ingested
   expiredAt?: string; // transaction time: when superseded (facts are superseded, never deleted)
+  sourceAdapter?: string; // ECS source-tagging: which adapter produced it ("pdf:mistral","sqlite",…)
+  locator?: string;       // where in the source ("p.67","table:parts/row:42")
 }
 ```
+
+**ECS source-tagging (`sourceAdapter` + `locator`).** Every fact is attributable to the
+adapter that produced it and where in the source. `sourceAdapter` is stamped **centrally** by
+`FileProcessor` from the matched reader's `adapterId()` (PDF engines → `pdf:mistral` etc.; a
+reader may pre-set a finer id); `locator` is reader-supplied where meaningful (the per-page PDF
+readers stamp `p.<n>`). Both flow `ChunkProvenance` → `KnowledgeGraphBuilder.toGraph()` →
+`Observation`. Structured-emit adapters (below) stamp them directly on the facts they emit.
 
 **Provenance is built, not asked of the model.** The LLM still emits observations as
 bare strings; `KnowledgeGraphBuilder.toGraph()` wraps each into an `Observation`,
@@ -183,7 +195,7 @@ interface KnowledgeGraph {
 validation + **all defaults** (`parseConfig`), and the JSON Schema served to the
 frontend (`configJsonSchema` / the `wanshi schema` command). The shape is
 **nested** (`llm`, `embeddings`, `chunking`, `retrieval`, `merging`, `grounding`,
-`corpus`, `classifier`, `readers`, `references`, `export`, `resume`, `logging`,
+`corpus`, `classifier`, `readers`, `references`, `export`, `resume`, `trace`, `logging`,
 `runtime`; with `input`/`filter`/`exclude`/`output`/`description` top-level). Config files use
 this nested shape — a legacy flat key errors with a migration hint (`src/config/
 legacyHints.ts`, docs/MIGRATION.md). **CLI flags stay flat** and ergonomic; `cli/
@@ -208,8 +220,14 @@ const svc = container.get<ISomeService>(TYPES.SomeService);
 
 ### 2. Strategy Pattern — File Readers
 
-`FileReaderFactory` maps file extensions to reader implementations. All readers extend the abstract `FileReader` base class.
+`FileReaderFactory` maps file extensions to reader implementations (first-match-wins). All readers extend the abstract `FileReader` base class. Each exposes `adapterId()` (the `sourceAdapter` tag stamped onto every fact).
 **To add a new file format**: implement `FileReader`, register in `FileReaderFactory.ts`.
+
+**PDF engine selector.** The PDF slot is chosen by `readers.pdfEngine` (`pdf2json` default | `docling` | `marker` | `mistral`), not a boolean — the dispatch in `ContainerFactory` registers the chosen reader; `marker`/`mistral` degrade to `pdf2json` on failure. The legacy `readers.docling: true` errors with a `readers.pdfEngine: docling` migration hint. `MarkerPdfReader` shells the `marker_single` CLI; `MistralOcrReader` is native HTTP (Mistral OCR API).
+
+### 2b. Strategy Pattern — Structured-emit adapters (data-sink track)
+
+Beside the text→LLM-extract path, a **structured source** (graph-native: a SQLite `.db`, an OpenAPI spec, …) can map DIRECTLY to graph fragments via `IStructuredAdapter` (`src/core/adapters/`). `StructuredAdapterRegistry` (DI-registered, **empty by default**) is consulted in `DirectoryProcessor.processFile`: a matched file's fragment is emitted into the per-file `graphs[]` union (the same union the AST seed + reference graph use), bypassing the LLM, still going through merge/canon. Adapters stamp `sourceAdapter`/`locator` on the facts they emit. Phase 0 (the seam + provenance field) is in; concrete adapters (SQLite first) land per their own briefs.
 
 ### 3. Strategy Pattern — Export Formats
 
@@ -341,6 +359,18 @@ Default run = offline, byte-identical. Gated GO by the OA-resolvability probe
 (`examples/sandbox/oa-resolvability-probe.ts`); design in
 `docs/inbox/2026-06-1{4-cheetah,5-dove}-*reference-resolution-phase2*`.
 
+### 9. Debug run-trace (observability, `trace.enabled`, default OFF)
+
+`src/core/trace/`: a module-singleton `trace` (à la `shared/shutdown`) emits a versioned
+append-only JSONL sidecar (`<output>.trace.jsonl`) of every pipeline decision —
+ingest · classify (+cascade tie-break) · extract (+mention IDs +token `usage`) · ground ·
+merge/canon (+the adjudicator verdict) · export — `jq`/pandas-native. **Observe-only:** the
+mention-instance lineage IDs live in a run-scoped `LineageRegistry` **outside** the graph
+objects, so the serialized graph is byte-identical trace-on vs trace-off *by construction*.
+Every emit is guarded by `if (trace.enabled)` (zero overhead off). The token-usage seam is the
+optional `ILLMProvider.getLastUsage()` (both providers stash what they already log). Composes
+with the future cost meter + debug inspector. Design: `docs/inbox/2026-06-15-dove-to-cheetah-debug-trace-layer-brief.md`.
+
 ## LLM Providers & Resume
 
 ### Provider selection
@@ -444,13 +474,15 @@ is caught and the run continues without it. Flags: `--corpus-profiling disabled|
 | `TextReader` | `.txt`, most text/code files | Built-in |
 | `JsonFileReader` | `.json`, `.jsonl`, `.geojson` | Built-in (registered before `TextReader`) |
 | `MarkdownReader` | `.md` | Built-in |
-| `PdfReader` | `.pdf` | `pdf2json` |
+| `PdfReader` | `.pdf` (`pdfEngine: pdf2json`, default) | `pdf2json` |
+| `MarkerPdfReader` | `.pdf` (`pdfEngine: marker`) | `marker_single` CLI (Python; optional `--use_llm`) |
+| `MistralOcrReader` | `.pdf` (`pdfEngine: mistral`) | Mistral OCR HTTP API (native fetch) |
+| `DoclingReader` | `.pdf` (`pdfEngine: docling`); also `.doc`/`.ppt` | Docling CLI (opt-in) |
 | `HtmlReader` | `.html`, `.htm` | `cheerio` + `html-to-text` |
 | `OfficeReader` | `.docx`, `.xlsx`, `.pptx` | `officeparser` |
 | `RtfReader` | `.rtf` | `rtf-parser` |
 | `ImageReader` | `.jpg`, `.png`, `.gif`, `.webp`, etc. | Vision model via Ollama |
-| `AudioReader` | `.mp3`, `.wav`, `.ogg`, `.m4a`, etc. | `nodejs-whisper` + `fluent-ffmpeg` |
-| `DoclingReader` | `.pdf`, `.doc`, `.docx`, `.ppt`, `.pptx` | Docling API (opt-in) |
+| `AudioReader` | `.mp3`, `.wav`, `.ogg`, `.m4a`, etc. | `whisper` engine (`nodejs-whisper`) or `dual` engine (Python `audio-pipeline`: VAD + Parakeet/Whisper dual-STT + diarization) |
 | `BinaryReader` | Unknown/binary | Skips gracefully |
 
 **TranscriptReader** (`src/core/processor/readers/TranscriptReader.ts`) is registered **before** `JsonFileReader`/`TextReader` and overrides `canRead` to claim only files that sniff as transcripts (deferring everything else). It normalizes three real shapes — recua speaker-labeled text (`SPEAKER_XX:` blocks), recua turns JSON (`[{start,end,speaker,<backend>}]`), and Claude/ChatGPT chat exports (`[{chat_messages:[{sender,created_at,…}]}]`) — into `Turn[]`, then **size-packs** them into chunks capped at `maxChunkSize` (tied to the global `chunkSize` via `ContainerFactory`), rendering each turn inline as `speaker: text`. A turn longer than the budget is split with its label kept on every piece. `ChunkProvenance {source, occurredAt}` is always set; `speaker` is set **only when a chunk is single-speaker** (mixed chunks keep the speaker labels inline in the content instead). This keeps a long dialogue to a handful of chunks (was one-per-turn → an LLM call per turn, the `--chunk-size`-ignored explosion). Inline labels keep speakers visible to the model as dialogue provenance without each `SPEAKER_XX` becoming an entity.
