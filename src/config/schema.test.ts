@@ -20,6 +20,13 @@ describe("config schema", () => {
     expect(c.cost.prices["my-model"]).toEqual({ in: 2, out: 8 });
   });
 
+  it("defaults the SQLite structured-emit adapter off with sensible defaults", () => {
+    expect(parseConfig({}).adapters.sqlite.enabled).toBe(false);
+    expect(parseConfig({}).adapters.sqlite.extensions).toEqual([".db", ".sqlite", ".sqlite3"]);
+    expect(parseConfig({}).adapters.sqlite.maxRowsPerTable).toBe(5000);
+    expect(parseConfig({ adapters: { sqlite: { maxRowsPerTable: "100" } } }).adapters.sqlite.maxRowsPerTable).toBe(100);
+  });
+
   it("applies nested defaults from an empty config", () => {
     const c = parseConfig({});
     expect(c.input).toBe(".");

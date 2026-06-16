@@ -102,6 +102,8 @@ export const FLAG_TO_PATH: Record<string, string> = {
   cost: "cost.enabled",
   maxCost: "cost.maxCost",
   costLedger: "cost.ledgerPath",
+  // structured-emit adapters (data-sink track)
+  sqlite: "adapters.sqlite.enabled",
   // runtime
   watch: "runtime.watch",
   exportOnly: "runtime.exportOnly",

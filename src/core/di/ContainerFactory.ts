@@ -266,9 +266,27 @@ export class ContainerFactory {
 
     // Structured-emit adapter registry (data-sink track). Empty by default;
     // concrete adapters (SQLite, OpenAPI, iCal, …) register here in their own briefs.
-    container.register(TYPES.StructuredAdapterRegistry, async () => {
+    container.register(TYPES.StructuredAdapterRegistry, async (c) => {
       const { StructuredAdapterRegistry } = await import("../adapters");
-      return new StructuredAdapterRegistry();
+      const registry = new StructuredAdapterRegistry();
+      // Concrete adapters register only when enabled (registry stays empty otherwise →
+      // default run unaffected). SQLite is the first (data-sink Class A).
+      const sqliteCfg = processingOptions.adapters?.sqlite;
+      if (sqliteCfg?.enabled) {
+        const { SqliteAdapter } = await import("../adapters/SqliteAdapter");
+        const logger = await c.resolve<Logger>(TYPES.Logger);
+        registry.register(
+          new SqliteAdapter(
+            {
+              extensions: sqliteCfg.extensions,
+              maxRowsPerTable: sqliteCfg.maxRowsPerTable,
+              excludeTables: sqliteCfg.excludeTables,
+            },
+            logger
+          )
+        );
+      }
+      return registry;
     });
 
     // Register File REader Factory

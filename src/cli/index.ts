@@ -205,6 +205,9 @@ program
   .option("--max-cost <amount>", "hard spend cap for this run; stops gracefully (checkpoints + exports) when exceeded (implies --cost)")
   .option("--cost-ledger <path>", "cumulative cost ledger sidecar (default: <output>.cost.json)")
 
+  // Structured-emit adapters (data-sink track)
+  .option("--sqlite", "map .db/.sqlite files directly to a graph (tables→types, rows→entities, FK→edges; no LLM; off by default)")
+
   // Runtime Modes
   .option("-w, --watch", "watch for changes and update knowledge graph")
   .option(
