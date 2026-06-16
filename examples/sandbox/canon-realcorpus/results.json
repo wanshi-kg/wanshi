@@ -1,0 +1,1992 @@
+{
+  "embModel": "mxbai-embed-large:335m",
+  "blockTopN": 10,
+  "maxAdj": 300,
+  "graphs": [
+    {
+      "name": "self-code",
+      "entities": 685,
+      "counts": [
+        {
+          "guidance": "baseline",
+          "model": "gemma3:4b-cloud",
+          "entitiesBefore": 685,
+          "entitiesAfter": 675,
+          "adjudications": 300,
+          "accepts": 1
+        },
+        {
+          "guidance": "default",
+          "model": "gemma3:4b-cloud",
+          "entitiesBefore": 685,
+          "entitiesAfter": 524,
+          "adjudications": 272,
+          "accepts": 196
+        },
+        {
+          "guidance": "baseline",
+          "model": "gemma4:31b-cloud",
+          "entitiesBefore": 685,
+          "entitiesAfter": 667,
+          "adjudications": 300,
+          "accepts": 9
+        },
+        {
+          "guidance": "default",
+          "model": "gemma4:31b-cloud",
+          "entitiesBefore": 685,
+          "entitiesAfter": 646,
+          "adjudications": 300,
+          "accepts": 31
+        }
+      ],
+      "perModel": [
+        {
+          "model": "gemma3:4b-cloud",
+          "baselineAccepts": 1,
+          "defaultAccepts": 196,
+          "sharedPairs": 210,
+          "newlyAccepted": [
+            [
+              "Whisper ASR",
+              "asr"
+            ],
+            [
+              "RerunMode",
+              "rerunRun"
+            ],
+            [
+              "js-yaml",
+              "YAML"
+            ],
+            [
+              "system_mission_statement",
+              "mission_statement"
+            ],
+            [
+              "embeddings-max-input-chars",
+              "DEFAULT_MAX_EMBED_CHARS"
+            ],
+            [
+              "parseJson",
+              "JSON.parse"
+            ],
+            [
+              "audio/video",
+              "audio"
+            ],
+            [
+              "readConfigurationFile",
+              "readConfig"
+            ],
+            [
+              "kg-gen",
+              "kg-gen-frontend"
+            ],
+            [
+              "Logger",
+              "TYPES.Logger"
+            ],
+            [
+              "computeSemanticMetrics",
+              "computeMetrics"
+            ],
+            [
+              "IExportStrategy",
+              "McpExportStrategy"
+            ],
+            [
+              "OutlineGeneratorOptions",
+              "OutlineOptions"
+            ],
+            [
+              "loadPriorGraphs",
+              "graph-loader"
+            ],
+            [
+              "getSupportedFormats",
+              "getFormat"
+            ],
+            [
+              "graceful_cancel",
+              "graceful_interrupts"
+            ],
+            [
+              "Local LLM",
+              "llm"
+            ],
+            [
+              "Expert Knowledge Graph Generation System",
+              "KnowledgeGraphBuilder"
+            ],
+            [
+              "next_server_response",
+              "NextResponse"
+            ],
+            [
+              "kg.json",
+              "kg"
+            ],
+            [
+              "@tanstack/react-query",
+              "react-query"
+            ],
+            [
+              "Graceful shutdown",
+              "shutdown"
+            ],
+            [
+              "cancelRun",
+              "run_cancellation_response"
+            ],
+            [
+              "progressNdjson",
+              "NdjsonProgressEmitter"
+            ],
+            [
+              "ChunkingMode",
+              "chunkSize"
+            ],
+            [
+              "DEFAULT_STOPWORDS",
+              "stopword_removal"
+            ],
+            [
+              "entitySimilarityThreshold",
+              "DefaultSimilarityThreshold"
+            ],
+            [
+              "buildProcessingOptions",
+              "ProcessingOptions"
+            ],
+            [
+              "classifyContent",
+              "BertContentClassifier"
+            ],
+            [
+              "TextReader",
+              "BinaryReader"
+            ],
+            [
+              "Watch mode",
+              "watchCommand"
+            ],
+            [
+              "entityTypeDistribution",
+              "entityTypeCounts"
+            ],
+            [
+              "raw",
+              "rawResult"
+            ],
+            [
+              "NDJSON_stdout_stream",
+              "stdout_stream"
+            ],
+            [
+              "Classifier",
+              "Naive Bayes Classifier"
+            ],
+            [
+              "grounding path",
+              "groundingFile"
+            ],
+            [
+              "Knowledge Graph Generator",
+              "multi-modal knowledge graphs"
+            ],
+            [
+              "KnowledgeGraphBuilder",
+              "multi-modal knowledge graphs"
+            ],
+            [
+              "fileText",
+              "A.txt"
+            ],
+            [
+              "nodejs-whisper",
+              "WhisperConfig"
+            ],
+            [
+              "html-to-text",
+              "parseWithHtmlToText"
+            ],
+            [
+              "path",
+              "fullPath"
+            ],
+            [
+              "embeddings-max-input-chars",
+              "MIN_EMBED_CHARS"
+            ],
+            [
+              "PROPER_NOUN_RE",
+              "WORD_RE"
+            ],
+            [
+              "classifyContent",
+              "HeuristicContentClassifier"
+            ],
+            [
+              "container",
+              "DIContainer"
+            ],
+            [
+              "Strategy pattern",
+              "strategies"
+            ],
+            [
+              "ExactMatcher",
+              "minimatch"
+            ],
+            [
+              "benchmark_script",
+              "kg-gen benchmark evaluation script"
+            ],
+            [
+              "openai",
+              "OPENAI_API_KEY"
+            ],
+            [
+              "PATH_KEYS",
+              "path_module"
+            ],
+            [
+              "api_key_management",
+              "apiKey"
+            ],
+            [
+              "eslint-config-next",
+              "nextConfig"
+            ],
+            [
+              "getUserMessage",
+              "getUserPrompt"
+            ],
+            [
+              "dotOptions",
+              "dotProduct"
+            ],
+            [
+              "advanced CLI features",
+              "cli"
+            ],
+            [
+              "node_js",
+              "node:fs"
+            ],
+            [
+              "json",
+              "parseJson"
+            ],
+            [
+              "json",
+              "JSON.parse"
+            ],
+            [
+              "CorpusProfile",
+              "CorpusGlossary"
+            ],
+            [
+              "FactualEvaluator",
+              "FactualMetrics"
+            ],
+            [
+              "SemanticEvaluator",
+              "SemanticMetrics"
+            ],
+            [
+              "JsonReporter",
+              "JsonFileReader"
+            ],
+            [
+              "module",
+              "model_module"
+            ],
+            [
+              "next-env.d.ts",
+              ".next/types/routes.d.ts"
+            ],
+            [
+              "OKLch_tokens",
+              "tokens"
+            ],
+            [
+              "kg-gen",
+              "KG_GEN_DATA_DIR"
+            ],
+            [
+              "kg-gen-frontend",
+              "KG_GEN_DATA_DIR"
+            ],
+            [
+              "Quality Framework",
+              "Quality metrics"
+            ],
+            [
+              "Merging",
+              "tailwind-merge"
+            ],
+            [
+              "logger_module",
+              "Logger"
+            ],
+            [
+              "logger_module",
+              "TYPES.Logger"
+            ],
+            [
+              "ChunkingMode",
+              "ChunkProvenance"
+            ],
+            [
+              "chunkSize",
+              "ChunkProvenance"
+            ],
+            [
+              "entityTypeDistribution",
+              "GENERIC_ENTITY_TYPES"
+            ],
+            [
+              "entityTypeCounts",
+              "GENERIC_ENTITY_TYPES"
+            ],
+            [
+              "MIT License",
+              "license"
+            ],
+            [
+              "quality_evaluation",
+              "quality_thresholds"
+            ],
+            [
+              "TYPE_PALETTE",
+              "typeColorMap"
+            ],
+            [
+              "ILLMService",
+              "ILLMProvider"
+            ],
+            [
+              "tripletsEqual",
+              "add_triplet"
+            ],
+            [
+              "run_registry",
+              "run_module"
+            ],
+            [
+              "isolatedEntities",
+              "uniqueEntities"
+            ],
+            [
+              "generate",
+              "generateStructured"
+            ],
+            [
+              "ts-graphviz",
+              "ts-jest"
+            ],
+            [
+              "PromptContentExample",
+              "responseContent"
+            ],
+            [
+              "ExportFormat",
+              "getSupportedFormats"
+            ],
+            [
+              "ExportFormat",
+              "getFormat"
+            ],
+            [
+              "src/core/llm/prompts/templates/",
+              "PromptTemplateEngine"
+            ],
+            [
+              "Checkpoint / resume",
+              "CheckpointService"
+            ],
+            [
+              "formatMetadata",
+              "ImageMetadata"
+            ],
+            [
+              "getName",
+              "name"
+            ],
+            [
+              "getDocumentType",
+              "getMediaType"
+            ],
+            [
+              "Gap analysis",
+              "Blocking / functional gaps"
+            ],
+            [
+              "NodeJS.ReadStream",
+              "ReadableStream"
+            ],
+            [
+              "IKnowledgeGraphSearch",
+              "mergeKnowledgeGraphs"
+            ],
+            [
+              "KnowledgeGraphExportService",
+              "exportGraph"
+            ],
+            [
+              "ffmpeg-static",
+              "fluent-ffmpeg"
+            ],
+            [
+              "LOG_CAP",
+              "PER_FILE_CHAR_CAP"
+            ],
+            [
+              "build",
+              "buildChunks"
+            ],
+            [
+              "semantic_understanding",
+              "semantic_similarity_threshold"
+            ],
+            [
+              "entity/relation types",
+              "MEANINGFUL_ENTITY_TYPES"
+            ],
+            [
+              "README.md",
+              "code.md"
+            ],
+            [
+              "heuristic",
+              "HeuristicContentClassifier"
+            ],
+            [
+              "PDF",
+              "PdfReader"
+            ],
+            [
+              "calculateSimilarity",
+              "cosineSimilarity"
+            ],
+            [
+              "suffixDisplay",
+              "TEXT_SUFFIXES"
+            ],
+            [
+              "IExportStrategy",
+              "KblamExportStrategy"
+            ],
+            [
+              "OllamaService",
+              "ollama_host_url"
+            ],
+            [
+              "dynamic",
+              "dynamic_force_dynamic"
+            ],
+            [
+              "Bayes Theorem",
+              "theorem"
+            ],
+            [
+              "grounding path",
+              "grounding-min-score"
+            ],
+            [
+              "groundingFile",
+              "grounding-min-score"
+            ],
+            [
+              "example",
+              "comprehensive_examples"
+            ],
+            [
+              "AudioReader",
+              "TextReader"
+            ],
+            [
+              "IExportStrategy",
+              "GraphvizDotExportStrategy"
+            ],
+            [
+              "McpExportStrategy",
+              "GraphvizDotExportStrategy"
+            ],
+            [
+              "filePatterns",
+              "pattern"
+            ],
+            [
+              "TYPE_PALETTE",
+              "colorForType"
+            ],
+            [
+              "typeColorMap",
+              "colorForType"
+            ],
+            [
+              "formatMetadata",
+              "metadata"
+            ],
+            [
+              "ImageMetadata",
+              "metadata"
+            ],
+            [
+              "StructuralMetrics",
+              "structural_strategy"
+            ],
+            [
+              "LLMMessage",
+              "chatMessageText"
+            ],
+            [
+              "domainFilter",
+              "domainHints"
+            ],
+            [
+              "fetch",
+              "get"
+            ],
+            [
+              "intrinsic_quality_scoring",
+              "QualityScoreCalculator"
+            ],
+            [
+              "NERExampleEntity",
+              "normalizeEntity"
+            ],
+            [
+              "run",
+              "run-store"
+            ],
+            [
+              "whisperModel",
+              "nodejs-whisper"
+            ],
+            [
+              "whisperModel",
+              "WhisperConfig"
+            ],
+            [
+              "multiChunk",
+              "totalChunks"
+            ],
+            [
+              "getSystemPrompt",
+              "ClassifierSystemPrompt"
+            ],
+            [
+              "TripleMetrics",
+              "computeSemanticMetrics"
+            ],
+            [
+              "File readers",
+              "FileReaderFactory"
+            ],
+            [
+              "compilerOptions",
+              "compile"
+            ],
+            [
+              "LLMProviderMode",
+              "LLMOptions"
+            ],
+            [
+              "package.json",
+              "in.json"
+            ],
+            [
+              "fs",
+              "fs/promises"
+            ],
+            [
+              "logger_module",
+              "LoggerFactory"
+            ],
+            [
+              "Logger",
+              "LoggerFactory"
+            ],
+            [
+              "TYPES.Logger",
+              "LoggerFactory"
+            ],
+            [
+              "retrievedEntities",
+              "retrieved-context-partial"
+            ],
+            [
+              "json",
+              "JSON.stringify"
+            ],
+            [
+              "JSON.parse",
+              "JSON.stringify"
+            ],
+            [
+              "kgToTriplets",
+              "kg"
+            ],
+            [
+              "nextConfig",
+              "Next.js_App_Router"
+            ],
+            [
+              "benchmark_script",
+              "BenchmarkSample"
+            ],
+            [
+              "intrinsic_quality_scoring",
+              "quality_evaluation"
+            ],
+            [
+              "intrinsic_quality_scoring",
+              "quality_thresholds"
+            ],
+            [
+              "QualityScoreCalculator",
+              "quality_evaluation"
+            ],
+            [
+              "domainFilter",
+              "detectedDomain"
+            ],
+            [
+              "openai",
+              "OpenAICompatibleService"
+            ],
+            [
+              "TextReader",
+              "MarkdownReader"
+            ],
+            [
+              "outline.includeLineNumbers",
+              "OutlineOptions"
+            ],
+            [
+              "semantic_understanding",
+              "SemanticEvaluator"
+            ],
+            [
+              "semantic_similarity_threshold",
+              "SemanticMetrics"
+            ]
+          ],
+          "newlyRejected": [],
+          "defaultContainmentAccepts": [
+            [
+              "Whisper ASR",
+              "asr"
+            ],
+            [
+              "js-yaml",
+              "YAML"
+            ],
+            [
+              "system_mission_statement",
+              "mission_statement"
+            ],
+            [
+              "audio/video",
+              "audio"
+            ],
+            [
+              "readConfigurationFile",
+              "readConfig"
+            ],
+            [
+              "kg-gen",
+              "kg-gen-frontend"
+            ],
+            [
+              "Logger",
+              "TYPES.Logger"
+            ],
+            [
+              "Local LLM",
+              "llm"
+            ],
+            [
+              "@tanstack/react-query",
+              "react-query"
+            ],
+            [
+              "Graceful shutdown",
+              "shutdown"
+            ],
+            [
+              "buildProcessingOptions",
+              "ProcessingOptions"
+            ],
+            [
+              "raw",
+              "rawResult"
+            ],
+            [
+              "NDJSON_stdout_stream",
+              "stdout_stream"
+            ],
+            [
+              "Classifier",
+              "Naive Bayes Classifier"
+            ],
+            [
+              "html-to-text",
+              "parseWithHtmlToText"
+            ],
+            [
+              "path",
+              "fullPath"
+            ],
+            [
+              "container",
+              "DIContainer"
+            ],
+            [
+              "openai",
+              "OPENAI_API_KEY"
+            ],
+            [
+              "api_key_management",
+              "apiKey"
+            ],
+            [
+              "advanced CLI features",
+              "cli"
+            ],
+            [
+              "json",
+              "parseJson"
+            ],
+            [
+              "json",
+              "JSON.parse"
+            ],
+            [
+              "module",
+              "model_module"
+            ],
+            [
+              "OKLch_tokens",
+              "tokens"
+            ],
+            [
+              "kg-gen",
+              "KG_GEN_DATA_DIR"
+            ],
+            [
+              "merge",
+              "tailwind-merge"
+            ],
+            [
+              "logger_module",
+              "Logger"
+            ],
+            [
+              "MIT License",
+              "license"
+            ],
+            [
+              "generate",
+              "generateStructured"
+            ],
+            [
+              "getName",
+              "name"
+            ],
+            [
+              "promptVersion: v4.5",
+              "v4.5"
+            ],
+            [
+              "build",
+              "buildChunks"
+            ],
+            [
+              "heuristic",
+              "HeuristicContentClassifier"
+            ],
+            [
+              "PDF",
+              "PdfReader"
+            ],
+            [
+              "dynamic",
+              "dynamic_force_dynamic"
+            ],
+            [
+              "dynamic",
+              "force_dynamic"
+            ],
+            [
+              "Bayes Theorem",
+              "theorem"
+            ],
+            [
+              "example",
+              "comprehensive_examples"
+            ],
+            [
+              "filePatterns",
+              "pattern"
+            ],
+            [
+              "formatMetadata",
+              "metadata"
+            ],
+            [
+              "ImageMetadata",
+              "metadata"
+            ],
+            [
+              "run",
+              "run-store"
+            ],
+            [
+              "systemPrompt",
+              "ClassifierSystemPrompt"
+            ],
+            [
+              "compilerOptions",
+              "compile"
+            ],
+            [
+              "Logger",
+              "LoggerFactory"
+            ],
+            [
+              "json",
+              "JSON.stringify"
+            ],
+            [
+              "apiPost",
+              "POST"
+            ],
+            [
+              "ollama",
+              "OllamaService"
+            ],
+            [
+              "openai",
+              "OpenAICompatibleService"
+            ],
+            [
+              "error",
+              "CustomErrors"
+            ],
+            [
+              "Observation",
+              "observationGroundingScore"
+            ],
+            [
+              "Images",
+              "extractImages"
+            ]
+          ]
+        },
+        {
+          "model": "gemma4:31b-cloud",
+          "baselineAccepts": 9,
+          "defaultAccepts": 31,
+          "sharedPairs": 273,
+          "newlyAccepted": [
+            [
+              "parseJson",
+              "JSON.parse"
+            ],
+            [
+              "readConfigurationFile",
+              "readConfig"
+            ],
+            [
+              "Expert Knowledge Graph Generation System",
+              "KnowledgeGraphBuilder"
+            ],
+            [
+              "next_server_response",
+              "NextResponse"
+            ],
+            [
+              "kg.json",
+              "kg"
+            ],
+            [
+              "getSupportedFormats",
+              "supported_document_formats"
+            ],
+            [
+              "progressNdjson",
+              "NdjsonProgressEmitter"
+            ],
+            [
+              "Watch mode",
+              "watchCommand"
+            ],
+            [
+              "entityTypeDistribution",
+              "entityTypeCounts"
+            ],
+            [
+              "raw",
+              "rawResult"
+            ],
+            [
+              "NDJSON_stdout_stream",
+              "stdout_stream"
+            ],
+            [
+              "html-to-text",
+              "parseWithHtmlToText"
+            ],
+            [
+              "path",
+              "fullPath"
+            ],
+            [
+              "Strategy pattern",
+              "strategies"
+            ],
+            [
+              "module",
+              "model_module"
+            ],
+            [
+              "apiKey",
+              "OPENAI_API_KEY"
+            ],
+            [
+              "logger_module",
+              "Logger"
+            ],
+            [
+              "TYPE_PALETTE",
+              "typeColorMap"
+            ],
+            [
+              "Whisper ASR",
+              "whisperModel"
+            ],
+            [
+              "KnowledgeGraphExportService",
+              "exportGraph"
+            ],
+            [
+              "example",
+              "comprehensive_examples"
+            ],
+            [
+              "cli",
+              "runCli"
+            ]
+          ],
+          "newlyRejected": [],
+          "defaultContainmentAccepts": [
+            [
+              "system_mission_statement",
+              "mission_statement"
+            ],
+            [
+              "readConfigurationFile",
+              "readConfig"
+            ],
+            [
+              "Logger",
+              "TYPES.Logger"
+            ],
+            [
+              "@tanstack/react-query",
+              "react-query"
+            ],
+            [
+              "raw",
+              "rawResult"
+            ],
+            [
+              "NDJSON_stdout_stream",
+              "stdout_stream"
+            ],
+            [
+              "html-to-text",
+              "parseWithHtmlToText"
+            ],
+            [
+              "path",
+              "fullPath"
+            ],
+            [
+              "container",
+              "DIContainer"
+            ],
+            [
+              "module",
+              "model_module"
+            ],
+            [
+              "apiKey",
+              "OPENAI_API_KEY"
+            ],
+            [
+              "logger_module",
+              "Logger"
+            ],
+            [
+              "promptVersion: v4.5",
+              "v4.5"
+            ],
+            [
+              "example",
+              "comprehensive_examples"
+            ],
+            [
+              "cli",
+              "runCli"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "telegram-prose",
+      "entities": 738,
+      "counts": [
+        {
+          "guidance": "baseline",
+          "model": "gemma3:4b-cloud",
+          "entitiesBefore": 738,
+          "entitiesAfter": 687,
+          "adjudications": 300,
+          "accepts": 3
+        },
+        {
+          "guidance": "default",
+          "model": "gemma3:4b-cloud",
+          "entitiesBefore": 738,
+          "entitiesAfter": 543,
+          "adjudications": 300,
+          "accepts": 223
+        }
+      ],
+      "perModel": [
+        {
+          "model": "gemma3:4b-cloud",
+          "baselineAccepts": 3,
+          "defaultAccepts": 223,
+          "sharedPairs": 200,
+          "newlyAccepted": [
+            [
+              "ingredient embedding model",
+              "Epicure: Navigating the Emergent Geometry of Food Ingredient Embeddings"
+            ],
+            [
+              "ingredient–ingredient NPMI graph",
+              "FlavorDB ingredient–compound graph"
+            ],
+            [
+              "SLERP",
+              "SLERP-destination"
+            ],
+            [
+              "performance cores",
+              "efficiency cores"
+            ],
+            [
+              "compound-feature (CF) sensory categories",
+              "FlavorDB compound-feature (CF) sensory categories"
+            ],
+            [
+              "red rice",
+              "rice"
+            ],
+            [
+              "Google's API model identifier gemini-embedding-001",
+              "Google’s gemini-embedding-001 endpoint"
+            ],
+            [
+              "16-core NPU",
+              "16 cores"
+            ],
+            [
+              "Constrained Optimization Problems",
+              "optimization problem"
+            ],
+            [
+              "cosine-nearest neighbours",
+              "cosine similarity"
+            ],
+            [
+              "basic-taste CF probes",
+              "five basic-taste probes"
+            ],
+            [
+              "SLERP direction arithmetic",
+              "direction arithmetic"
+            ],
+            [
+              "liqueur",
+              "coffee liqueur"
+            ],
+            [
+              "Cuisine-region clustering",
+              "Food-group-clustering subset"
+            ],
+            [
+              "skip-gram",
+              "skip-gram objective"
+            ],
+            [
+              "Apple",
+              "Mac"
+            ],
+            [
+              "4.14M recipes",
+              "4.14M-recipe corpus"
+            ],
+            [
+              "Display Engines",
+              "Display Composition Engines"
+            ],
+            [
+              "chicken broth",
+              "broth"
+            ],
+            [
+              "Cooc",
+              "Cooc graph"
+            ],
+            [
+              "supervised direction probes",
+              "supervised direction quality"
+            ],
+            [
+              "GPU technology",
+              "GPU"
+            ],
+            [
+              "Computational gastronomy",
+              "computational representation of food knowledge"
+            ],
+            [
+              "Letta API",
+              "Letta Code"
+            ],
+            [
+              "Lagrangian multipliers",
+              "Lagrangian weights"
+            ],
+            [
+              "oyster mushroom",
+              "mushroom"
+            ],
+            [
+              "constraint violations",
+              "Number of constraint violations (VC)"
+            ],
+            [
+              "LLM-augmented pipeline",
+              "LLM-augmented canonicalisation pipeline"
+            ],
+            [
+              "Epicure",
+              "Epicure-Cooc"
+            ],
+            [
+              "AI",
+              "AI calculations"
+            ],
+            [
+              "typed compound metapaths",
+              "via-compound metapath"
+            ],
+            [
+              "liqueur",
+              "chocolate liqueur"
+            ],
+            [
+              "Monotonicity Constraints",
+              "monotonicity property"
+            ],
+            [
+              "ICA factors",
+              "ICA"
+            ],
+            [
+              "Southeast-Asian aromatics",
+              "Southeast Asian aromatic chili spices"
+            ],
+            [
+              "L2 cache",
+              "four-megabyte large shared L2 cache"
+            ],
+            [
+              "NAND chips",
+              "NAND storage devices"
+            ],
+            [
+              "lentil",
+              "chickpea"
+            ],
+            [
+              "I–I walk injection (ii_repeat)",
+              "walk injection"
+            ],
+            [
+              "liqueur",
+              "hazelnut liqueur"
+            ],
+            [
+              "salsa verde",
+              "salsa"
+            ],
+            [
+              "Mediterranean pantry seeds and aromatics",
+              "Mediterranean savoury pantry"
+            ],
+            [
+              "enchilada sauce",
+              "taco sauce"
+            ],
+            [
+              "Active Generation Dispatches",
+              "generator dispatch"
+            ],
+            [
+              "Letta",
+              "Letta API"
+            ],
+            [
+              "Letta",
+              "Letta Code"
+            ],
+            [
+              "The Urgency of Interpretability",
+              "mechanistic interpretability"
+            ],
+            [
+              "M1 Pro",
+              "M1 iPad Pro"
+            ],
+            [
+              "Direction quality",
+              "direction-quality protocol"
+            ],
+            [
+              "Lagrangian Duality",
+              "Lagrangian Dual Framework (LDF)"
+            ],
+            [
+              "supervised set",
+              "supervised properties"
+            ],
+            [
+              "confectionery and dessert components",
+              "East Asian confectionery and sweet baking ingredients"
+            ],
+            [
+              "Lagrangian function",
+              "Lagrangian loss function"
+            ],
+            [
+              "performance cores",
+              "four efficiency cores"
+            ],
+            [
+              "efficiency cores",
+              "four performance cores"
+            ],
+            [
+              "Apple Silicon",
+              "Apple Silicon chip deep-dives"
+            ],
+            [
+              "food embedding",
+              "food-group-residualised embeddings"
+            ],
+            [
+              "Epicure: Navigating the Emergent Geometry of Food Ingredient Embeddings",
+              "food-group-residualised embeddings"
+            ],
+            [
+              "Chem",
+              "Core/Chem (typed)"
+            ],
+            [
+              "random-walk schema",
+              "Walk schema cycling"
+            ],
+            [
+              "skip-gram",
+              "skip-gram with negative sampling"
+            ],
+            [
+              "skip-gram objective",
+              "skip-gram with negative sampling"
+            ],
+            [
+              "embedded vocabulary",
+              "Final canonicals (embedded vocabulary)"
+            ],
+            [
+              "FastICA",
+              "sklearn.FastICA"
+            ],
+            [
+              "embedding's own natural axes",
+              "embedding"
+            ],
+            [
+              "LLM",
+              "LLM dependence"
+            ],
+            [
+              "Mu et al. [2017]",
+              "Dong et al. , 2017"
+            ],
+            [
+              "shiitake mushroom",
+              "oyster mushroom"
+            ],
+            [
+              "shiitake mushroom",
+              "mushroom"
+            ],
+            [
+              "Lagrangian relaxation",
+              "augmented Lagrangian methods"
+            ],
+            [
+              "Complex Constraints",
+              "constraint programming"
+            ],
+            [
+              "embedding isotropy",
+              "embedding's own natural axes"
+            ],
+            [
+              "embedding isotropy",
+              "embedding"
+            ],
+            [
+              "via-compound N–H–C[x]–H–N",
+              "cross-type C[x]–H–N–H–C[y] bridges"
+            ],
+            [
+              "bell pepper",
+              "poblano pepper"
+            ],
+            [
+              "Epicure",
+              "Epicure-Chem"
+            ],
+            [
+              "East Asian confectionery and sweet baking ingredients",
+              "East and Southeast Asian pantry staples"
+            ],
+            [
+              "Fairness Constraints",
+              "Fairness application domains"
+            ],
+            [
+              "chocolate",
+              "chocolate liqueur"
+            ],
+            [
+              "The Urgency of Interpretability",
+              "interpretable factors"
+            ],
+            [
+              "mechanistic interpretability",
+              "interpretable factors"
+            ],
+            [
+              "cheese",
+              "provolone cheese"
+            ],
+            [
+              "supervised probes",
+              "canonical probe seeds"
+            ],
+            [
+              "corn",
+              "corn + Latin_American"
+            ],
+            [
+              "culinary dimensions",
+              "culinary geometry"
+            ],
+            [
+              "FlavorGraph",
+              "FlavorDB"
+            ],
+            [
+              "System-on-a-Chip (SoC)",
+              "chip design"
+            ],
+            [
+              "shared level 2 cache",
+              "four-megabyte large shared L2 cache"
+            ],
+            [
+              "cheese",
+              "swiss cheese"
+            ],
+            [
+              "Lagrangian relaxation",
+              "Lagrangian multipliers"
+            ],
+            [
+              "Lagrangian relaxation",
+              "Lagrangian weights"
+            ],
+            [
+              "augmented Lagrangian methods",
+              "Lagrangian multipliers"
+            ],
+            [
+              "augmented Lagrangian methods",
+              "Lagrangian weights"
+            ],
+            [
+              "OPF",
+              "OPF Benchmarks"
+            ],
+            [
+              "sweet baking",
+              "sweet baking and plant-based pantry staples"
+            ],
+            [
+              "webcam",
+              "MacBook webcam"
+            ],
+            [
+              "Southeast-Asian aromatics",
+              "Indonesian spice paste aromatics"
+            ],
+            [
+              "Southeast Asian aromatic chili spices",
+              "Indonesian spice paste aromatics"
+            ],
+            [
+              "Deep Learning",
+              "neural network"
+            ],
+            [
+              "OGC",
+              "OGC Benchmarks"
+            ],
+            [
+              "cream",
+              "sour cream"
+            ],
+            [
+              "South Asian",
+              "rice + South_Asian"
+            ],
+            [
+              "Cuisine NMI",
+              "NMI"
+            ],
+            [
+              "pasta",
+              "pasta-pantry context"
+            ],
+            [
+              "logic board",
+              "USB logic block"
+            ],
+            [
+              "constraint violations",
+              "Sum of absolute magnitude of violated constraints (SMVC)"
+            ],
+            [
+              "Number of constraint violations (VC)",
+              "Sum of absolute magnitude of violated constraints (SMVC)"
+            ],
+            [
+              "Mediterranean savory cooking staples",
+              "Mediterranean pantry seeds and aromatics"
+            ],
+            [
+              "Mediterranean savory cooking staples",
+              "Mediterranean savoury pantry"
+            ],
+            [
+              "Energy networks",
+              "Power Flows"
+            ],
+            [
+              "M C",
+              "model M_D_C"
+            ],
+            [
+              "cheese",
+              "colby cheese"
+            ],
+            [
+              "pork",
+              "sausage"
+            ],
+            [
+              "Optimizer",
+              "Adam optimizer"
+            ],
+            [
+              "coherence",
+              "Mode coherence"
+            ],
+            [
+              "Voltage Angles",
+              "voltage set points"
+            ],
+            [
+              "USDA FoodData Central",
+              "USDA macros"
+            ],
+            [
+              "operator families",
+              "operators"
+            ],
+            [
+              "Lagrangian Duality for Constrained Deep Learning",
+              "Constrained Learning Framework"
+            ],
+            [
+              "SRAM",
+              "eight megabytes of SRAM"
+            ],
+            [
+              "human evolution",
+              "human brain development"
+            ],
+            [
+              "bread",
+              "pita bread"
+            ],
+            [
+              "supervised semantic directions",
+              "supervised direction probes"
+            ],
+            [
+              "supervised semantic directions",
+              "supervised direction quality"
+            ],
+            [
+              "emergent modes",
+              "emergent SLERP"
+            ],
+            [
+              "Fairness Constraints",
+              "Fairness"
+            ],
+            [
+              "Fairness application domains",
+              "Fairness"
+            ],
+            [
+              "culinary probes",
+              "culinary question"
+            ],
+            [
+              "SLERP rotation",
+              "SLERP"
+            ],
+            [
+              "SLERP rotation",
+              "SLERP-destination"
+            ],
+            [
+              "multilingual recipe corpus",
+              "canonical ingredient vocabulary"
+            ],
+            [
+              "Icestorm efficiency cores",
+              "Icestorm"
+            ],
+            [
+              "squid",
+              "octopus"
+            ],
+            [
+              "emergent factor-mode pole",
+              "emergent modes"
+            ],
+            [
+              "Anthropic , 2026a",
+              "2026a"
+            ],
+            [
+              "Energy Systems",
+              "renewable energy sources"
+            ],
+            [
+              "emergent geometry",
+              "emergent SLERP"
+            ],
+            [
+              "SLERP direction arithmetic",
+              "linear directions"
+            ],
+            [
+              "direction arithmetic",
+              "linear directions"
+            ],
+            [
+              "Dataset D",
+              "Adult dataset"
+            ],
+            [
+              "within-type H–C[x]–H aggregates",
+              "via-compound N–H–C[x]–H–N"
+            ],
+            [
+              "USDA FoodData Central",
+              "USDA food groups"
+            ],
+            [
+              "Direction quality",
+              "Stratified Direction Quality appendix"
+            ],
+            [
+              "AI",
+              "AI welfare"
+            ],
+            [
+              "Mac",
+              "MacBook Air"
+            ],
+            [
+              "GPU",
+              "GPU block"
+            ],
+            [
+              "Epicure",
+              "Epicure models"
+            ],
+            [
+              "Lagrangian relaxation",
+              "Lagrangian loss function"
+            ],
+            [
+              "Lagrangian multipliers",
+              "Lagrangian function"
+            ],
+            [
+              "Lagrangian multipliers",
+              "Lagrangian loss function"
+            ],
+            [
+              "Lagrangian weights",
+              "Lagrangian function"
+            ],
+            [
+              "Lagrangian weights",
+              "Lagrangian loss function"
+            ]
+          ],
+          "newlyRejected": [],
+          "defaultContainmentAccepts": [
+            [
+              "SLERP",
+              "SLERP-destination"
+            ],
+            [
+              "compound-feature (CF) sensory categories",
+              "FlavorDB compound-feature (CF) sensory categories"
+            ],
+            [
+              "red rice",
+              "rice"
+            ],
+            [
+              "Constrained Optimization Problems",
+              "optimization problem"
+            ],
+            [
+              "SLERP direction arithmetic",
+              "direction arithmetic"
+            ],
+            [
+              "liqueur",
+              "coffee liqueur"
+            ],
+            [
+              "skip-gram",
+              "skip-gram objective"
+            ],
+            [
+              "chicken broth",
+              "broth"
+            ],
+            [
+              "Cooc",
+              "Cooc graph"
+            ],
+            [
+              "supervised direction probes",
+              "supervised direction"
+            ],
+            [
+              "GPU technology",
+              "GPU"
+            ],
+            [
+              "oyster mushroom",
+              "mushroom"
+            ],
+            [
+              "constraint violations",
+              "Number of constraint violations (VC)"
+            ],
+            [
+              "Epicure",
+              "Epicure-Cooc"
+            ],
+            [
+              "liqueur",
+              "chocolate liqueur"
+            ],
+            [
+              "ICA factors",
+              "ICA"
+            ],
+            [
+              "L2 cache",
+              "four-megabyte large shared L2 cache"
+            ],
+            [
+              "I–I walk injection (ii_repeat)",
+              "walk injection"
+            ],
+            [
+              "liqueur",
+              "hazelnut liqueur"
+            ],
+            [
+              "salsa verde",
+              "salsa"
+            ],
+            [
+              "Letta",
+              "Letta API"
+            ],
+            [
+              "Letta",
+              "Letta Code"
+            ],
+            [
+              "interpretability",
+              "mechanistic interpretability"
+            ],
+            [
+              "Direction quality",
+              "direction-quality protocol"
+            ],
+            [
+              "Apple Silicon",
+              "Apple Silicon chip deep-dives"
+            ],
+            [
+              "Chem",
+              "Core/Chem (typed)"
+            ],
+            [
+              "random-walk schema",
+              "walk schema"
+            ],
+            [
+              "skip-gram",
+              "skip-gram with negative sampling"
+            ],
+            [
+              "embedded vocabulary",
+              "Final canonicals (embedded vocabulary)"
+            ],
+            [
+              "FastICA",
+              "sklearn.FastICA"
+            ],
+            [
+              "embedding's own natural axes",
+              "embedding"
+            ],
+            [
+              "LLM",
+              "LLM dependence"
+            ],
+            [
+              "shiitake mushroom",
+              "mushroom"
+            ],
+            [
+              "embedding isotropy",
+              "embedding"
+            ],
+            [
+              "Epicure",
+              "Epicure-Chem"
+            ],
+            [
+              "chocolate",
+              "chocolate liqueur"
+            ],
+            [
+              "cheese",
+              "provolone cheese"
+            ],
+            [
+              "corn",
+              "corn + Latin_American"
+            ],
+            [
+              "shared level 2 cache",
+              "L2 cache"
+            ],
+            [
+              "cheese",
+              "swiss cheese"
+            ],
+            [
+              "OPF",
+              "OPF Benchmarks"
+            ],
+            [
+              "sweet baking",
+              "sweet baking and plant-based pantry staples"
+            ],
+            [
+              "webcam",
+              "MacBook webcam"
+            ],
+            [
+              "webcam",
+              "iMac webcam"
+            ],
+            [
+              "Deep Neural Networks",
+              "neural network"
+            ],
+            [
+              "OGC",
+              "OGC Benchmarks"
+            ],
+            [
+              "cream",
+              "sour cream"
+            ],
+            [
+              "South Asian",
+              "rice + South_Asian"
+            ],
+            [
+              "Cuisine NMI",
+              "NMI"
+            ],
+            [
+              "pasta",
+              "pasta-pantry context"
+            ],
+            [
+              "M D C",
+              "model M_D_C"
+            ],
+            [
+              "cheese",
+              "colby cheese"
+            ],
+            [
+              "Optimizer",
+              "Adam optimizer"
+            ],
+            [
+              "coherence",
+              "Mode coherence"
+            ],
+            [
+              "coherence",
+              "per-mode coherence"
+            ],
+            [
+              "SRAM",
+              "eight megabytes of SRAM"
+            ],
+            [
+              "bread",
+              "pita bread"
+            ],
+            [
+              "Fairness Constraints",
+              "Fairness"
+            ],
+            [
+              "Fairness application domains",
+              "Fairness"
+            ],
+            [
+              "SLERP rotation",
+              "SLERP"
+            ],
+            [
+              "Icestorm efficiency cores",
+              "Icestorm"
+            ],
+            [
+              "Anthropic , 2026a",
+              "2026a"
+            ],
+            [
+              "Direction quality",
+              "Stratified Direction Quality appendix"
+            ],
+            [
+              "Mac",
+              "MacBook Air"
+            ],
+            [
+              "PHY",
+              "two PHYs"
+            ],
+            [
+              "GPU",
+              "GPU block"
+            ],
+            [
+              "LLM",
+              "LLM outputs"
+            ],
+            [
+              "model",
+              "vision models"
+            ],
+            [
+              "Epicure",
+              "Epicure models"
+            ],
+            [
+              "FastICA decomposition",
+              "FastICA"
+            ],
+            [
+              "ganache",
+              "white chocolate ganache"
+            ],
+            [
+              "continuous angle θ",
+              "angle"
+            ],
+            [
+              "Disparate Impact",
+              "Disparate impact index (DT index)"
+            ],
+            [
+              "Golden Gate Claude",
+              "Claude"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
