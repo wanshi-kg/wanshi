@@ -1,6 +1,13 @@
 import { KnowledgeGraphBuilder } from "./KnowledgeGraphBuilder";
 import { stubLogger } from "../../__tests__/helpers";
 
+/**
+ * Read a closed-vocab enum's allowed values from the captured schema. The enum is
+ * wrapped in `.catch(escape)` (lenient coercion of out-of-vocab values), so the node
+ * is a ZodCatch — unwrap `_def.innerType` to reach the ZodEnum's `.options`.
+ */
+const enumOptions = (node: any): string[] | undefined => (node?._def?.innerType ?? node)?.options;
+
 describe("KnowledgeGraphBuilder", () => {
   function makeBuilder(captured: any[]) {
     const promptManager = {
@@ -72,9 +79,9 @@ describe("KnowledgeGraphBuilder", () => {
     await builder.build(processedFile, "s");
 
     const entityType = capturedSchema.shape.entities.element.shape.entityType;
-    // a ZodEnum exposes .options; ZodString does not
-    expect(Array.isArray(entityType.options)).toBe(true);
-    expect(entityType.options).toEqual(
+    // a (catch-wrapped) ZodEnum exposes .options via the helper; ZodString does not
+    expect(Array.isArray(enumOptions(entityType))).toBe(true);
+    expect(enumOptions(entityType)).toEqual(
       expect.arrayContaining(["function", "other"])
     );
   });
@@ -111,7 +118,7 @@ describe("KnowledgeGraphBuilder", () => {
     // validation → empty graph. They must now be in the enum.
     // relationType is wrapped in z.preprocess (scalar→array coercion); unwrap to the array.
     const relationType = capturedSchema.shape.relations.element.shape.relationType._def.schema;
-    expect(relationType.element.options).toEqual(
+    expect(enumOptions(relationType.element)).toEqual(
       expect.arrayContaining(["treats", "diagnosed_with", "related_to"])
     );
   });
@@ -156,14 +163,14 @@ describe("KnowledgeGraphBuilder", () => {
     // entityType enum exists (no class detected, glossary alone drives it) and
     // includes the glossary type + the "other" escape
     const entityType = capturedSchema.shape.entities.element.shape.entityType;
-    expect(entityType.options).toEqual(
+    expect(enumOptions(entityType)).toEqual(
       expect.arrayContaining(["theorem", "other"])
     );
     // relationType is now a closed enum unioning glossary predicates + base set +
     // the "related_to" catch-all
     // relationType is wrapped in z.preprocess (scalar→array coercion); unwrap to the array.
     const relationType = capturedSchema.shape.relations.element.shape.relationType._def.schema;
-    expect(relationType.element.options).toEqual(
+    expect(enumOptions(relationType.element)).toEqual(
       expect.arrayContaining(["assumes", "uses", "related_to"])
     );
   });
@@ -197,8 +204,8 @@ describe("KnowledgeGraphBuilder", () => {
     const entityType = capturedSchema.shape.entities.element.shape.entityType;
     // relationType is wrapped in z.preprocess (scalar→array coercion); unwrap to the array.
     const relationType = capturedSchema.shape.relations.element.shape.relationType._def.schema;
-    expect(entityType.options).toEqual(expect.arrayContaining(["function", "other"]));
-    expect(relationType.element.options).toEqual(
+    expect(enumOptions(entityType)).toEqual(expect.arrayContaining(["function", "other"]));
+    expect(enumOptions(relationType.element)).toEqual(
       expect.arrayContaining(["depends_on", "related_to"])
     );
   });

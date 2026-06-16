@@ -13,30 +13,50 @@ import { trace, LineageRegistry } from '../trace';
 
 /**
  * Build the extraction schema. Under v5 both vocabularies are *closed*: when an
- * allowed set is supplied, the field is an enforced Zod enum; `entityType` falls
- * back to the base set + `other`, `relationType` to the base set + `related_to`,
- * so the model can never invent a one-off type/predicate. When a set is empty the
- * field stays a free string (legacy behavior, e.g. older prompt versions).
+ * allowed set is supplied, the field is a Zod enum; `entityType` falls back to the
+ * base set + `other`, `relationType` to the base set + `related_to`, so the model
+ * can never invent a one-off type/predicate. When a set is empty the field stays a
+ * free string (legacy behavior, e.g. older prompt versions).
+ *
+ * **Lenient coercion (recall guard):** the enum is wrapped in `.catch(escape)`, so an
+ * out-of-vocab value the model emits anyway (e.g. `relationType: "returns"`, which
+ * Ollama's soft `format` constraint doesn't reliably prevent) is coerced onto the
+ * catch-all (`other` / `related_to`) **per field** instead of failing Zod and
+ * discarding the *entire chunk* (3 retries → empty graph). This is the escapes'
+ * intended purpose ("prevent validation-failure recall loss"); coerced values surface
+ * in `KnowledgeMerger.logVocabularyFit`'s catch-all fraction (the too-tight-vocab
+ * signal), so nothing goes silent.
  */
-function buildGraphSchema(allowedTypes?: string[], allowedRelationTypes?: string[]) {
-  const entityType =
-    allowedTypes && allowedTypes.length > 0
-      ? z
-          .enum(allowedTypes as [string, ...string[]])
-          .describe("Entity type — pick the closest; use 'other' if none fit")
-      : z.string().describe("Entity description");
+export function buildGraphSchema(allowedTypes?: string[], allowedRelationTypes?: string[]) {
+  const hasTypes = !!allowedTypes && allowedTypes.length > 0;
+  const hasRel = !!allowedRelationTypes && allowedRelationTypes.length > 0;
+  const entityEscape = hasTypes ? (allowedTypes!.includes("other") ? "other" : allowedTypes![0]) : "other";
+  const relEscape = hasRel
+    ? allowedRelationTypes!.includes("related_to")
+      ? "related_to"
+      : allowedRelationTypes![0]
+    : "related_to";
+
+  const entityType = hasTypes
+    ? z
+        .enum(allowedTypes as [string, ...string[]])
+        .catch(entityEscape)
+        .describe("Entity type — pick the closest; use 'other' if none fit")
+    : z.string().describe("Entity description");
 
   // v5's prompt asks for "one canonical predicate", so instruction-following models
   // (e.g. gemma4) emit relationType as a scalar string ("depends_on") rather than a
   // one-element array. Coerce scalar → [scalar] before validating so a compliant model
   // isn't rejected; the array path is unchanged.
   const toRelationArray = (v: unknown) => (Array.isArray(v) ? v : v == null ? [] : [v]);
-  const relationType =
-    allowedRelationTypes && allowedRelationTypes.length > 0
-      ? z
-          .preprocess(toRelationArray, z.array(z.enum(allowedRelationTypes as [string, ...string[]])))
-          .describe("One canonical predicate; use 'related_to' if none fit")
-      : z.preprocess(toRelationArray, z.array(z.string())).describe("List of relation types");
+  const relationType = hasRel
+    ? z
+        .preprocess(
+          toRelationArray,
+          z.array(z.enum(allowedRelationTypes as [string, ...string[]]).catch(relEscape))
+        )
+        .describe("One canonical predicate; use 'related_to' if none fit")
+    : z.preprocess(toRelationArray, z.array(z.string())).describe("List of relation types");
 
   return z.object({
     entities: z.array(

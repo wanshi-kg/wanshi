@@ -159,10 +159,14 @@ glossary `entityTypes` ∪ `BASE_ENTITY_TYPES` ∪ `other`; `relationType` = glo
 `relationTypes` ∪ `BASE_RELATION_TYPES` ∪ `related_to`. The vocabularies are **always
 closed** — `resolveAllowedTypes`/`resolveAllowedRelationTypes` fall back to the base sets
 even with no class and no glossary, so a one-off type/predicate can't be invented. The
-escapes (`other`, `related_to`) prevent validation-failure recall loss;
+enums are wrapped in **`.catch(escape)`** so an out-of-vocab value the model emits anyway
+(Ollama's soft `format` constraint doesn't reliably block it — e.g. `relationType:"returns"`)
+is **coerced per-field** onto `other`/`related_to` rather than failing Zod and discarding the
+*whole chunk* (3 retries → empty graph). This is what makes the escapes actually "prevent
+validation-failure recall loss" (verified: a gemma3:4b corpus went 4/12 failed chunks → 0).
 `KnowledgeMerger.logVocabularyFit` logs the catch-all fraction (Dove's guardrail — a high
-`related_to` % means the closed set is too tight). The `BASE_*` constants mirror the
-`{{else}}` base lists in `templates/v5/system.hbs` (keep them in sync).
+`related_to` % means the closed set is too tight, now inclusive of coerced values). The
+`BASE_*` constants mirror the `{{else}}` base lists in `templates/v5/system.hbs` (keep them in sync).
 
 **Inline grounding gate (`--grounding`).** After each chunk is extracted,
 `KnowledgeGraphBuilder.applyGroundingGate()` scores every observation against its source
