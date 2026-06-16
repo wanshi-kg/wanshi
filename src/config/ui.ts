@@ -242,6 +242,15 @@ export const CONFIG_GROUPS: ConfigGroupMeta[] = [
       { path: "cost.ledgerPath", label: "Cost ledger path", widget: "path", pathLike: true, placeholder: "<output>.cost.json" },
     ],
   },
+  {
+    id: "adapters",
+    title: "Data-sink adapters",
+    description: "Graph-native sources mapped directly to a graph (no LLM). Off by default.",
+    fields: [
+      { path: "adapters.sqlite.enabled", label: "SQLite (.db → graph)", widget: "boolean" },
+      { path: "adapters.sqlite.maxRowsPerTable", label: "SQLite: max rows / table", widget: "number", placeholder: "5000" },
+    ],
+  },
 ];
 
 /** Paths the frontend owns and forces per web run — never imported or sent as-is. */

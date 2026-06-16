@@ -510,6 +510,26 @@ const CostSchema = z
   })
   .strict();
 
+// Structured-emit adapters (data-sink track): graph-native sources mapped DIRECTLY
+// to graph fragments (no LLM), still flowing through merge/canon. Each adapter is
+// off by default; the registry is empty until one is enabled (default run unchanged).
+const AdaptersSchema = z
+  .object({
+    sqlite: z
+      .object({
+        enabled: z.boolean().default(false).describe("Map .db/.sqlite files directly to a graph (tables→types, rows→entities, FK→edges)"),
+        extensions: z
+          .array(z.string())
+          .default([".db", ".sqlite", ".sqlite3"])
+          .describe("File extensions claimed by the SQLite adapter (a non-sqlite file still falls through)"),
+        maxRowsPerTable: z.coerce.number().int().default(5000).describe("Cap rows emitted per table (warns + truncates beyond)"),
+        excludeTables: z.array(z.string()).default([]).describe("Table names to skip entirely"),
+      })
+      .strict()
+      .default({}),
+  })
+  .strict();
+
 const LoggingSchema = z
   .object({
     level: LogLevelEnum.default("info").describe("Log level"),
@@ -724,6 +744,7 @@ export const ConfigSchema = z
     classifier: ClassifierSchema.default({}),
     readers: ReadersSchema.default({}),
     references: ReferencesSchema.default({}),
+    adapters: AdaptersSchema.default({}),
     export: ExportSchema.default({}),
     resume: ResumeSchema.default({}),
     trace: TraceSchema.default({}),
