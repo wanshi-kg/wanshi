@@ -235,6 +235,8 @@ export const CONFIG_GROUPS: ConfigGroupMeta[] = [
       { path: "logging.debug", label: "Debug", widget: "boolean" },
       { path: "logging.silent", label: "Silent", widget: "boolean" },
       { path: "resume.checkpointPath", label: "Checkpoint path", widget: "path", pathLike: true, placeholder: "<output>.checkpoint.jsonl" },
+      { path: "trace.enabled", label: "Debug run-trace", widget: "boolean" },
+      { path: "trace.path", label: "Trace path", widget: "path", pathLike: true, placeholder: "<output>.trace.jsonl" },
     ],
   },
 ];

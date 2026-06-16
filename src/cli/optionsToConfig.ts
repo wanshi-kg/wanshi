@@ -95,6 +95,9 @@ export const FLAG_TO_PATH: Record<string, string> = {
   // resume
   resume: "resume.enabled",
   checkpoint: "resume.checkpointPath",
+  // trace (debug/observability run-trace)
+  trace: "trace.enabled",
+  tracePath: "trace.path",
   // runtime
   watch: "runtime.watch",
   exportOnly: "runtime.exportOnly",

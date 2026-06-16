@@ -3,7 +3,7 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { Logger } from "../../shared";
 import { parseJsonLenient } from "../../shared/utils";
-import { ILLMProvider, LLMOptions, LLMMessage } from "../../types/ILLMProvider";
+import { ILLMProvider, LLMOptions, LLMMessage, LLMUsage } from "../../types/ILLMProvider";
 
 /**
  * LLM provider for any OpenAI-compatible chat-completions endpoint
@@ -20,6 +20,8 @@ export class OpenAICompatibleService implements ILLMProvider {
   private client: OpenAI;
   // Flips to false for the rest of the process once a provider rejects json_schema.
   private useJsonSchema = true;
+  // Token usage of the most recent call (cost-meter / trace seam); observe-only.
+  private lastUsage?: LLMUsage;
 
   constructor(options: LLMOptions, logger: Logger) {
     this.logger = logger;
@@ -211,6 +213,11 @@ export class OpenAICompatibleService implements ILLMProvider {
 
   private logUsage(completion: OpenAI.Chat.Completions.ChatCompletion): void {
     if (completion.usage) {
+      this.lastUsage = {
+        promptTokens: completion.usage.prompt_tokens,
+        completionTokens: completion.usage.completion_tokens,
+        totalTokens: completion.usage.total_tokens,
+      };
       this.logger.info(
         `LLM stats: ${JSON.stringify({
           prompt_tokens: completion.usage.prompt_tokens,
@@ -219,6 +226,10 @@ export class OpenAICompatibleService implements ILLMProvider {
         })}`
       );
     }
+  }
+
+  getLastUsage(): LLMUsage | undefined {
+    return this.lastUsage;
   }
 
   private delay(ms: number): Promise<void> {

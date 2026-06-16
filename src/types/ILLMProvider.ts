@@ -27,6 +27,13 @@ export interface LLMMessage {
   images?: string[]; // Base64 encoded images
 }
 
+/** Token usage of the most recent generation (normalized across providers). */
+export interface LLMUsage {
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+}
+
 /**
  * Common surface for any LLM backend used by the knowledge-graph builder.
  * Implemented by OllamaService (local) and OpenAICompatibleService (cloud).
@@ -47,4 +54,11 @@ export interface ILLMProvider {
    * introspection endpoint may return an empty list.
    */
   getModelCapabilities(model: string): Promise<string[]>;
+
+  /**
+   * Token usage of the most recent `generateStructured` call, when the provider
+   * exposed it (both providers already log it). Optional — the cost-meter / trace
+   * seam reads this right after a call; absent ⇒ usage unknown. Observe-only.
+   */
+  getLastUsage?(): LLMUsage | undefined;
 }

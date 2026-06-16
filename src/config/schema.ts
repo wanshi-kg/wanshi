@@ -480,6 +480,16 @@ const ResumeSchema = z
   })
   .strict();
 
+// Debug/observability run-trace (off by default). Emits a versioned append-only
+// JSONL sidecar of decision events (ingest→classify→extract→ground→merge→export)
+// with mention-instance lineage IDs. Observe-only: the graph is byte-identical on/off.
+const TraceSchema = z
+  .object({
+    enabled: z.boolean().default(false).describe("Emit a structured decision run-trace to a JSONL sidecar"),
+    path: z.string().optional().describe("Trace sidecar file path (default <output>.trace.jsonl)"),
+  })
+  .strict();
+
 const LoggingSchema = z
   .object({
     level: LogLevelEnum.default("info").describe("Log level"),
@@ -696,6 +706,7 @@ export const ConfigSchema = z
     references: ReferencesSchema.default({}),
     export: ExportSchema.default({}),
     resume: ResumeSchema.default({}),
+    trace: TraceSchema.default({}),
     logging: LoggingSchema.default({}),
     runtime: RuntimeSchema.default({}),
 

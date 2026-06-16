@@ -196,6 +196,10 @@ program
   )
   .option("--checkpoint <path>", "checkpoint sidecar file path (default: <output>.checkpoint.jsonl)")
 
+  // Debug/observability run-trace
+  .option("--trace", "emit a structured decision run-trace to a JSONL sidecar (debug/observability; off by default)")
+  .option("--trace-path <path>", "trace sidecar file path (default: <output>.trace.jsonl)")
+
   // Runtime Modes
   .option("-w, --watch", "watch for changes and update knowledge graph")
   .option(

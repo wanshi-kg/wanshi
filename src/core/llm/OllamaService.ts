@@ -3,7 +3,7 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { Logger } from "../../shared";
 import { parseJsonLenient } from "../../shared/utils";
-import { ILLMProvider, LLMOptions, LLMMessage } from "../../types/ILLMProvider";
+import { ILLMProvider, LLMOptions, LLMMessage, LLMUsage } from "../../types/ILLMProvider";
 
 // Re-export for back-compat: these types used to live here.
 export { LLMOptions, LLMMessage };
@@ -14,6 +14,7 @@ export { LLMOptions, LLMMessage };
 export class OllamaService implements ILLMProvider {
   private options: LLMOptions;
   private logger: Logger;
+  private lastUsage?: LLMUsage;
   private ollama: Ollama;
 
   constructor(options: LLMOptions, logger: Logger) {
@@ -159,6 +160,12 @@ export class OllamaService implements ILLMProvider {
    * Log response statistics
    */
   private logResponseStats(response: ChatResponse): void {
+    this.lastUsage = {
+      promptTokens: response.prompt_eval_count,
+      completionTokens: response.eval_count,
+      totalTokens:
+        (response.prompt_eval_count ?? 0) + (response.eval_count ?? 0) || undefined,
+    };
     const stats = {
       eval_count: response.eval_count,
       prompt_eval_count: response.prompt_eval_count,
@@ -169,6 +176,10 @@ export class OllamaService implements ILLMProvider {
     };
 
     this.logger.info(`LLM stats: ${JSON.stringify(stats)}`);
+  }
+
+  getLastUsage(): LLMUsage | undefined {
+    return this.lastUsage;
   }
 
   /**

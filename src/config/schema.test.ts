@@ -7,6 +7,11 @@ import {
 import { cliArgsToConfig, deepMerge } from "../cli/optionsToConfig";
 
 describe("config schema", () => {
+  it("defaults the debug trace off", () => {
+    expect(parseConfig({}).trace.enabled).toBe(false);
+    expect(parseConfig({ trace: { enabled: true, path: "x.trace.jsonl" } }).trace.path).toBe("x.trace.jsonl");
+  });
+
   it("applies nested defaults from an empty config", () => {
     const c = parseConfig({});
     expect(c.input).toBe(".");
