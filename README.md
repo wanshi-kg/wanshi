@@ -1,4 +1,11 @@
-# ![Wan Shi](./docs/assets/readme-banner.png)
+# wanshi
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme-banner-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/assets/readme-banner-light.png">
+  <img alt="wanshi" src="docs/assets/readme-banner-light.png">
+</picture>
+
 
 > A local-first CLI that reads ten thousand things — code, docs, PDFs, audio, transcripts — and builds one knowledge graph that remembers where every fact came from.
 
