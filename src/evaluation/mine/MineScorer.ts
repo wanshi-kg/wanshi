@@ -18,11 +18,16 @@ import { MineFactResult, MineGraphScore, MineTool } from './types';
 export const MINE_JUDGE_INSTRUCTION =
   'Determine whether the context contains the information stated in the correct answer. Respond with 1 if yes, 0 if no.';
 
-// The model emits 0/1; we threshold the number defensively (≥0.5 ⇒ 1) and treat a
-// parse failure as a miss (0), so a loose judge response never throws the run.
-const JudgeSchema = z.object({
-  evaluation: z.number(),
-});
+// Output {evaluation: 0|1}. Tolerant of a BARE number/string too: gemma3:4b honors
+// the verbatim "respond with 1" prompt with a bare `1` under Ollama's soft format
+// constraint, so we coerce that into {evaluation:1} instead of 3x-retrying then
+// dropping it — which zeroed every score AND took 27min on the first dev run.
+// zod-to-json-schema emits the inner object schema, so capable judges still get an
+// object format constraint and comply directly. We threshold ≥0.5 ⇒ 1.
+const JudgeSchema = z.preprocess(
+  (v) => (typeof v === 'number' || typeof v === 'string' ? { evaluation: v } : v),
+  z.object({ evaluation: z.coerce.number() })
+);
 
 export interface MineScorerOptions {
   /** Entities retrieved per fact; their incident triples form the context.
@@ -102,7 +107,12 @@ export class MineScorer {
       { role: 'user', content: `Context:\n${context}\n\nCorrect answer:\n${fact}` },
     ];
     try {
-      const out = await this.judge.generateStructured<{ evaluation: number }>(messages, JudgeSchema);
+      // Cast: the preprocess schema's INPUT is `unknown` (it accepts bare numbers),
+      // but its OUTPUT is exactly {evaluation:number}, which is what we read.
+      const out = await this.judge.generateStructured<{ evaluation: number }>(
+        messages,
+        JudgeSchema as unknown as z.ZodType<{ evaluation: number }>
+      );
       return out.evaluation >= 0.5 ? 1 : 0;
     } catch {
       return 0; // a judge failure is a miss, never a thrown run
