@@ -299,12 +299,14 @@ export class ContainerFactory {
         MarkdownReader,
         DoclingReader,
         EmailReader,
+        LatexReader,
         MarkerPdfReader,
         MistralOcrReader,
         HtmlReader,
         ImageReader,
         JsonFileReader,
         OfficeReader,
+        SubtitleReader,
         TextReader,
         TranscriptReader,
         PdfReader,
@@ -406,6 +408,15 @@ export class ContainerFactory {
       factory.registerReader(
         new ChatExportReader(chunker, logger, options.chunking.size, options.readers.chat)
       );
+
+      // Class C structure-rich text (.srt/.vtt subtitles, .tex LaTeX) — both
+      // currently unclaimed (→ BinaryReader). Subtitles denoise captions (+ <v>
+      // turns); LaTeX cleans the body and feeds \cite{} into the reference
+      // pipeline (refCites) → cites edges. Registered before Text/Binary.
+      factory.registerReader(
+        new SubtitleReader(chunker, logger, options.chunking.size)
+      );
+      factory.registerReader(new LatexReader(chunker, logger, refCites));
 
       // JSON reader claims .json/.jsonl/.geojson — must be registered before
       // TextReader (first-match-wins) so it handles them instead of TextReader.
