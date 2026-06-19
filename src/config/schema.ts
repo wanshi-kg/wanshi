@@ -259,6 +259,55 @@ const AsrSchema = z
   })
   .strict();
 
+// Email reader knobs (`.eml`/`.mbox`). The body still flows through LLM
+// extraction; these only govern how an email/thread is turned into turns.
+const EmailReaderSchema = z
+  .object({
+    maxMessages: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(1000)
+      .describe("Max messages parsed from one .mbox (warns + truncates beyond this)"),
+    stripQuotes: z
+      .boolean()
+      .default(true)
+      .describe("Strip quoted reply chains (`> …` / `On … wrote:`) so each message contributes only its new content"),
+  })
+  .strict();
+
+// Chat-export reader knobs (WhatsApp .txt, Telegram/Discord/Slack .json). The
+// message text still flows through LLM extraction; these only govern parsing.
+const ChatReaderSchema = z
+  .object({
+    maxMessages: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(50000)
+      .describe("Max messages parsed from one chat export (warns + truncates beyond this)"),
+    skipSystem: z
+      .boolean()
+      .default(true)
+      .describe("Drop system/service noise (joins, encryption notices, <Media omitted>, …)"),
+  })
+  .strict();
+
+// Jupyter notebook reader knobs (.ipynb). Markdown narrative + fenced code are
+// always rendered; outputs/images are opt-in (they often carry noise).
+const JupyterReaderSchema = z
+  .object({
+    includeOutputs: z
+      .boolean()
+      .default(false)
+      .describe("Append code-cell text outputs (stream / text-plain results; error tracebacks always skipped)"),
+    includeImages: z
+      .boolean()
+      .default(false)
+      .describe("Attach base64 image outputs as chunk images (for the vision path)"),
+  })
+  .strict();
+
 const OutlineSchema = z
   .object({
     enabled: z.boolean().default(true).describe("Generate a per-file structural outline and inject it into the prompt"),
@@ -300,6 +349,9 @@ const ReadersSchema = z
     stripReferences: z.boolean().default(false).describe("Quarantine trailing references/bibliography sections before extraction (PDF + markdown)"),
     images: ImageProcessingModeEnum.default("auto").describe("Image processing mode"),
     json: JsonReaderSchema.default({}),
+    email: EmailReaderSchema.default({}),
+    chat: ChatReaderSchema.default({}),
+    jupyter: JupyterReaderSchema.default({}),
     asr: AsrSchema.default({}),
     outline: OutlineSchema.default({}),
   })

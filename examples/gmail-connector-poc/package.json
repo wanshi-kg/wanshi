@@ -1,0 +1,19 @@
+{
+  "name": "gmail-connector-poc",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PoC Gmail/OAuth2 connector — a live-source prototype for a future wanshi Gmail ingestion path. Pairs with the offline EmailReader (.eml/.mbox). Not a wired app.",
+  "scripts": {
+    "gmail:auth": "ts-node gmail-auth.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "googleapis": "^144.0.0",
+    "html-to-text": "^9.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2"
+  }
+}

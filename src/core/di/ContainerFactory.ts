@@ -295,14 +295,20 @@ export class ContainerFactory {
         FileReaderFactory,
         AudioReader,
         BinaryReader,
+        ChatExportReader,
         MarkdownReader,
         DoclingReader,
+        EmailReader,
+        EpubReader,
+        JupyterReader,
+        LatexReader,
         MarkerPdfReader,
         MistralOcrReader,
         HtmlReader,
         ImageReader,
         JsonFileReader,
         OfficeReader,
+        SubtitleReader,
         TextReader,
         TranscriptReader,
         PdfReader,
@@ -388,6 +394,38 @@ export class ContainerFactory {
       // its content-sniffing canRead defers everything else.
       factory.registerReader(
         new TranscriptReader(chunker, logger, options.chunking.size)
+      );
+
+      // Email reader claims .eml/.mbox (otherwise unclaimed → skipped as binary).
+      // Each message becomes a conversational turn (sender→speaker, Date→occurredAt),
+      // reusing the shared transcript turn-packing. Registered before TextReader.
+      factory.registerReader(
+        new EmailReader(chunker, logger, options.chunking.size, options.readers.email)
+      );
+
+      // Chat-export reader sniffs chat-shaped .txt (WhatsApp) / .json (Telegram,
+      // Discord, Slack) and defers everything else. Registered after Transcript
+      // (Claude/ChatGPT exports stay there) and before Json/Text. Each message
+      // becomes a turn (sender→speaker, timestamp→occurredAt) via packTurns.
+      factory.registerReader(
+        new ChatExportReader(chunker, logger, options.chunking.size, options.readers.chat)
+      );
+
+      // Class C structure-rich text (.srt/.vtt subtitles, .tex LaTeX) — both
+      // currently unclaimed (→ BinaryReader). Subtitles denoise captions (+ <v>
+      // turns); LaTeX cleans the body and feeds \cite{} into the reference
+      // pipeline (refCites) → cites edges. Registered before Text/Binary.
+      factory.registerReader(
+        new SubtitleReader(chunker, logger, options.chunking.size)
+      );
+      factory.registerReader(new LatexReader(chunker, logger, refCites));
+      // EPUB (zip→spine→chapter chunking) and Jupyter (cell-aware) — extensions
+      // were unclaimed (→ BinaryReader). Registered before Text/Binary.
+      factory.registerReader(
+        new EpubReader(chunker, logger, options.chunking.size)
+      );
+      factory.registerReader(
+        new JupyterReader(chunker, logger, options.readers.jupyter)
       );
 
       // JSON reader claims .json/.jsonl/.geojson — must be registered before

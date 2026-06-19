@@ -27,6 +27,24 @@ describe("config schema", () => {
     expect(parseConfig({ adapters: { sqlite: { maxRowsPerTable: "100" } } }).adapters.sqlite.maxRowsPerTable).toBe(100);
   });
 
+  it("defaults the email reader (.eml/.mbox) knobs", () => {
+    expect(parseConfig({}).readers.email.maxMessages).toBe(1000);
+    expect(parseConfig({}).readers.email.stripQuotes).toBe(true);
+    expect(parseConfig({ readers: { email: { maxMessages: "50" } } }).readers.email.maxMessages).toBe(50);
+  });
+
+  it("defaults the chat-export reader knobs", () => {
+    expect(parseConfig({}).readers.chat.maxMessages).toBe(50000);
+    expect(parseConfig({}).readers.chat.skipSystem).toBe(true);
+    expect(parseConfig({ readers: { chat: { skipSystem: false } } }).readers.chat.skipSystem).toBe(false);
+  });
+
+  it("defaults the Jupyter reader knobs (outputs/images off)", () => {
+    expect(parseConfig({}).readers.jupyter.includeOutputs).toBe(false);
+    expect(parseConfig({}).readers.jupyter.includeImages).toBe(false);
+    expect(parseConfig({ readers: { jupyter: { includeOutputs: true } } }).readers.jupyter.includeOutputs).toBe(true);
+  });
+
   it("applies nested defaults from an empty config", () => {
     const c = parseConfig({});
     expect(c.input).toBe(".");
