@@ -37,11 +37,18 @@ async function fetchRow(offset: number): Promise<RowsResponse> {
   const url =
     `https://datasets-server.huggingface.co/rows?dataset=${encodeURIComponent(DATASET)}` +
     `&config=default&split=train&offset=${offset}&length=1`;
-  for (let attempt = 1; attempt <= 4; attempt++) {
-    const res = await fetch(url);
+  for (let attempt = 1; attempt <= 7; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(url);
+    } catch {
+      await new Promise((r) => setTimeout(r, Math.min(attempt * 2, 15) * 1000));
+      continue;
+    }
     if (res.ok) return (await res.json()) as RowsResponse;
     if (res.status === 429 || res.status >= 500) {
-      await new Promise((r) => setTimeout(r, attempt * 1000));
+      // Back off harder on rate-limit/5xx (the datasets-server throttles bursts).
+      await new Promise((r) => setTimeout(r, Math.min(attempt * 2, 15) * 1000));
       continue;
     }
     throw new Error(`HF rows API ${res.status} @${offset}: ${await res.text()}`);
@@ -55,16 +62,34 @@ function project(row: Record<string, unknown>): Record<string, unknown> {
   return out;
 }
 
+/** `--limit N` (default all). */
+function parseLimit(): number {
+  const i = process.argv.indexOf('--limit');
+  if (i >= 0 && process.argv[i + 1]) {
+    const n = parseInt(process.argv[i + 1], 10);
+    if (n > 0) return n;
+  }
+  return Infinity;
+}
+
 async function main(): Promise<void> {
   fs.mkdirSync(OUT_DIR, { recursive: true });
-  console.log(`Fetching ${DATASET} …`);
+  const limit = parseLimit();
 
-  const lines: string[] = [];
-  let offset = 0;
+  // Resume: count rows already written so a re-run continues after a flaky abort.
+  // (Delete data/mine/mine.jsonl for a clean refetch.)
+  let done = 0;
+  if (fs.existsSync(OUT_PATH)) {
+    done = fs.readFileSync(OUT_PATH, 'utf-8').split('\n').filter((l) => l.trim()).length;
+    if (done > 0) console.log(`Resuming from ${done} already-fetched rows`);
+  }
+
+  console.log(`Fetching ${DATASET} …`);
+  let offset = done;
   let total = Infinity;
   let truncatedCount = 0;
 
-  while (offset < total) {
+  while (offset < Math.min(total, limit)) {
     const page = await fetchRow(offset);
     total = page.num_rows_total;
     if (page.rows.length === 0) break;
@@ -73,14 +98,15 @@ async function main(): Promise<void> {
       truncatedCount++;
       console.warn(`\n  ⚠ row ${offset} truncated cells: ${entry.truncated_cells.join(', ')}`);
     }
-    lines.push(JSON.stringify(project(entry.row)));
+    // Append incrementally so progress survives an abort (resume picks it up).
+    fs.appendFileSync(OUT_PATH, JSON.stringify(project(entry.row)) + '\n');
     offset += 1;
-    process.stdout.write(`\r  ${offset}/${total}`);
+    process.stdout.write(`\r  ${offset}/${Math.min(total, limit)}`);
+    await new Promise((r) => setTimeout(r, 250)); // be polite — avoid the burst 429
   }
   process.stdout.write('\n');
 
-  fs.writeFileSync(OUT_PATH, lines.join('\n') + '\n');
-  console.log(`  → wrote ${lines.length} articles to ${OUT_PATH}`);
+  console.log(`  → ${OUT_PATH} now has ${offset} articles`);
   if (truncatedCount > 0) {
     console.warn(`  ⚠ ${truncatedCount} rows had truncated cells (essay/graph may be incomplete).`);
   }
