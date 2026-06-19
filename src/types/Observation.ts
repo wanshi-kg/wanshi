@@ -29,6 +29,12 @@ export interface Observation {
   // "p.67"/"table:parts/row:42". Makes trust + origin queryable, not format-specific.
   sourceAdapter?: string;
   locator?: string;
+  // Read-reliability of this fact, 0..1 — NOT a truth verdict. Set by deterministic
+  // image-metadata extractors (EXIF/C2PA → sourceAdapter "exif"/"c2pa") and the
+  // opt-in CV pre-pass (confidence-floored, tool-attributed signals); absent on
+  // ordinary LLM-extracted observations. Keeps a low-trust tool signal queryably
+  // distinct from a high-confidence deterministic read.
+  confidence?: number;
 }
 
 /** An observation as stored may be a legacy bare string or a full object. */
