@@ -373,6 +373,16 @@ const ChandraSchema = z
   })
   .strict();
 
+// Image metadata enrichment (deterministic, default OFF → byte-identical run).
+// EXIF is graph-native structured data the image already carries; mapped to
+// facts (GPS→location, capture time→bitemporal validAt, camera/author/software)
+// that AUGMENT the VLM read of the image, stamped sourceAdapter:"exif".
+const ExifSchema = z
+  .object({
+    enabled: z.boolean().default(false).describe("Extract image EXIF (GPS→location, capture time→validAt, camera/author/software) into deterministic graph facts"),
+  })
+  .strict();
+
 const ReadersSchema = z
   .object({
     pdfEngine: PdfEngineEnum.default("pdf2json").describe("PDF reading engine: pdf2json (built-in) | tesseract (pure-JS/WASM OCR) | docling | marker (Python subprocess) | chandra (Python subprocess, SOTA) | mistral (HTTP OCR API)"),
@@ -382,6 +392,7 @@ const ReadersSchema = z
     chandra: ChandraSchema.default({}),
     stripReferences: z.boolean().default(false).describe("Quarantine trailing references/bibliography sections before extraction (PDF + markdown)"),
     images: ImageProcessingModeEnum.default("auto").describe("Image processing mode"),
+    exif: ExifSchema.default({}),
     json: JsonReaderSchema.default({}),
     email: EmailReaderSchema.default({}),
     chat: ChatReaderSchema.default({}),

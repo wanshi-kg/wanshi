@@ -53,6 +53,7 @@ export const FLAG_TO_PATH: Record<string, string> = {
   stripReferences: "readers.stripReferences",
   jsonStrategy: "readers.json.strategy",
   images: "readers.images",
+  exif: "readers.exif.enabled",
   // references (Phase 0, network-free; off by default)
   referenceLinks: "references.internalLinks.enabled",
   referenceCitations: "references.citations.enabled",

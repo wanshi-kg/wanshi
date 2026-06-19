@@ -113,6 +113,11 @@ describe("config schema", () => {
     expect(c.readers.chandra.method).toBe("vllm");
   });
 
+  it("defaults image EXIF extraction off", () => {
+    expect(parseConfig({}).readers.exif.enabled).toBe(false);
+    expect(parseConfig({ readers: { exif: { enabled: true } } }).readers.exif.enabled).toBe(true);
+  });
+
   it("migrates the retired readers.docling key to readers.pdfEngine", () => {
     let message = "";
     try {

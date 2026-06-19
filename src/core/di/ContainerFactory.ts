@@ -343,7 +343,7 @@ export class ContainerFactory {
         new MarkdownReader(chunker, logger, options.readers.stripReferences, refLinks, refCites)
       );
       factory.registerReader(new HtmlReader(chunker, logger, refLinks));
-      factory.registerReader(new ImageReader(chunker, logger));
+      factory.registerReader(new ImageReader(chunker, logger, { exif: options.readers.exif.enabled }));
       factory.registerReader(new OfficeReader(chunker, logger));
 
       // PDF engine selector. The built-in pdf2json reader doubles as the graceful

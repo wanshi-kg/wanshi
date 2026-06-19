@@ -21,6 +21,7 @@ import { PromptManager } from "./llm";
 import { AstSeedService } from "./processor/ast";
 import { toRelPathId } from "./corpus";
 import { buildReferenceGraph, resolveInternalTarget } from "./knowledge/references/ReferenceResolver";
+import { buildImageMetaGraph } from "./knowledge/images/imageMetaGraph";
 import { isExternalTarget, RawCitation, RawLink, RawReferences } from "./processor/readers/referenceExtraction";
 import { ProcessedRegistry } from "./processor/ProcessedRegistry";
 import { GatedFetcher } from "./knowledge/references/web/GatedFetcher";
@@ -544,6 +545,12 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     // LLM's per-chunk graphs — the model augments the symbol set, not originates it.
     const seed = astSeed ? await astSeed.seedGraph(processedFile) : null;
     if (seed) graphs.push(seed);
+
+    // Deterministic image metadata (EXIF/C2PA): graph facts that AUGMENT the VLM's
+    // read of an image rather than replacing it (sourceAdapter exif/c2pa, confidence).
+    // No-op (returns null) unless a reader stashed metadata.exif/metadata.c2pa.
+    const imageGraph = buildImageMetaGraph(processedFile, options.input);
+    if (imageGraph) graphs.push(imageGraph);
 
     // Deterministic reference edges (Phase 0, network-free): internal links +
     // citations the document already contains, resolved against the corpus.
