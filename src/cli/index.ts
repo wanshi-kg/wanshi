@@ -105,6 +105,8 @@ program
   // Image metadata enrichment (deterministic, default off)
   .option("--exif", "extract image EXIF (GPS→location, capture time→validAt, camera/author/software) into graph facts")
   .option("--c2pa", "read C2PA content credentials (via c2patool) into a trust observation on the image")
+  .option("--object-detection", "CV pre-pass: detect objects in images → VLM context + cv-detection graph facts")
+  .option("--detection-mode <mode>", "object-detection mode: closed (COCO classes) | zero-shot (open-vocab via readers.cv.detection.labels)")
 
   // Reference & link resolution (Phase 0, network-free; off by default)
   .option("--reference-links", "resolve internal links ([x](./other.md), [[wikilinks]], HTML href) to corpus files as links_to edges (default: false)")

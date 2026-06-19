@@ -79,3 +79,37 @@ describe("buildImageMetaGraph (C2PA)", () => {
     expect(g.entities.some((e) => e.entityType === "camera")).toBe(true);
   });
 });
+
+describe("buildImageMetaGraph (CV detection)", () => {
+  const box = { xmin: 0, ymin: 0, xmax: 1, ymax: 1 };
+  const pfMeta = (metadata: any): ProcessedFile =>
+    ({ path: "/corpus/photos/img.jpg", chunks: [], metadata }) as unknown as ProcessedFile;
+  const image = (g: any) => g.entities.find((e: any) => e.name === "photos/img.jpg");
+
+  it("maps detections → object entities + depicts edges + cv-detection observations (score = confidence)", () => {
+    const g = buildImageMetaGraph(
+      pfMeta({
+        cvDetection: {
+          objects: [
+            { label: "person", score: 0.95, box },
+            { label: "person", score: 0.8, box },
+            { label: "car", score: 0.7, box },
+          ],
+        },
+      }),
+      "/corpus"
+    )!;
+    const person = g.entities.find((e) => e.name === "person")!;
+    expect(person.entityType).toBe("object");
+    expect(person.observations[0].sourceAdapter).toBe("cv-detection");
+    expect(person.observations[0].confidence).toBe(0.95); // top score for the label
+    expect(g.relations.some((r) => r.relationType[0] === "depicts" && r.to === "person")).toBe(true);
+    expect(g.relations.some((r) => r.relationType[0] === "depicts" && r.to === "car")).toBe(true);
+    // a summary observation lands on the image node
+    expect(image(g).observations.some((o: any) => o.sourceAdapter === "cv-detection" && o.text.includes("person ×2"))).toBe(true);
+  });
+
+  it("returns null when cvDetection has no objects", () => {
+    expect(buildImageMetaGraph(pfMeta({ cvDetection: { objects: [] } }), "/corpus")).toBeNull();
+  });
+});

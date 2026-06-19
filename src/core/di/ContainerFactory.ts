@@ -14,6 +14,7 @@ import { FileReaderFactory, TextChunker } from "../processor";
 import type { CheckpointService } from "../checkpoint";
 import { IContentClassifier } from "../processor/classifier";
 import { LlmContentClassifier } from "../processor/classifier/LlmContentClassifier";
+import { ObjectDetectionService } from "../cv/ObjectDetectionService";
 import { configureDomainGate } from "../knowledge/vocabulary";
 import { createHash } from "crypto";
 import { trace } from "../trace";
@@ -343,11 +344,33 @@ export class ContainerFactory {
         new MarkdownReader(chunker, logger, options.readers.stripReferences, refLinks, refCites)
       );
       factory.registerReader(new HtmlReader(chunker, logger, refLinks));
+      // CV pre-pass object detector (opt-in) — a singleton (loads the model once),
+      // injected into ImageReader; undefined when disabled ⇒ no detection, no cost.
+      const cvDet = options.readers.cv.detection;
+      const objectDetector = cvDet.enabled
+        ? new ObjectDetectionService(
+            {
+              mode: cvDet.mode,
+              model: cvDet.model,
+              threshold: cvDet.threshold,
+              labels: cvDet.labels,
+              maxObjects: cvDet.maxObjects,
+              cacheDir: cvDet.cacheDir,
+              allowRemote: cvDet.allowRemote,
+            },
+            logger
+          )
+        : undefined;
       factory.registerReader(
-        new ImageReader(chunker, logger, {
-          exif: options.readers.exif.enabled,
-          c2pa: { enabled: options.readers.c2pa.enabled, command: options.readers.c2pa.command },
-        })
+        new ImageReader(
+          chunker,
+          logger,
+          {
+            exif: options.readers.exif.enabled,
+            c2pa: { enabled: options.readers.c2pa.enabled, command: options.readers.c2pa.command },
+          },
+          objectDetector
+        )
       );
       factory.registerReader(new OfficeReader(chunker, logger));
 

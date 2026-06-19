@@ -1,6 +1,7 @@
 import { Entity, KnowledgeGraph, Observation, ProcessedFile, Relation } from "../../../types";
 import { toRelPathId } from "../../corpus/relPath";
 import { ExifMetadata, C2paMetadata } from "../../processor/readers/image/imageMetadata";
+import { Detection } from "../../../types/IObjectDetector";
 
 /**
  * Turn an image's deterministic metadata (`metadata.exif`, `metadata.c2pa`) into a
@@ -27,7 +28,8 @@ const C2PA_CONFIDENCE = 0.95;
 export function buildImageMetaGraph(processedFile: ProcessedFile, inputRoot: string): KnowledgeGraph | null {
   const exif = processedFile.metadata?.exif as ExifMetadata | undefined;
   const c2pa = processedFile.metadata?.c2pa as C2paMetadata | undefined;
-  if (!exif && !c2pa) return null;
+  const cvDetection = processedFile.metadata?.cvDetection as { objects: Detection[] } | undefined;
+  if (!exif && !c2pa && !(cvDetection && cvDetection.objects.length)) return null;
 
   const imageName = toRelPathId(inputRoot, processedFile.path);
   const createdAt = new Date().toISOString();
@@ -110,6 +112,31 @@ export function buildImageMetaGraph(processedFile: ProcessedFile, inputRoot: str
       image.observations.push(
         obs("No C2PA Content Credential found. Absence is not evidence of manipulation.", "c2pa", C2PA_CONFIDENCE)
       );
+    }
+  }
+
+  // CV object detection — each detected class → an `object` entity + a `depicts`
+  // edge; confidence is the detector's own score (2a "may be stated plainly").
+  if (cvDetection && cvDetection.objects.length) {
+    const byLabel = new Map<string, { count: number; score: number }>();
+    for (const o of cvDetection.objects) {
+      const cur = byLabel.get(o.label);
+      if (cur) {
+        cur.count++;
+        cur.score = Math.max(cur.score, o.score);
+      } else {
+        byLabel.set(o.label, { count: 1, score: o.score });
+      }
+    }
+    const ranked = [...byLabel.entries()].sort((a, b) => b[1].count - a[1].count);
+    const summary = ranked.map(([l, v]) => (v.count > 1 ? `${l} ×${v.count}` : l)).join(", ");
+    const topScore = Math.max(...cvDetection.objects.map((o) => o.score));
+    image.observations.push(obs(`CV object detection: ${summary}`, "cv-detection", topScore));
+    for (const [label, v] of ranked) {
+      ensure(label, "object", [
+        obs(`Detected in image via cv-detection (count ${v.count}, top score ${v.score.toFixed(2)})`, "cv-detection", v.score),
+      ]);
+      edge(label, "depicts");
     }
   }
 

@@ -55,6 +55,8 @@ export const FLAG_TO_PATH: Record<string, string> = {
   images: "readers.images",
   exif: "readers.exif.enabled",
   c2pa: "readers.c2pa.enabled",
+  objectDetection: "readers.cv.detection.enabled",
+  detectionMode: "readers.cv.detection.mode",
   // references (Phase 0, network-free; off by default)
   referenceLinks: "references.internalLinks.enabled",
   referenceCitations: "references.citations.enabled",
