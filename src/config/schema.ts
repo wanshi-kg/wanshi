@@ -112,7 +112,7 @@ const EmbeddingsSchema = z
     provider: ProviderModeEnum.default("ollama").describe(
       "Embeddings provider, independent from generation; defaults to local Ollama"
     ),
-    model: z.string().default("mxbai-embed-large:335m").describe("Embeddings model"),
+    model: z.string().default("nomic-embed-text").describe("Embeddings model"),
     host: z.string().default("http://localhost:11434").describe("Embeddings host / OpenAI-compatible base URL"),
     apiKey: z.string().optional().describe("API key for OpenAI-compatible embeddings"),
     maxInputChars: num(1024).describe("Truncate embedding inputs to at most N characters"),

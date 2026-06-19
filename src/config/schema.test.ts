@@ -52,7 +52,7 @@ describe("config schema", () => {
     expect(c.llm.model).toBe("llama3.2");
     expect(c.llm.provider).toBe("ollama");
     expect(c.llm.promptVersion).toBe("v5");
-    expect(c.embeddings.model).toBe("mxbai-embed-large:335m");
+    expect(c.embeddings.model).toBe("nomic-embed-text");
     expect(c.chunking.size).toBe(2000);
     expect(c.chunking.overlap).toBe(100);
     expect(c.retrieval.scope).toBe("chunk");

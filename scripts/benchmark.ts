@@ -126,7 +126,7 @@ program
   .option('--host <url>',              'Ollama host URL, or OpenAI-compatible base URL when provider=openai','http://localhost:11434')
   .option('--api-key <key>',           'API key for OpenAI-compatible provider (else $OPENAI_API_KEY / $WANSHI_API_KEY / .env)')
   .option('--embeddings-provider <n>', 'Embeddings provider: ollama | openai',                               'ollama')
-  .option('--embeddings-model <name>', 'Embedding model',                                                    'mxbai-embed-large:335m')
+  .option('--embeddings-model <name>', 'Embedding model',                                                    'nomic-embed-text')
   .option('--embeddings-host <url>',   'Embeddings host / OpenAI-compatible base URL',                       'http://localhost:11434')
   .option('--classifier <mode>',       'Content classifier: disabled | heuristic | llm | bert',              'heuristic')
   .option('--prompt-version <ver>',    'Prompt template version to use (e.g. v4, v4.5)',                    'v4.5')
