@@ -9,3 +9,8 @@ export * from './metrics/TripleMetrics';
 export * from './reporters/ConsoleReporter';
 export * from './reporters/JsonReporter';
 export * from './BenchmarkRunner';
+export * from './mine/types';
+export * from './mine/MineDataset';
+export * from './mine/MineScorer';
+export * from './mine/MineRunner';
+export * from './mine/MineReporter';

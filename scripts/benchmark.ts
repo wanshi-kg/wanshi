@@ -30,7 +30,12 @@ import {
   BenchmarkRunner,
   ConsoleReporter,
   JsonReporter,
+  MineDataset,
+  MineScorer,
+  MineRunner,
+  MineReporter,
 } from '../src/evaluation';
+import { ILLMProvider } from '../src/types/ILLMProvider';
 
 // ─── ProcessingOptions for benchmark ─────────────────────────────────────────
 //
@@ -111,7 +116,7 @@ const program = new Command('benchmark');
 
 program
   .description('Evaluate wanshi extraction quality against benchmark datasets')
-  .option('--dataset <name>',          'Dataset: rebel | crossre | redocred | semeval',                      'rebel')
+  .option('--dataset <name>',          'Dataset: rebel | crossre | redocred | semeval | mine',               'rebel')
   .option('--data-path <path>',        'Path to dataset file or directory (CrossRE: dir loads all splits)')
   .option('--limit <n>',               'Max number of samples to evaluate (0 = all)',                        '50')
   .option('--match-threshold <n>',     'Semantic similarity threshold for entity matching (0–1)',            '0.80')
@@ -127,6 +132,13 @@ program
   .option('--prompt-version <ver>',    'Prompt template version to use (e.g. v4, v4.5)',                    'v4.5')
   .option('--domain <domains>',        'Domain filter: single (ai) or comma-separated (ai,news,science)')
   .option('--output <path>',           'Save full JSON report to this file path')
+  // ── MINE-only (--dataset mine): retrieve+judge scoring, four-way comparison ──
+  .option('--judge-provider <name>',   'MINE judge provider: ollama | openai (default: generation provider)')
+  .option('--judge-model <name>',      'MINE judge model (default: the generation model)')
+  .option('--judge-host <url>',        'MINE judge host / OpenAI-compatible base URL (default: generation host)')
+  .option('--judge-api-key <key>',     'MINE judge API key (default: the generation key)')
+  .option('--retrieval-top-k <n>',     'MINE: entities retrieved per fact (incident triples form the context)','15')
+  .option('--no-rescore-baselines',    'MINE: skip re-scoring the stored KGGen/GraphRAG/OpenIE graphs (wanshi only)')
   .action(async (opts) => {
     const datasetName = opts.dataset as string;
     const limitRaw    = parseInt(opts.limit, 10);
@@ -160,6 +172,55 @@ program
     const kgBuilder        = await container.resolve<KnowledgeGraphBuilder>(TYPES.KnowledgeGraphBuilder);
     const promptManager    = (await container.resolve(TYPES.PromptManager)) as PromptManager;
     const embeddingService = await container.resolve<EmbeddingService>(TYPES.EmbeddingService);
+
+    // ── MINE: retrieve+judge, four-way comparison (its own runner/reporter) ──
+    if (datasetName === 'mine') {
+      // Judge provider — defaults to the generation model; a separate --judge-*
+      // model gets its own container (so e.g. a cheap/local judge can score a
+      // cloud-extracted graph). The same judge scores all four tools identically.
+      let judge = await container.resolve<ILLMProvider>(TYPES.LLMService);
+      let judgeModel = opts.model as string;
+      if (opts.judgeModel) {
+        judgeModel = opts.judgeModel;
+        const judgeContainer = ContainerFactory.createContainer({
+          processingOptions: buildProcessingOptions({
+            provider: opts.judgeProvider || opts.provider,
+            model: opts.judgeModel,
+            host: opts.judgeHost || opts.host,
+            apiKey: opts.judgeApiKey || opts.apiKey || process.env.OPENAI_API_KEY || process.env.WANSHI_API_KEY || process.env.KG_API_KEY,
+            classifier: opts.classifier,
+            embeddingsProvider: opts.embeddingsProvider,
+            embeddingsModel: opts.embeddingsModel,
+            embeddingsHost: opts.embeddingsHost,
+            promptVersion: opts.promptVersion,
+          }),
+        });
+        judge = await judgeContainer.resolve<ILLMProvider>(TYPES.LLMService);
+      }
+
+      const topK = parseInt(opts.retrievalTopK, 10) || 15;
+      const scorer = new MineScorer(embeddingService, judge, { topK });
+
+      logger.info(`Loading MINE from ${dataPath}`);
+      const mineSamples = await new MineDataset().load(dataPath, limit);
+      logger.info(`Loaded ${mineSamples.length} MINE articles (judge: ${judgeModel}, top-k: ${topK})`);
+      if (mineSamples.length === 0) {
+        logger.error('No MINE samples loaded — check the data path (run scripts/fetch-mine.ts)');
+        process.exit(1);
+      }
+
+      const mineRunner = new MineRunner(kgBuilder as any, promptManager, scorer, logger);
+      const mineResult = await mineRunner.run(mineSamples, {
+        model: opts.model,
+        judgeModel,
+        rescoreBaselines: opts.rescoreBaselines !== false,
+      });
+
+      const mineReporter = new MineReporter();
+      mineReporter.print(mineResult);
+      if (opts.output) mineReporter.save(mineResult, opts.output);
+      return;
+    }
 
     // Load dataset
     logger.info(`Loading dataset: ${datasetName} from ${dataPath}`);
