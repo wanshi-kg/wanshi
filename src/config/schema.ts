@@ -394,6 +394,31 @@ const C2paSchema = z
   })
   .strict();
 
+// CV pre-pass (Phase 2, opt-in, signal-not-verdict). Object detection runs a
+// transformers.js detector (already a dep; bundles onnxruntime-node + sharp — no
+// new dep) over images; detections feed the VLM prompt as context AND a
+// deterministic cv-detection graph fragment (confidence = detector score). Default
+// OFF → byte-identical run. (Forensic/manipulation signals — `cv.forensics` — are
+// the gated 2b sub-phase, not yet built.)
+const CvDetectionSchema = z
+  .object({
+    enabled: z.boolean().default(false).describe("Detect objects in images (people/vehicles/objects/animals) → VLM context + cv-detection graph facts"),
+    mode: z.enum(["closed", "zero-shot"]).default("closed").describe("closed = fixed COCO classes (DETR/YOLOS); zero-shot = open-vocab via `labels` (OWL-ViT)"),
+    model: z.string().default("").describe("HF model id; empty ⇒ per-mode default (closed: Xenova/detr-resnet-50, zero-shot: Xenova/owlvit-base-patch32)"),
+    threshold: z.coerce.number().min(0).max(1).default(0.5).describe("Minimum detection score to keep"),
+    labels: z.array(z.string()).default([]).describe("Zero-shot candidate labels (required for mode=zero-shot; ignored for closed)"),
+    maxObjects: z.coerce.number().int().positive().default(20).describe("Cap detected objects per image"),
+    cacheDir: z.string().optional().describe("transformers.js model cache dir (env.cacheDir)"),
+    allowRemote: z.boolean().default(true).describe("Allow downloading the model from the HF Hub (false ⇒ offline; needs a local cache/mirror)"),
+  })
+  .strict();
+
+const CvSchema = z
+  .object({
+    detection: CvDetectionSchema.default({}),
+  })
+  .strict();
+
 const ReadersSchema = z
   .object({
     pdfEngine: PdfEngineEnum.default("pdf2json").describe("PDF reading engine: pdf2json (built-in) | tesseract (pure-JS/WASM OCR) | docling | marker (Python subprocess) | chandra (Python subprocess, SOTA) | mistral (HTTP OCR API)"),
@@ -405,6 +430,7 @@ const ReadersSchema = z
     images: ImageProcessingModeEnum.default("auto").describe("Image processing mode"),
     exif: ExifSchema.default({}),
     c2pa: C2paSchema.default({}),
+    cv: CvSchema.default({}),
     json: JsonReaderSchema.default({}),
     email: EmailReaderSchema.default({}),
     chat: ChatReaderSchema.default({}),

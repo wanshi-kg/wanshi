@@ -124,6 +124,15 @@ describe("config schema", () => {
     expect(parseConfig({ readers: { c2pa: { enabled: true } } }).readers.c2pa.enabled).toBe(true);
   });
 
+  it("defaults the CV object-detection pre-pass off (closed mode)", () => {
+    expect(parseConfig({}).readers.cv.detection.enabled).toBe(false);
+    expect(parseConfig({}).readers.cv.detection.mode).toBe("closed");
+    expect(parseConfig({}).readers.cv.detection.threshold).toBe(0.5);
+    const c = parseConfig({ readers: { cv: { detection: { enabled: true, mode: "zero-shot", labels: ["tank"] } } } });
+    expect(c.readers.cv.detection.mode).toBe("zero-shot");
+    expect(c.readers.cv.detection.labels).toEqual(["tank"]);
+  });
+
   it("migrates the retired readers.docling key to readers.pdfEngine", () => {
     let message = "";
     try {
