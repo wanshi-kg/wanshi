@@ -105,6 +105,14 @@ describe("config schema", () => {
     expect(c.readers.tesseract.psm).toBe(6);
   });
 
+  it("defaults the chandra OCR engine knobs and accepts the engine value", () => {
+    expect(parseConfig({}).readers.chandra.command).toBe("chandra");
+    expect(parseConfig({}).readers.chandra.method).toBe("hf");
+    const c = parseConfig({ readers: { pdfEngine: "chandra", chandra: { method: "vllm" } } });
+    expect(c.readers.pdfEngine).toBe("chandra");
+    expect(c.readers.chandra.method).toBe("vllm");
+  });
+
   it("migrates the retired readers.docling key to readers.pdfEngine", () => {
     let message = "";
     try {

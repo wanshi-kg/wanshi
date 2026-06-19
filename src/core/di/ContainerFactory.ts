@@ -305,6 +305,7 @@ export class ContainerFactory {
         MarkerPdfReader,
         MistralOcrReader,
         TesseractPdfReader,
+        ChandraPdfReader,
         HtmlReader,
         ImageReader,
         JsonFileReader,
@@ -392,6 +393,20 @@ export class ContainerFactory {
             new TesseractPdfReader(
               { lang: t.lang, scale: t.scale, oem: t.oem, psm: t.psm, langPath: t.langPath },
               pdf2json,
+              chunker,
+              logger
+            )
+          );
+          break;
+        }
+        case "chandra": {
+          const ch = options.readers.chandra;
+          logger.info(`PDF engine: chandra (${ch.method})`);
+          factory.registerReader(
+            new ChandraPdfReader(
+              { command: ch.command, method: ch.method, timeoutMs: ch.timeoutMs },
+              pdf2json,
+              "./temp",
               chunker,
               logger
             )

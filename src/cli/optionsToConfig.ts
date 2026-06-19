@@ -49,6 +49,7 @@ export const FLAG_TO_PATH: Record<string, string> = {
   pdfEngine: "readers.pdfEngine",
   markerUseLlm: "readers.marker.useLlm",
   tesseractLang: "readers.tesseract.lang",
+  chandraMethod: "readers.chandra.method",
   stripReferences: "readers.stripReferences",
   jsonStrategy: "readers.json.strategy",
   images: "readers.images",

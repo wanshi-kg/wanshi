@@ -61,9 +61,11 @@ export const ExportFormatEnum = z.enum([
 export const JsonStrategyEnum = z.enum(["structural", "raw"]);
 // PDF reading engine: `pdf2json` = built-in text extraction (default, no OCR,
 // portable); `tesseract` = pure-JS/WASM OCR (light-local floor, no system binary);
-// `docling`/`marker` = local Python tools (subprocess); `mistral` = Mistral OCR
-// HTTP API. Any non-default engine degrades to pdf2json on failure.
-export const PdfEngineEnum = z.enum(["pdf2json", "docling", "marker", "mistral", "tesseract"]);
+// `docling`/`marker`/`chandra` = local Python tools (subprocess; chandra = slow
+// SOTA/handwriting 4B VLM); `mistral` = Mistral OCR HTTP API. Any non-default
+// engine degrades to pdf2json on failure. Hardware-aware ladder:
+// tesseract (light/CPU) → pdf2json → docling → marker → chandra → mistral (cloud).
+export const PdfEngineEnum = z.enum(["pdf2json", "docling", "marker", "mistral", "tesseract", "chandra"]);
 // AudioReader transcription engine: `whisper` = built-in single-model nodejs-whisper
 // (default, portable, network-free); `dual` = vendored Python audio-pipeline
 // (Silero VAD + Parakeet/Whisper dual-STT + diarization, Apple-Silicon only, opt-in).
@@ -357,12 +359,27 @@ const TesseractSchema = z
   })
   .strict();
 
+// Chandra OCR engine (datalab `chandra-ocr` CLI subprocess; 4B VLM, slow on
+// CPU/MPS — the SOTA/handwriting rung). Only consulted when `pdfEngine: chandra`;
+// any failure degrades to pdf2json. License note: Chandra's weights are modified
+// OpenRAIL-M (free for personal/research and orgs under $2M revenue; commercial
+// self-hosting needs a license) — unlike Tesseract's clean Apache. Provide a
+// license-aware default so a downstream commercial user isn't surprised.
+const ChandraSchema = z
+  .object({
+    command: z.string().default("chandra").describe("chandra CLI executable (on PATH; `pip install chandra-ocr`)"),
+    method: z.enum(["hf", "vllm"]).default("hf").describe("Backend: hf (HuggingFace+torch, M4-runnable but slow) | vllm (GPU server)"),
+    timeoutMs: z.coerce.number().int().positive().default(900_000).describe("Per-file chandra subprocess timeout (ms)"),
+  })
+  .strict();
+
 const ReadersSchema = z
   .object({
-    pdfEngine: PdfEngineEnum.default("pdf2json").describe("PDF reading engine: pdf2json (built-in) | tesseract (pure-JS/WASM OCR) | docling | marker (Python subprocess) | mistral (HTTP OCR API)"),
+    pdfEngine: PdfEngineEnum.default("pdf2json").describe("PDF reading engine: pdf2json (built-in) | tesseract (pure-JS/WASM OCR) | docling | marker (Python subprocess) | chandra (Python subprocess, SOTA) | mistral (HTTP OCR API)"),
     marker: MarkerSchema.default({}),
     mistral: MistralSchema.default({}),
     tesseract: TesseractSchema.default({}),
+    chandra: ChandraSchema.default({}),
     stripReferences: z.boolean().default(false).describe("Quarantine trailing references/bibliography sections before extraction (PDF + markdown)"),
     images: ImageProcessingModeEnum.default("auto").describe("Image processing mode"),
     json: JsonReaderSchema.default({}),

@@ -97,6 +97,7 @@ program
   .option("--pdf-engine <engine>", "PDF reading engine: pdf2json (built-in) | tesseract (pure-JS/WASM OCR) | docling | marker (Python subprocess) | mistral (HTTP OCR API)")
   .option("--marker-use-llm", "marker engine: enable --use_llm hybrid mode (better tables, costs LLM calls)")
   .option("--tesseract-lang <lang>", "tesseract engine: OCR language code(s), e.g. \"eng\" or \"eng+deu\" (default: eng)")
+  .option("--chandra-method <method>", "chandra engine: backend hf (HuggingFace, M4-runnable) | vllm (GPU server) (default: hf)")
 
   // Quarantine trailing references/bibliography sections before extraction
   .option("--strip-references", "quarantine trailing references/bibliography sections before extraction (PDF + markdown, default: false)")

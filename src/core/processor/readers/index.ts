@@ -1,5 +1,6 @@
 export * from './AudioReader';
 export * from './BinaryReader';
+export * from './ChandraPdfReader';
 export * from './ChatExportReader';
 export * from './DoclingReader';
 export * from './EmailReader';
