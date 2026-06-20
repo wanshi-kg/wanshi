@@ -46,6 +46,14 @@ export class MineReporter {
     console.log(sep);
     console.log('Re-scored = our identical retrieve+judge over all graphs (comparable).');
     console.log('Published = KGGen-paper headline (different judge/retrieval; reference only).');
+    if (result.relatedToShare !== undefined) {
+      // Guardrail: a high wanshi `related_to` share means the closed vocab is
+      // coercing real predicates away (Bug 1) — it caps the recall ceiling on MINE.
+      console.log(
+        `wanshi vocab fit: ${(result.relatedToShare * 100).toFixed(0)}% of relations are 'related_to' ` +
+          `(high ⇒ closed vocab is coercing predicates; hurts MINE recall)`
+      );
+    }
     console.log('');
     console.log(`Duration: ${fmtDuration(result.durationMs)}`);
     console.log('');

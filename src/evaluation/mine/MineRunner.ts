@@ -79,8 +79,18 @@ export class MineRunner {
           .map((t) => `${t}=${(scores[t]!.accuracy * 100).toFixed(1)}%`)
           .join('  ')}`
       );
-      perArticle.push({ id: s.id, topic: s.topic, scores });
+      perArticle.push({
+        id: s.id,
+        topic: s.topic,
+        scores,
+        wanshiGraph: wanshiKg,
+        relatedToShare: relatedToShare(wanshiKg),
+      });
     }
+
+    const meanRelatedTo = perArticle.length
+      ? perArticle.reduce((acc, a) => acc + (a.relatedToShare ?? 0), 0) / perArticle.length
+      : 0;
 
     return {
       model: opts.model,
@@ -90,6 +100,7 @@ export class MineRunner {
       published: MINE_PUBLISHED,
       perArticle,
       durationMs: Date.now() - start,
+      relatedToShare: meanRelatedTo,
     };
   }
 
@@ -132,4 +143,16 @@ export class MineRunner {
     }
     return out;
   }
+}
+
+/** Fraction of a graph's relations that are the generic `related_to` catch-all (the
+ *  vocab-fit guardrail; mirrors KnowledgeMerger.logVocabularyFit). 0 for no relations. */
+export function relatedToShare(graph: KnowledgeGraph): number {
+  const rels = graph.relations;
+  if (rels.length === 0) return 0;
+  const catchAll = rels.filter((r) => {
+    const types = Array.isArray(r.relationType) ? r.relationType : [r.relationType];
+    return types.length > 0 && types.every((t) => t === 'related_to');
+  }).length;
+  return catchAll / rels.length;
 }

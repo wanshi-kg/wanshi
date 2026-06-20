@@ -32,6 +32,12 @@ export interface MineArticleResult {
   id: string;
   topic: string;
   scores: Partial<Record<MineTool, MineGraphScore>>;
+  /** The freshly-extracted wanshi graph, persisted so vocab/topology can be
+   *  diagnosed post-hoc (Bug 1 was found this way — from serialized contexts). */
+  wanshiGraph?: KnowledgeGraph;
+  /** Fraction of wanshi relations that are the generic `related_to` catch-all — the
+   *  vocab-fit guardrail. High share = closed vocab coercing real predicates away. */
+  relatedToShare?: number;
 }
 
 export interface MineResult {
@@ -42,6 +48,8 @@ export interface MineResult {
   published: Record<Exclude<MineTool, 'wanshi'>, number>; // paper headline (reference)
   perArticle: MineArticleResult[];
   durationMs: number;
+  /** Mean wanshi `related_to` share across articles (logged as a guardrail line). */
+  relatedToShare?: number;
 }
 
 /** KGGen paper headline accuracies on MINE (their judge + retrieval). A labelled
