@@ -28,8 +28,8 @@ N="${N:-70}"
 EMB="${EMB:-nomic-embed-text}"            # local, free
 JUDGE="${JUDGE:-deepseek/deepseek-v4-flash}"  # FIXED cloud judge (structured_output ✓)
 TOPK="${TOPK:-15}"
-MAXCOST="${MAXCOST:-3}"                   # per-run USD cap (cost meter → graceful stop)
-RUN_TIMEOUT="${RUN_TIMEOUT:-4500}"
+CONCURRENCY="${CONCURRENCY:-8}"           # facts judged in parallel (the judge is the bottleneck)
+RUN_TIMEOUT="${RUN_TIMEOUT:-4500}"       # per-run wall-clock cap (watchdog) — also the spend bound
 
 # Model tiers (all structured_output ✓ on OpenRouter, verified 2026-06-20).
 CURVE_MODELS=(${CURVE_MODELS:-\
@@ -59,7 +59,7 @@ run() {
   esac
   local tag; tag="$(safe "$model")__${arm}"; [ -z "$rescore" ] && tag="${tag}_4way"
   local out="$OUT/${tag}.json"
-  log "START $tag  (model=$model arm=$arm N=$N rescore='${rescore:-4way}' maxcost=$MAXCOST)"
+  log "START $tag  (model=$model arm=$arm N=$N rescore='${rescore:-4way}')"
   local start=$SECONDS
 
   npm run benchmark -- \
@@ -67,8 +67,7 @@ run() {
     --provider openai --host "$HOST" --model "$model" \
     --embeddings-model "$EMB" \
     --judge-provider openai --judge-host "$HOST" --judge-model "$JUDGE" \
-    --retrieval-top-k "$TOPK" $promptflag $extra ${rescore} \
-    --cost --max-cost "$MAXCOST" \
+    --retrieval-top-k "$TOPK" --judge-concurrency "$CONCURRENCY" $promptflag $extra ${rescore} \
     --output "$out" >>"$LOG" 2>&1 &
   local pid=$!
   ( sleep "$RUN_TIMEOUT"; kill -TERM "$pid" 2>/dev/null; sleep 5; pkill -KILL -f "scripts/benchmark.ts" 2>/dev/null ) &
