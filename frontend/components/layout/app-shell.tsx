@@ -77,8 +77,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="hidden w-56 flex-col border-r bg-sidebar md:flex">
         {/* Brand */}
         <div className="flex h-14 items-center gap-2 border-b px-4">
-          <Network className="h-5 w-5 text-primary" />
-          <span className="text-sm font-semibold">Wan Shi</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/wanshi-avatar-256.svg" alt="" className="h-6 w-6" />
+          <span className="text-sm font-semibold">wanshi</span>
         </div>
 
         {/* Navigation — grouped by mode */}
@@ -126,8 +127,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Mobile header */}
         <header className="flex h-14 items-center gap-4 border-b px-4 md:hidden">
-          <Network className="h-5 w-5 text-primary" />
-          <span className="flex-1 text-sm font-semibold">Wan Shi</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/wanshi-avatar-256.svg" alt="" className="h-6 w-6" />
+          <span className="flex-1 text-sm font-semibold">wanshi</span>
           <ThemeToggle />
         </header>
 

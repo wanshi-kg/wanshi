@@ -4,8 +4,9 @@ import { Providers } from "./providers"
 import { AppShell } from "@/components/layout/app-shell"
 
 export const metadata: Metadata = {
-  title: "Wan Shi",
+  title: "wanshi",
   description: "Configure, run, and watch knowledge-graph generation.",
+  icons: { icon: "/wanshi-avatar-256.svg" },
 }
 
 // Applied before paint to avoid a light/dark flash on first load. Mirrors the
