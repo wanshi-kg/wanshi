@@ -79,7 +79,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-14 items-center gap-2 border-b px-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/wanshi-avatar-256.svg" alt="" className="h-6 w-6" />
-          <span className="text-sm font-semibold">wanshi</span>
+          <span className="font-display text-sm font-semibold tracking-tight">wanshi</span>
         </div>
 
         {/* Navigation — grouped by mode */}

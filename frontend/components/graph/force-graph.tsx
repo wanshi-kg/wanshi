@@ -121,7 +121,7 @@ export default function ForceGraphInner({
         if (show) {
           const label: string = node.name
           const fontSize = Math.max(10 / scale, 2.4)
-          ctx.font = `${fontSize}px ui-sans-serif, system-ui, sans-serif`
+          ctx.font = `${fontSize}px 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif`
           ctx.textAlign = "center"
           ctx.textBaseline = "top"
           ctx.fillStyle = text

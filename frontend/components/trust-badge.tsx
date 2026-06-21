@@ -46,14 +46,21 @@ export function TrustBadge({
     <span
       title={title}
       className={cn(
-        "inline-flex w-fit shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-1.5 py-0.5 text-[11px] font-medium text-foreground/80",
+        "inline-flex w-fit shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] border px-2 py-0.5 text-[11px] font-semibold text-foreground",
         className
       )}
-      style={{ borderColor: color }}
+      style={{
+        borderColor: color,
+        backgroundColor: `color-mix(in srgb, ${color} 12%, transparent)`,
+      }}
     >
-      <Icon className="size-3 shrink-0" style={{ color }} aria-hidden="true" />
-      {showLabel && <span>{trustLabel(state)}</span>}
-      {pct && <span className="tabular-nums opacity-60">{pct}</span>}
+      <Icon className="size-3.5 shrink-0" style={{ color }} aria-hidden="true" />
+      {showLabel && <span className="font-display">{trustLabel(state)}</span>}
+      {pct && (
+        <span className="font-mono tabular-nums" style={{ color }}>
+          {pct}
+        </span>
+      )}
     </span>
   )
 }

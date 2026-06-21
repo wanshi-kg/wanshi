@@ -3,53 +3,79 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-background: oklch(1 0 0);
-  --color-foreground: oklch(0.145 0 0);
-  --color-card: oklch(1 0 0);
-  --color-card-foreground: oklch(0.145 0 0);
-  --color-popover: oklch(1 0 0);
-  --color-popover-foreground: oklch(0.145 0 0);
-  --color-primary: oklch(0.205 0 0);
-  --color-primary-foreground: oklch(0.985 0 0);
-  --color-secondary: oklch(0.97 0 0);
-  --color-secondary-foreground: oklch(0.205 0 0);
-  --color-muted: oklch(0.97 0 0);
-  --color-muted-foreground: oklch(0.556 0 0);
-  --color-accent: oklch(0.97 0 0);
-  --color-accent-foreground: oklch(0.205 0 0);
-  --color-destructive: oklch(0.577 0.245 27.325);
-  --color-destructive-foreground: oklch(0.577 0.245 27.325);
-  --color-border: oklch(0.922 0 0);
-  --color-input: oklch(0.922 0 0);
-  --color-ring: oklch(0.708 0 0);
-  --color-chart-1: oklch(0.646 0.222 41.116);
-  --color-chart-2: oklch(0.6 0.118 184.704);
-  --color-chart-3: oklch(0.398 0.07 227.392);
-  --color-chart-4: oklch(0.828 0.189 84.429);
-  --color-chart-5: oklch(0.769 0.188 70.08);
-  /* Trust language (the inspector's identity) — NEUTRAL grayscale placeholders.
-     Sable's trust color-book overwrites these VALUES; selectors/consumers don't
-     change. States stay distinguishable by icon+label until then. */
-  --color-trust-grounded: oklch(0.55 0 0);
-  --color-trust-ungrounded: oklch(0.5 0 0);
-  --color-trust-uncertain: oklch(0.62 0 0);
-  --color-trust-contradicted: oklch(0.45 0 0);
-  --color-trust-superseded: oklch(0.66 0 0);
-  --color-trust-tool-derived: oklch(0.58 0 0);
-  --color-trust-unknown: oklch(0.72 0 0);
-  --color-sidebar: oklch(0.985 0 0);
-  --color-sidebar-foreground: oklch(0.145 0 0);
-  --color-sidebar-primary: oklch(0.205 0 0);
-  --color-sidebar-primary-foreground: oklch(0.985 0 0);
-  --color-sidebar-accent: oklch(0.97 0 0);
-  --color-sidebar-accent-foreground: oklch(0.205 0 0);
-  --color-sidebar-border: oklch(0.922 0 0);
-  --color-sidebar-ring: oklch(0.708 0 0);
+  /* Typefaces (Sable's trio, wired via next/font in layout.tsx). */
+  --font-display: var(--font-grotesk), "Space Grotesk", system-ui, sans-serif;
+  --font-sans: var(--font-ibm), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "JetBrains Mono", monospace;
+
+  /* ---- base skin · LIGHT (:root, secondary) ---- */
+  --color-background: #f2faf8;
+  --color-foreground: #0c2a34;
+  --color-card: #ffffff;
+  --color-card-foreground: #0c2a34;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0c2a34;
+  --color-primary: #0c8f84;
+  --color-primary-foreground: #f2faf8;
+  --color-secondary: #dcedec;
+  --color-secondary-foreground: #0c2a34;
+  --color-muted: #e7f1ef;
+  --color-muted-foreground: #4a6670;
+  --color-accent: #dcedec;
+  --color-accent-foreground: #0c2a34;
+  --color-destructive: #d63b3b;
+  --color-destructive-foreground: #f2faf8;
+  --color-border: #cadddb;
+  --color-input: #cadddb;
+  --color-ring: #c98b12; /* amber — focus/selection only */
+  --color-chart-1: #0c8f84;
+  --color-chart-2: #6e8ae6;
+  --color-chart-3: #e08a5c;
+  --color-chart-4: #4fb87e;
+  --color-chart-5: #c46fcb;
+  --color-sidebar: #ffffff;
+  --color-sidebar-foreground: #0c2a34;
+  --color-sidebar-primary: #0c8f84;
+  --color-sidebar-primary-foreground: #f2faf8;
+  --color-sidebar-accent: #dcedec;
+  --color-sidebar-accent-foreground: #0c2a34;
+  --color-sidebar-border: #cadddb;
+  --color-sidebar-ring: #c98b12;
+
   --radius: 0.5rem;
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
+}
+
+/* Trust + entity tokens are consumed at RUNTIME (getComputedStyle for the raw
+   <canvas>, inline var() in the badges), which Tailwind's tree-shaker can't see.
+   Define them as plain custom properties (NOT @theme) so they're always emitted;
+   `.dark` overrides the trust set below. LIGHT here. */
+:root {
+  --color-trust-grounded: #0e9e78; /* verified jade   */
+  --color-trust-ungrounded: #d63b3b; /* coral · alarm   */
+  --color-trust-uncertain: #c98b12; /* amber           */
+  --color-trust-contradicted: #c42c7a; /* magenta · alarm */
+  --color-trust-superseded: #6e828a; /* faded slate     */
+  --color-trust-tool-derived: #5b54c4; /* indigo · hedge  */
+  --color-trust-unknown: #69757a; /* quiet grey      */
+
+  /* entity palette · 12-hue categorical scale (theme-invariant) */
+  --color-entity-1: #6e8ae6;
+  --color-entity-2: #9d7ae6;
+  --color-entity-3: #c46fcb;
+  --color-entity-4: #de6e9b;
+  --color-entity-5: #e08a5c;
+  --color-entity-6: #cbae3f;
+  --color-entity-7: #9ab84a;
+  --color-entity-8: #4fb87e;
+  --color-entity-9: #3fb2b0;
+  --color-entity-10: #54a6c8;
+  --color-entity-11: #5e93d6;
+  --color-entity-12: #b96fb0;
+  --color-entity-fallback: #5a6b72;
 }
 
 @layer base {
@@ -65,47 +91,67 @@
     color: var(--color-foreground);
     background: var(--color-background);
   }
+
+  body {
+    font-family: var(--font-sans);
+  }
+
+  /* Display face for headings (used with restraint). */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+  }
+
+  /* Amber selection — the brand's one warm pop, reserved here + the focus ring. */
+  ::selection {
+    background: var(--color-ring);
+    color: #0c2834;
+  }
 }
 
+/* ---- base skin · DARK is the hero ---- */
 .dark {
-  --color-background: oklch(0.145 0 0);
-  --color-foreground: oklch(0.985 0 0);
-  --color-card: oklch(0.145 0 0);
-  --color-card-foreground: oklch(0.985 0 0);
-  --color-popover: oklch(0.145 0 0);
-  --color-popover-foreground: oklch(0.985 0 0);
-  --color-primary: oklch(0.985 0 0);
-  --color-primary-foreground: oklch(0.205 0 0);
-  --color-secondary: oklch(0.269 0 0);
-  --color-secondary-foreground: oklch(0.985 0 0);
-  --color-muted: oklch(0.269 0 0);
-  --color-muted-foreground: oklch(0.708 0 0);
-  --color-accent: oklch(0.269 0 0);
-  --color-accent-foreground: oklch(0.985 0 0);
-  --color-destructive: oklch(0.396 0.141 25.723);
-  --color-destructive-foreground: oklch(0.637 0.237 25.331);
-  --color-border: oklch(0.269 0 0);
-  --color-input: oklch(0.269 0 0);
-  --color-ring: oklch(0.556 0 0);
-  --color-chart-1: oklch(0.488 0.243 264.376);
-  --color-chart-2: oklch(0.696 0.17 162.48);
-  --color-chart-3: oklch(0.769 0.188 70.08);
-  --color-chart-4: oklch(0.627 0.265 303.9);
-  --color-chart-5: oklch(0.645 0.246 16.439);
-  /* Trust placeholders, dark — lighter grays to read on near-black. */
-  --color-trust-grounded: oklch(0.7 0 0);
-  --color-trust-ungrounded: oklch(0.75 0 0);
-  --color-trust-uncertain: oklch(0.66 0 0);
-  --color-trust-contradicted: oklch(0.8 0 0);
-  --color-trust-superseded: oklch(0.6 0 0);
-  --color-trust-tool-derived: oklch(0.68 0 0);
-  --color-trust-unknown: oklch(0.5 0 0);
-  --color-sidebar: oklch(0.205 0 0);
-  --color-sidebar-foreground: oklch(0.985 0 0);
-  --color-sidebar-primary: oklch(0.488 0.243 264.376);
-  --color-sidebar-primary-foreground: oklch(0.985 0 0);
-  --color-sidebar-accent: oklch(0.269 0 0);
-  --color-sidebar-accent-foreground: oklch(0.985 0 0);
-  --color-sidebar-border: oklch(0.269 0 0);
-  --color-sidebar-ring: oklch(0.556 0 0);
+  --color-background: #081f29;
+  --color-foreground: #d8faf6;
+  --color-card: #0c2834;
+  --color-card-foreground: #d8faf6;
+  --color-popover: #0c2834;
+  --color-popover-foreground: #d8faf6;
+  --color-primary: #4fe6d7;
+  --color-primary-foreground: #06222b;
+  --color-secondary: #143845;
+  --color-secondary-foreground: #d8faf6;
+  --color-muted: #0e2a32;
+  --color-muted-foreground: #8cb0bd;
+  --color-accent: #143845;
+  --color-accent-foreground: #d8faf6;
+  --color-destructive: #ff6b6b;
+  --color-destructive-foreground: #06222b;
+  --color-border: #1c4250;
+  --color-input: #1c4250;
+  --color-ring: #f4c75a; /* amber */
+  --color-chart-1: #4fe6d7;
+  --color-chart-2: #6e8ae6;
+  --color-chart-3: #e08a5c;
+  --color-chart-4: #4fb87e;
+  --color-chart-5: #c46fcb;
+  --color-sidebar: #0a2630;
+  --color-sidebar-foreground: #d8faf6;
+  --color-sidebar-primary: #4fe6d7;
+  --color-sidebar-primary-foreground: #06222b;
+  --color-sidebar-accent: #143845;
+  --color-sidebar-accent-foreground: #d8faf6;
+  --color-sidebar-border: #1c4250;
+  --color-sidebar-ring: #f4c75a;
+
+  /* ---- trust language · DARK ---- */
+  --color-trust-grounded: #4fe3b4;
+  --color-trust-ungrounded: #ff6b6b;
+  --color-trust-uncertain: #f4c75a;
+  --color-trust-contradicted: #ff5ca8;
+  --color-trust-superseded: #7e96a0;
+  --color-trust-tool-derived: #9d9bf0;
+  --color-trust-unknown: #6e7e84;
 }
