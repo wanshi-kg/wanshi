@@ -88,7 +88,12 @@ function normalizeEntity(e: unknown): Entity {
   }
 }
 
-/** Coerce relationType to a string[] (mcp-jsonl flattens it to a comma string). */
+/**
+ * Coerce relationType to a string[] (mcp-jsonl flattens it to a comma string),
+ * while preserving every provenance field the core stamps on an edge
+ * (sourceSpan, grounded/groundingScore, source, resolved, faithfulness*, validAt).
+ * Spread first, then overwrite the identity/relationType fields.
+ */
 function normalizeRelation(r: unknown): Relation {
   const raw = r as Record<string, unknown>
   let relationType: string[] = []
@@ -98,6 +103,7 @@ function normalizeRelation(r: unknown): Relation {
     relationType = raw.relationType.split(",").map((s) => s.trim()).filter(Boolean)
   }
   return {
+    ...(raw as Partial<Relation>),
     from: String(raw.from ?? ""),
     to: String(raw.to ?? ""),
     relationType,

@@ -6,6 +6,7 @@ import type {
   KnowledgeGraph,
   TypeCount,
 } from "@/types"
+import { deriveNodeTrust, deriveRelationTrust } from "@/lib/trust"
 
 /** Count entities per entityType, descending. */
 export function entityTypeCounts(entities: Entity[]): TypeCount[] {
@@ -48,6 +49,7 @@ export function toForceData(graph: KnowledgeGraph): ForceData {
       name: e.name,
       entityType: e.entityType,
       degree: 0,
+      trust: deriveNodeTrust(e.observations),
     })
   }
 
@@ -58,7 +60,12 @@ export function toForceData(graph: KnowledgeGraph): ForceData {
     ensureNode(nodes, r.to)
     nodes.get(r.from)!.degree++
     nodes.get(r.to)!.degree++
-    links.push({ source: r.from, target: r.to, relationType: r.relationType })
+    links.push({
+      source: r.from,
+      target: r.to,
+      relationType: r.relationType,
+      trust: deriveRelationTrust(r),
+    })
   }
 
   return { nodes: [...nodes.values()], links }

@@ -13,6 +13,7 @@ import { DataTable } from "@/components/data-table/data-table"
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter"
 import { TypeBarChart } from "@/components/charts/type-bar-chart"
 import { TypeChip } from "@/components/type-chip"
+import { ObservationItem } from "@/components/graph/observation-item"
 import { RerunActions } from "@/components/rerun-actions"
 import { SaveAsButton } from "@/components/save-as-button"
 import { useGraph } from "@/hooks/use-graph"
@@ -215,20 +216,12 @@ export default function ResultDetailPage() {
                   return next
                 }),
               renderContent: (row: Row<Entity>) => (
-                <div className="space-y-2 pl-7">
+                <div className="space-y-2.5 pl-7 text-sm">
                   {row.original.observations.length === 0 ? (
                     <p className="text-xs text-muted-foreground">No observations.</p>
                   ) : (
                     row.original.observations.map((o, i) => (
-                      <div key={i} className="text-sm">
-                        <span>{o.text}</span>
-                        {(o.source || o.createdAt) && (
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            {o.source ? basename(o.source) : ""}
-                            {o.createdAt ? ` · ${new Date(o.createdAt).toLocaleDateString()}` : ""}
-                          </span>
-                        )}
-                      </div>
+                      <ObservationItem key={i} observation={o} />
                     ))
                   )}
                 </div>

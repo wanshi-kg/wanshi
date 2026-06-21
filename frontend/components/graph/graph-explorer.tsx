@@ -34,7 +34,14 @@ function endpointId(end: unknown): string {
   return typeof end === "object" && end !== null ? (end as { id: string }).id : (end as string)
 }
 
-export function GraphExplorer({ graph }: { graph: KnowledgeGraph }) {
+export function GraphExplorer({
+  graph,
+  runId,
+}: {
+  graph: KnowledgeGraph
+  /** Threaded to the node inspector to enable "view lineage" (trace inspector). */
+  runId?: string
+}) {
   const isDark = useIsDark()
   const containerRef = useRef<HTMLDivElement>(null)
   const graphRef = useRef<any>(undefined) // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -114,6 +121,11 @@ export function GraphExplorer({ graph }: { graph: KnowledgeGraph }) {
       entityType: entityMap.get(name)?.entityType ?? "(unresolved)",
     }))
   }, [selectedId, adjacency, entityMap])
+
+  const incidentRelations = useMemo(() => {
+    if (!selectedId) return []
+    return graph.relations.filter((r) => r.from === selectedId || r.to === selectedId)
+  }, [selectedId, graph])
 
   function focusNode(name: string) {
     const node = data.nodes.find(
@@ -269,6 +281,8 @@ export function GraphExplorer({ graph }: { graph: KnowledgeGraph }) {
             entity={selectedEntity}
             entityType={selectedEntity?.entityType ?? selectedNode?.entityType ?? "(unresolved)"}
             neighbors={neighbors}
+            relations={incidentRelations}
+            runId={runId}
             onClose={() => setSelectedId(null)}
             onSelectNeighbor={focusNode}
           />

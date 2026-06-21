@@ -69,7 +69,7 @@ function GraphView({ runId }: { runId: string }) {
         </Button>
       </div>
       <div className="min-h-0 flex-1">
-        <GraphExplorer graph={data.graph} />
+        <GraphExplorer graph={data.graph} runId={runId} />
       </div>
     </div>
   )

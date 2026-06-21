@@ -1,8 +1,8 @@
 "use client"
 
 import ForceGraph2D from "react-force-graph-2d"
-import type { ForceData, ForceNode } from "@/types"
-import { colorForType } from "@/lib/graph-colors"
+import type { ForceData, ForceNode, TrustSignal } from "@/types"
+import { colorForType, trustColor, resolveToken } from "@/lib/graph-colors"
 
 // react-force-graph mutates nodes/links with x/y and resolved source/target
 // objects, so the canvas callbacks work in `any` space by design.
@@ -43,7 +43,7 @@ export default function ForceGraphInner({
   onNodeHover,
   onBackgroundClick,
 }: Props) {
-  const text = isDark ? "#ededed" : "#171717"
+  const text = resolveToken("--color-foreground") || (isDark ? "#ededed" : "#171717")
   const muted = isDark ? "rgba(237,237,237,0.5)" : "rgba(23,23,23,0.45)"
   const baseLink = isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.12)"
   const strongLink = isDark ? "rgba(237,237,237,0.6)" : "rgba(23,23,23,0.55)"
@@ -70,7 +70,12 @@ export default function ForceGraphInner({
       onNodeClick={(n: any) => onNodeClick(n)}
       onNodeHover={(n: any) => onNodeHover(n ?? null)}
       onBackgroundClick={onBackgroundClick}
-      linkColor={(l: any) => (focusId == null || linkActive(l) ? (linkActive(l) ? strongLink : baseLink) : baseLink)}
+      linkColor={(l: any) => {
+        const t: TrustSignal | undefined = l.trust
+        // Surface unfaithful / ungrounded edges regardless of focus.
+        if (t && (t.state === "ungrounded" || t.state === "uncertain")) return trustColor(t.state)
+        return linkActive(l) ? strongLink : baseLink
+      }}
       linkWidth={(l: any) => (linkActive(l) ? 1.6 : 0.6)}
       linkDirectionalArrowLength={3}
       linkDirectionalArrowRelPos={1}
@@ -80,16 +85,34 @@ export default function ForceGraphInner({
         const r = radius(node)
         const faded = dimmed(node.id)
         const color = node.unresolved ? muted : colorForType(node.entityType)
+        const trust: TrustSignal | undefined = node.trust
+        const conf = trust?.confidence
 
-        ctx.globalAlpha = faded ? 0.16 : 1
+        // Opacity encodes the confidence gradient — an un-scored node (no signal)
+        // stays at full opacity rather than fading toward invisible.
+        ctx.globalAlpha = faded ? 0.16 : typeof conf === "number" ? 0.45 + 0.55 * conf : 1
         ctx.beginPath()
         ctx.arc(node.x, node.y, r, 0, 2 * Math.PI)
         ctx.fillStyle = color
         ctx.fill()
 
+        // Trust ring: a graded node wears a ring in its trust color (neutral now,
+        // semantic once Sable's color-book lands). Skipped for unknown/unresolved.
+        if (!faded && trust && trust.state !== "unknown" && !node.unresolved) {
+          ctx.globalAlpha = 1
+          ctx.lineWidth = 1.5 / scale
+          ctx.strokeStyle = trustColor(trust.state)
+          ctx.beginPath()
+          ctx.arc(node.x, node.y, r + 2 / scale, 0, 2 * Math.PI)
+          ctx.stroke()
+        }
+
         if (node.id === focusId) {
+          ctx.globalAlpha = 1
           ctx.lineWidth = 2 / scale
           ctx.strokeStyle = text
+          ctx.beginPath()
+          ctx.arc(node.x, node.y, r, 0, 2 * Math.PI)
           ctx.stroke()
         }
 

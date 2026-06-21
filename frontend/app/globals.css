@@ -27,6 +27,16 @@
   --color-chart-3: oklch(0.398 0.07 227.392);
   --color-chart-4: oklch(0.828 0.189 84.429);
   --color-chart-5: oklch(0.769 0.188 70.08);
+  /* Trust language (the inspector's identity) — NEUTRAL grayscale placeholders.
+     Sable's trust color-book overwrites these VALUES; selectors/consumers don't
+     change. States stay distinguishable by icon+label until then. */
+  --color-trust-grounded: oklch(0.55 0 0);
+  --color-trust-ungrounded: oklch(0.5 0 0);
+  --color-trust-uncertain: oklch(0.62 0 0);
+  --color-trust-contradicted: oklch(0.45 0 0);
+  --color-trust-superseded: oklch(0.66 0 0);
+  --color-trust-tool-derived: oklch(0.58 0 0);
+  --color-trust-unknown: oklch(0.72 0 0);
   --color-sidebar: oklch(0.985 0 0);
   --color-sidebar-foreground: oklch(0.145 0 0);
   --color-sidebar-primary: oklch(0.205 0 0);
@@ -82,6 +92,14 @@
   --color-chart-3: oklch(0.769 0.188 70.08);
   --color-chart-4: oklch(0.627 0.265 303.9);
   --color-chart-5: oklch(0.645 0.246 16.439);
+  /* Trust placeholders, dark — lighter grays to read on near-black. */
+  --color-trust-grounded: oklch(0.7 0 0);
+  --color-trust-ungrounded: oklch(0.75 0 0);
+  --color-trust-uncertain: oklch(0.66 0 0);
+  --color-trust-contradicted: oklch(0.8 0 0);
+  --color-trust-superseded: oklch(0.6 0 0);
+  --color-trust-tool-derived: oklch(0.68 0 0);
+  --color-trust-unknown: oklch(0.5 0 0);
   --color-sidebar: oklch(0.205 0 0);
   --color-sidebar-foreground: oklch(0.985 0 0);
   --color-sidebar-primary: oklch(0.488 0.243 264.376);
