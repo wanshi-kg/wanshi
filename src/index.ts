@@ -1,7 +1,8 @@
-// Main entry point - re-export CLI
-export * from './cli';
+// Library entry point — programmatic API.
+// The CLI is NOT re-exported here: it runs `program.parse()` at import time,
+// which must not fire when this module is `require`d as a library. The CLI is
+// shipped via the `wanshi` bin (./dist/cli/index.js).
 
-// Also export core functionality for programmatic use
 export * from './core/DirectoryProcessor';
 export * from './core/processor';
 export * from './core/llm/OllamaService';

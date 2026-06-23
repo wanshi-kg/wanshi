@@ -4,7 +4,7 @@ import {
   SymbolTable,
   SymbolKind,
   hashContent,
-} from "document-outline-gen";
+} from "@wanshi-kg/outlion";
 
 export { hashContent };
 export type { SymbolEntry, SymbolReference, SymbolTable, SymbolKind };
