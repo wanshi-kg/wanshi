@@ -54,7 +54,7 @@ npm install
 
 # Default local models
 ollama pull llama3.2                 # generation
-ollama pull mxbai-embed-large:335m   # embeddings
+ollama pull nomic-embed-text   # embeddings
 
 npm run build   # optional; ts-node works directly
 ```
@@ -92,7 +92,7 @@ llm:
 
 embeddings:                 # independent from generation — keep local & free
   provider: ollama
-  model: mxbai-embed-large:335m
+  model: nomic-embed-text
   host: http://localhost:11434
 
 chunking: { mode: enabled, size: 4000, overlap: 100 }
@@ -118,7 +118,7 @@ llm:
   model: google/gemma-3-27b-it
 embeddings:
   provider: ollama
-  model: mxbai-embed-large:335m
+  model: nomic-embed-text
 resume:
   enabled: true             # writes <output>.checkpoint.jsonl
 ```
@@ -176,7 +176,7 @@ wanshi --export-only -i ./knowledge-graph.json --export-format kblam -o ./kb.jso
 | Option | Default | Description |
 | ------ | ------- | ----------- |
 | `--embeddings-provider <name>` | `ollama` | `ollama` or `openai` |
-| `--embeddings-model <name>` | `mxbai-embed-large:335m` | Embeddings model |
+| `--embeddings-model <name>` | `nomic-embed-text` | Embeddings model |
 | `--embeddings-host <url>` | `http://localhost:11434` | Host / base URL |
 | `--embeddings-max-input-chars <n>` | `1024` | Truncate embedding inputs (safe for 512-token models; raise for cloud) |
 
@@ -318,7 +318,7 @@ Quality/speed trade-off for local selection. For measured numbers see the benchm
 | `qwen3:1.7b` | 1.7B | ★★★ | fast | good general purpose |
 | `gemma3:1b` | 1B | ★★ | very fast | minimal resources |
 
-Default embeddings: `mxbai-embed-large:335m`.
+Default embeddings: `nomic-embed-text`.
 
 The table above is qualitative guidance. For measured, comparative numbers (wanshi vs KGGen on gold-labeled datasets) see **[Benchmarks](#benchmarks)** below — note those run on **cloud** models; local-model benchmarks are planned.
 
