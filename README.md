@@ -320,19 +320,92 @@ Quality/speed trade-off for local selection. For measured numbers see the benchm
 
 Default embeddings: `mxbai-embed-large:335m`.
 
-### Measured benchmark (CrossRE)
+The table above is qualitative guidance. For measured, comparative numbers (wanshi vs KGGen on gold-labeled datasets) see **[Benchmarks](#benchmarks)** below — note those run on **cloud** models; local-model benchmarks are planned.
 
-Dataset **CrossRE `ai-test`**, n = 17–20 (failed extractions excluded, not zeroed); prompt **v5**; generation via **OpenRouter**; matching via local `mxbai-embed-large:335m` at semantic threshold 0.80. *Indicative, not definitive — small n, single domain, cloud inference.* Reproduce with `npm run benchmark -- --provider openai --host https://openrouter.ai/api/v1 --model <id> --dataset crossre --limit 20 --prompt-version v5`.
+## Benchmarks
 
-| Model | n | Entity F1 (sem) | Relation F1 | Triple F1 | Intrinsic |
-| ----- | - | --------------- | ----------- | --------- | --------- |
-| `qwen3-14b` | 17 | **0.851** | 0.130 | 0.037 | 83.9 |
-| `qwen3-8b` | 19 | 0.808 | 0.187 | 0.019 | 82.0 |
-| `gemma-3-4b-it` | 20 | 0.807 | 0.198 | 0.036 | 83.4 |
-| `gemma-3-27b-it` | 20 | 0.767 | **0.211** | **0.070** | 82.8 |
-| `gemma-3-12b-it` | 20 | 0.716 | 0.093 | 0.019 | 74.7 |
+> **Scope & honesty (read first).** Every number here is **cloud inference via OpenRouter** —
+> **local-model (offline-first) benchmarks are planned and not yet run** (see [What's not yet
+> measured](#whats-not-yet-measured)). Comparative baselines are **re-scored under one identical
+> harness, not the published figures**. The document-level result rests on **one dataset** so far.
+> **MINE** is a recall-only, LLM-judge-mediated axis, reported as *context*, not a load-bearing claim.
 
-The **"small Gemma beats larger Gemmas"** result holds under corrected sampling: `gemma-3-4b-it` outperforms both `gemma-3-12b-it` and `-27b-it` on entity extraction and lands ~2nd of 5 overall. Relation/triple F1 are uniformly low — CrossRE relation extraction is hard under strict matching.
+wanshi vs **KGGen** (its real Python package), **same model for both tools**, on gold-labeled datasets.
+The fair cross-tool metric is **entity-capture F1** (did the tool recover the gold entities) — both
+tools emit free predicates, so typed relation-F1 understates uniformly *except* in the schema-aware
+mode below. Embeddings for matching run locally (`nomic-embed-text`), semantic threshold 0.80.
+
+**Entity capture across granularity** (deepseek-v4-pro):
+
+| Dataset | Level | N | wanshi F1 | KGGen F1 |
+| ------- | ----- | - | --------- | -------- |
+| SemEval-2010 T8 | sentence | 300 | 0.422 | **0.453** |
+| CrossRE | sentence | 300 | 0.786 | **0.824** |
+| Re-DocRED | document | 100 | **0.677** | 0.643 |
+
+Same shape everywhere: KGGen edges **recall**, wanshi wins **precision**. The net **flips with document
+length** — on long documents KGGen over-extracts and its precision collapses, so wanshi's discipline wins.
+
+**Claim (a) — the precision advantage grows with document length *and* model capability.** Re-DocRED
+two-way (node entity-capture F1) across the model ladder:
+
+| Model | wanshi | KGGen | wanshi win | KGGen precision | KGGen ent/doc |
+| ----- | ------ | ----- | ---------- | --------------- | ------------- |
+| deepseek-v4-pro | 0.677 | 0.643 | +3.4 pt | 0.530 | 21.6 |
+| claude-sonnet-4.6 | 0.721 | 0.620 | +10.1 pt | 0.489 | 24.2 |
+| gpt-5.4 | 0.735 | 0.561 | **+17.4 pt** | 0.402 | 32.1 |
+
+Stronger models extract *more* (KGGen 21.6 → 32.1 entities/doc); on long docs that craters precision
+(0.53 → 0.40) faster than it helps recall, while wanshi stays disciplined — so the win **widens at the
+frontier**. *Confirmed across three models; rests on one document-level dataset (a second, SciERC/BioRED,
+is planned).*
+
+**Claim (b) — schema-aware typed extraction (a mode KGGen lacks).** When the **target relation schema is
+known**, wanshi extracts typed relations natively via a closed vocabulary (`--relation-vocab`). Re-DocRED
+triple-F1, free predicates → strict gold schema (96 Wikidata properties):
+
+| Model | wanshi free → strict | Ign-F1 | KGGen (free) | × KGGen |
+| ----- | -------------------- | ------ | ------------ | ------- |
+| deepseek-v4-pro | 0.012 → 0.107 | 0.111 | 0.025 | 4× |
+| claude-sonnet-4.6 | 0.016 → 0.112 | 0.116 | 0.019 | 6× |
+| gpt-5.4 | 0.015 → **0.145** | 0.148 | 0.014 | **10×** |
+
+**Ign-F1 ≈ triple-F1** on every model (Ign-F1 excludes triples seen in training) → the gains are
+**generalization, not memorized facts**. KGGen has no closed-vocab mode, so it can't consume a known
+ontology. *This is "schema-aware typed extraction," not "wanshi beats KGGen at relation extraction."*
+
+**MINE (context only).** On the recall-only, judge-mediated MINE benchmark KGGen's denser extraction wins
+(re-scored ~64% vs wanshi's best ~28%). MINE rewards raw triple coverage and is blind to precision, and
+its judge performs fact-verification (a known-soft measurement) — so the gold-labeled results above carry
+the comparative claims; MINE is reported as context, not a verdict.
+
+**Cost & reproducibility.** Generation = cloud OpenRouter; **embeddings = local Ollama (free)**.
+Representative spend (measured live via the OpenRouter credits API; wanshi extraction tokens shown, the
+$ also covers the KGGen baseline):
+
+| Cell (Re-DocRED, two-way + H4, N=100) | tokens in | tokens out | cost |
+| ------------------------------------- | --------- | ---------- | ---- |
+| claude-sonnet-4.6 | ~0.57 M | ~0.16 M | $6.00 |
+| gpt-5.4 | ~0.43 M | ~0.19 M | $5.60 |
+
+(OpenRouter rates at run time, ≈ $3 / $15 per Mtok in/out for the Claude tier.) Reproduce a cell with the
+one harness — wanshi inline, KGGen cached, same sample list for both:
+
+```bash
+npx ts-node scripts/gold-compare.ts --dataset redocred --limit 100 \
+  --model deepseek/deepseek-v4-pro --provider openai --host https://openrouter.ai/api/v1
+.venv-kggen/bin/python scripts/kggen-crossre.py --model deepseek/deepseek-v4-pro \
+  --samples data/redocred/compare/samples.jsonl --out data/redocred/compare/kggen.jsonl
+# add --relation-vocab @data/redocred/compare/relation-vocab.txt for the schema-aware (H4) cell
+```
+
+### What's not yet measured
+
+- **Local-model (offline-first) benchmarks** — the deployment-target floor (`gemma3:4b`-class) is *owed*;
+  every number above is cloud inference. This is the next benchmark priority. *(An earlier indicative
+  n=20 single-domain run hinted small `gemma3:4b` ≈ larger Gemmas on entity extraction — to be confirmed
+  in the local arm.)*
+- **A second document-level dataset** (SciERC / BioRED) to close the single-dataset caveat on claim (a).
 
 ## Quality metrics
 
