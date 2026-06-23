@@ -1,5 +1,5 @@
 {
-  "name": "wanshi",
+  "name": "@wanshi-kg/wanshi",
   "version": "0.1.0",
   "description": "Local-first CLI that turns files, code, PDFs, audio and transcripts into a provenance-tracked knowledge graph — via local Ollama or any OpenAI-compatible LLM.",
   "keywords": [
