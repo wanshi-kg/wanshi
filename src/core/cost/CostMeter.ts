@@ -9,6 +9,17 @@ export const CHARS_PER_TOKEN = 4;
 export const SYSTEM_OVERHEAD_TOKENS = 900; // v5 system prompt + retrieved context, per chunk
 export const OUTPUT_TOKENS_PER_CHUNK = 400; // a chunk's worth of entities/relations JSON
 
+/**
+ * Conservative fallback USD/1M-token price used ONLY when a `--max-cost` cap is
+ * set on an UNPRICED model (WS-13). Without it the cap could never trip — an
+ * unpriced id keeps cost at 0 forever, turning a budget ceiling into unlimited
+ * spend. This is a deliberately pessimistic floor (≈ a mid cloud model) so the
+ * cap stays *actionable*; the user is warned that the figure is a cap-only
+ * estimate, not a real bill, and should set `cost.prices` for accuracy. With no
+ * `--max-cost`, the default path is untouched (unpriced ⇒ still shown as $0).
+ */
+export const UNPRICED_CAP_FALLBACK: ModelPrice = { in: 5, out: 15 };
+
 export interface CostBucket {
   calls: number;
   promptTokens: number;
@@ -108,8 +119,23 @@ export class CostMeter {
   /** Record one generation's usage. Guarded by `enabled` at the call site, but safe regardless. */
   record(model: string, usage?: LLMUsage): void {
     if (!this._enabled || !usage) return;
-    const price = this.priceFor(model);
-    if (price.in === 0 && price.out === 0 && !this.warnedModels.has(model)) {
+    let price = this.priceFor(model);
+    const unpriced = price.in === 0 && price.out === 0;
+    if (unpriced && this.maxCost != null) {
+      // WS-13: an unpriced model under a --max-cost cap would keep cost at 0 and
+      // the cap could never trip — silent unlimited spend. Fall back to a
+      // conservative price floor so the cap stays actionable, and ESCALATE the
+      // note to a warning.
+      price = UNPRICED_CAP_FALLBACK;
+      if (!this.warnedModels.has(model)) {
+        this.warnedModels.add(model);
+        this.logger?.warn(
+          `Cost meter: no price for model '${model}' but --max-cost is set — billing it at a conservative ` +
+            `fallback rate (${this.currency} ${price.in}/${price.out} per 1M in/out tokens) so the cap can act. ` +
+            `Set cost.prices['${model}'] for an accurate cap and bill.`
+        );
+      }
+    } else if (unpriced && !this.warnedModels.has(model)) {
       this.warnedModels.add(model);
       this.logger?.info(`Cost meter: no price for model '${model}' — its spend is shown as ${this.currency} 0 (set cost.prices for an accurate bill).`);
     }

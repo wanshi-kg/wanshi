@@ -57,6 +57,36 @@ describe("CostMeter", () => {
     expect(free.estCost).toBe(0);
   });
 
+  it("WS-22: dotted OpenRouter Anthropic ids resolve to the same price as hyphenated", () => {
+    meter.configure({ enabled: true, currency: "USD", prices: PRICES }); // + DEFAULT_PRICES
+    // dotted form (OpenRouter / Anthropic native) must NOT fall through to $0
+    expect(meter.priceFor("claude-3.5-sonnet")).toEqual({ in: 3, out: 15 });
+    // and it equals the hyphenated key it aliases
+    expect(meter.priceFor("claude-3.5-sonnet")).toEqual(meter.priceFor("claude-3-5-sonnet"));
+    expect(meter.priceFor("claude-3.5-haiku")).toEqual(meter.priceFor("claude-3-5-haiku"));
+    expect(meter.priceFor("claude-3.7-sonnet")).toEqual(meter.priceFor("claude-3-7-sonnet"));
+    // an OpenRouter-prefixed dotted id still substring-matches
+    expect(meter.priceFor("anthropic/claude-3.5-sonnet")).toEqual({ in: 3, out: 15 });
+  });
+
+  it("WS-13: an unpriced model still accrues cost under --max-cost so the cap can trip", () => {
+    // unpriced id + a cap → fallback price floor makes the cap actionable
+    meter.configure({ enabled: true, maxCost: 1, currency: "USD", prices: PRICES });
+    expect(shutdown.isRequested()).toBe(false);
+    meter.record("unknown-model:7b", { promptTokens: 1_000_000, completionTokens: 0 });
+    // cost is no longer 0 for an unpriced model when a cap is set
+    expect(meter.thisRunCost).toBeGreaterThan(0);
+    // 1M prompt tokens at the fallback floor exceeds the $1 cap → shutdown requested
+    expect(shutdown.isRequested()).toBe(true);
+  });
+
+  it("WS-13: without --max-cost an unpriced model is still billed as 0 (default unchanged)", () => {
+    meter.configure({ enabled: true, currency: "USD", prices: PRICES }); // no maxCost
+    meter.record("unknown-model:7b", { promptTokens: 1_000_000, completionTokens: 1_000_000 });
+    expect(meter.thisRunCost).toBe(0);
+    expect(shutdown.isRequested()).toBe(false);
+  });
+
   it("ledger: persists cumulative and does NOT double-count a no-spend resume", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "costledger-"));
     const ledgerPath = path.join(dir, "out.cost.json");
