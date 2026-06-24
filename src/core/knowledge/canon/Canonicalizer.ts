@@ -132,17 +132,23 @@ export class Canonicalizer implements GraphTransform {
       mergedEntities.push(merged);
 
       if (cluster.length > 1) {
-        mergeLog.push(
-          this.buildRecord(
-            "entity",
-            cluster,
-            canonical,
-            cfg.method,
-            embByName,
-            borderline,
-            this.spansForEntities(graph, cluster)
-          )
+        const record = this.buildRecord(
+          "entity",
+          cluster,
+          canonical,
+          cfg.method,
+          embByName,
+          borderline,
+          this.spansForEntities(graph, cluster)
         );
+        mergeLog.push(record);
+        // Canon runs AFTER the merger, with its own clustering/renaming, so the
+        // surface forms it collapses here were never folded into the lineage
+        // thread. Reattribute each non-canonical member's mentions onto the
+        // winner so mentionsFor(canonical) is complete, and emit the decision.
+        // Observe-only (lineage lives outside the graph) → byte-identical when
+        // trace is off, which is the default.
+        this.emitLineageFold(record);
       }
     }
 
@@ -215,9 +221,17 @@ export class Canonicalizer implements GraphTransform {
       for (const member of cluster) rename.set(member, canonical);
 
       if (cluster.length > 1) {
-        mergeLog.push(
-          this.buildRecord("relation", cluster, canonical, cfg.method, embByLabel, borderline, [])
+        const record = this.buildRecord(
+          "relation",
+          cluster,
+          canonical,
+          cfg.method,
+          embByLabel,
+          borderline,
+          []
         );
+        mergeLog.push(record);
+        this.emitLineageFold(record);
       }
     }
 
@@ -319,6 +333,36 @@ export class Canonicalizer implements GraphTransform {
       });
     }
     return verdict;
+  }
+
+  /**
+   * Fold each non-canonical surface form's mentions onto the winner and emit one
+   * `merge_decision` event for the cluster — the same lineage thread the merger
+   * maintains (ContainerFactory's `onMergeRecord`), applied to the fusions canon
+   * performs after merge. Guarded by `trace.enabled`, and lineage lives outside
+   * the graph, so a trace-off run is byte-identical.
+   */
+  private emitLineageFold(record: MergeRecord): void {
+    if (!trace.enabled) return;
+    const foldedMentionIds: string[] = [];
+    for (const sf of record.surface_forms) {
+      if (sf === record.canonical_chosen) continue;
+      foldedMentionIds.push(
+        ...trace.lineage.fold(sf, record.canonical_chosen).map((m) => m.mentionId)
+      );
+    }
+    trace.emit({
+      stage: "merge",
+      type: "merge_decision",
+      mergeDecisionId: record.cluster_id,
+      target: record.target,
+      canonical: record.canonical_chosen,
+      surfaceForms: record.surface_forms,
+      foldedMentionIds,
+      cosine: record.intra_cluster_sim?.max,
+      method: record.method,
+      verdict: "accept",
+    });
   }
 
   private buildRecord(
