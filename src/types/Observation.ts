@@ -27,13 +27,17 @@ export interface Observation {
   // ECS source-tagging (data-sink adapter track): which adapter produced this
   // fact + where in the source. e.g. sourceAdapter "pdf:mistral"/"sqlite", locator
   // "p.67"/"table:parts/row:42". Makes trust + origin queryable, not format-specific.
+  // Export-only provenance: carried through merge and surfaced in exports, but the
+  // dedup tie-break keys on observation text only — these fields do not steer it.
   sourceAdapter?: string;
   locator?: string;
   // Read-reliability of this fact, 0..1 — NOT a truth verdict. Set by deterministic
   // image-metadata extractors (EXIF/C2PA → sourceAdapter "exif"/"c2pa") and the
   // opt-in CV pre-pass (confidence-floored, tool-attributed signals); absent on
   // ordinary LLM-extracted observations. Keeps a low-trust tool signal queryably
-  // distinct from a high-confidence deterministic read.
+  // distinct from a high-confidence deterministic read. Export-only provenance:
+  // the merge dedup tie-break compares text length, not confidence, so this does
+  // not currently influence which near-duplicate observation is kept.
   confidence?: number;
 }
 
