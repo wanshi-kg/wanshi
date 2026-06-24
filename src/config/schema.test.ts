@@ -68,6 +68,18 @@ describe("config schema", () => {
     expect(c.filter).toEqual(["**/*.ts"]);
   });
 
+  it("maps a bare/empty numeric value to the default, not 0 (WS-19)", () => {
+    // A YAML `size:` parses to null; an empty CLI value to "". Both must fall
+    // through to the default rather than coercing to 0.
+    expect(parseConfig({ chunking: { size: "" as any } }).chunking.size).toBe(2000);
+    expect(parseConfig({ chunking: { size: null as any } }).chunking.size).toBe(2000);
+    expect(parseConfig({ chunking: { overlap: "" as any } }).chunking.overlap).toBe(100);
+    // a real 0 is a legitimate value and is preserved
+    expect(parseConfig({ chunking: { overlap: 0 } }).chunking.overlap).toBe(0);
+    // valid strings/numbers still coerce
+    expect(parseConfig({ retrieval: { limit: "7" } }).retrieval.limit).toBe(7);
+  });
+
   it("rejects an out-of-vocab enum value", () => {
     expect(() => parseConfig({ llm: { provider: "bogus" } })).toThrow(ConfigError);
   });

@@ -20,8 +20,17 @@ import { z } from "zod";
 
 // ── small helpers ──────────────────────────────────────────────────────────
 
-/** A number field with a default; coerces CLI strings + YAML numbers. */
-const num = (def: number) => z.coerce.number().default(def);
+/**
+ * A number field with a default; coerces CLI strings + YAML numbers. A bare
+ * `key:` in YAML parses to `null` (and an empty CLI value to `""`); both map to
+ * the default rather than coercing to 0 (WS-19) — the preprocess runs before
+ * `z.coerce.number()`, and the inner `.default()` then fills the undefined.
+ */
+const num = (def: number) =>
+  z.preprocess(
+    (v) => (v === "" || v === null ? undefined : v),
+    z.coerce.number().default(def)
+  );
 
 /** Accept a single string or an array of strings; normalize to an array. */
 const stringList = (def: string[]) =>
