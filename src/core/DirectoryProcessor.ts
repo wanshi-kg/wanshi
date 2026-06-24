@@ -219,7 +219,13 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     // Load a prior output graph (if any) to seed retrieval CONTEXT only. It must
     // NOT enter the merge set: re-merging already-merged output into a fresh run
     // double-counts entities/observations on a plain (no --resume) re-run.
-    const priorGraphs = await this.loadPriorGraphs(options.output, logger);
+    // KG-11: the writer rewrites the output extension to match the export format
+    // (getOutputPath), so seed from that same path — else `output: kg.json` +
+    // `format: jsonl` looks for a non-existent kg.json and silently seeds nothing.
+    const priorGraphs = await this.loadPriorGraphs(
+      this.getOutputPath(options.output, options.export.format),
+      logger
+    );
 
     // Optional corpus analysis pre-pass: build/load a corpus-specific glossary
     // (and cached per-file classification) once, before extraction.
