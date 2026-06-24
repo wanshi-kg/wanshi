@@ -150,4 +150,26 @@ describe("readC2pa", () => {
     const res = await readC2pa(p, "c2patool", stubLogger());
     expect(res.valid).toBe(false);
   });
+
+  // WS-44: a c2patool build that exits non-zero on validation failure but still
+  // emits validation_status must be present-but-invalid, NOT unavailable.
+  it("WS-44: non-zero exit WITH validation_status → present:true, valid:false (not unavailable)", async () => {
+    const report = JSON.stringify({
+      active_manifest: "m1",
+      manifests: { m1: { signature_info: { issuer: "Self-Signed" } } },
+      validation_status: [{ code: "assertion.hashedURI.mismatch", success: false }],
+    });
+    mockSpawn.mockImplementation(fakeC2patool(report, "validation_status: assertion.hashedURI.mismatch", 1));
+    const res = await readC2pa(p, "c2patool", stubLogger());
+    expect(res.present).toBe(true);
+    expect(res.valid).toBe(false);
+    expect(res.unavailable).toBeUndefined();
+  });
+
+  it("WS-44: non-zero exit WITHOUT validation_status stays unavailable", async () => {
+    mockSpawn.mockImplementation(fakeC2patool("", "panic: something exploded", 2));
+    const res = await readC2pa(p, "c2patool", stubLogger());
+    expect(res.present).toBe(false);
+    expect(res.unavailable).toBe(true);
+  });
 });

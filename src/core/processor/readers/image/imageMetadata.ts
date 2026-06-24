@@ -125,6 +125,18 @@ export async function readC2pa(
       // c2patool exits non-zero with "No claim found" when the asset has no
       // credential — a real fact (absent), distinct from the tool being missing.
       if (/no (claim|manifest|provenance|c2pa)/i.test(`${stderr}\n${stdout}`)) return { present: false };
+      // Some c2patool builds/versions exit non-zero when validation FAILS yet still
+      // emit the manifest-store report (with validation_status) on stdout. A present
+      // manifest that failed crypto checks is "present-but-invalid" (untrustworthy),
+      // NOT "unavailable" (unreadable) — parse it so we don't lose the signal.
+      if (/validation_status|validation_state/i.test(`${stdout}\n${stderr}`)) {
+        try {
+          const parsed = parseC2pa(JSON.parse(stdout));
+          if (parsed.present) return parsed;
+        } catch {
+          /* fall through to unavailable */
+        }
+      }
       logger?.debug(`c2patool exited ${code} for ${filePath}: ${stderr.trim().slice(-200)}`);
       return { present: false, unavailable: true };
     }
