@@ -94,6 +94,56 @@ describe("EmailReader", () => {
     expect(text).not.toContain("Can you review the doc");
   });
 
+  it("WS-48: strips a quoted reply whose 'On … wrote:' attribution wraps across two lines", async () => {
+    const p = write(
+      "wrapped.eml",
+      [
+        "From: Bob <bob@example.com>",
+        "Subject: Re: Question",
+        "Date: Wed, 04 Jun 2025 08:00:00 +0000",
+        "",
+        "Yes, ship it.",
+        "",
+        // attribution wrapped: the address pushes "wrote:" onto the next line
+        "On Mon, Jun 2, 2025 at 10:00 AM Alice Smith <alice@example.com>",
+        "wrote:",
+        "> Should we ship the release?",
+        "> Please confirm.",
+      ].join("\n")
+    );
+    const res = await reader().read(p);
+    const text = res.chunks.map((c) => c.content).join("\n");
+    expect(text).toContain("Yes, ship it");
+    expect(text).not.toContain("Should we ship the release"); // wrapped attribution detected → quote dropped
+    expect(text).not.toContain("Please confirm");
+    expect(text).not.toMatch(/wrote:/);
+  });
+
+  it("WS-49: mbox does NOT split on a prose line beginning 'From … <year>'", async () => {
+    const p = write(
+      "prose-from.mbox",
+      [
+        "From alice@example.com Mon Jun 02 10:00:00 2025",
+        "From: Alice <alice@example.com>",
+        "Subject: History",
+        "Date: Mon, 02 Jun 2025 10:00:00 +0000",
+        "Message-ID: <a1@example.com>",
+        "",
+        "Here is the story.",
+        "From the 2024 summit we learned a great deal about owls.",
+        "That concludes the recap.",
+        "",
+      ].join("\n")
+    );
+    const res = await reader().read(p);
+    // One envelope → one message; the prose 'From … 2024' line must NOT start a new block.
+    expect((res.metadata as any)?.messages).toBe(1);
+    const text = res.chunks.map((c) => c.content).join("\n");
+    expect(text).toContain("Here is the story.");
+    expect(text).toContain("From the 2024 summit we learned"); // prose line preserved in-body
+    expect(text).toContain("That concludes the recap.");
+  });
+
   it("keeps the quoted chain when stripQuotes is off", async () => {
     const p = write(
       "reply2.eml",

@@ -182,7 +182,11 @@ export class EmailReader extends FileReader {
 
   /** Split an mbox into RFC822 message blocks on `From ` envelope lines. */
   private splitMbox(raw: string): string[] {
-    const fromLine = /^From .+\b(?:19|20)\d{2}\b/;
+    // RFC4155 envelope: `From <addr> <Day> <Mon> <dd> <hh:mm:ss> <yyyy>`.
+    // Tightened from `^From .+<year>` so prose lines beginning "From … <year>"
+    // (e.g. "From the 2024 summit we learned…") don't split mid-body (WS-49).
+    const fromLine =
+      /^From \S+ (?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) [ \d]\d \d{2}:\d{2}:\d{2} (?:19|20)\d{2}\b/;
     const blocks: string[] = [];
     let cur: string[] = [];
     for (const line of raw.split(/\r?\n/)) {
@@ -211,14 +215,20 @@ export class EmailReader extends FileReader {
    * leading-`>` lines. Not a full reply parser — keeps each message's own prose.
    */
   private stripQuotedReplies(body: string): string {
-    const onWrote = /^\s*On\b.*\bwrote:\s*$/i;
-    const origMsg = /^\s*-{2,}\s*Original Message\s*-{2,}/i;
-    const out: string[] = [];
-    for (const line of body.split(/\r?\n/)) {
-      if (onWrote.test(line) || origMsg.test(line)) break;
-      out.push(line);
-    }
-    return out.filter((l) => !/^\s*>/.test(l)).join("\n");
+    // Non-anchored, multiline "On … wrote:" so an attribution WRAPPED across two
+    // lines (the address pushes "wrote:" onto the next line) still matches (WS-48).
+    const onWrote = /^[ \t]*On\b[\s\S]*?\bwrote:[ \t]*$/im;
+    const origMsg = /^[ \t]*-{2,}\s*Original Message\s*-{2,}/im;
+    let cut = body.length;
+    const ow = onWrote.exec(body);
+    if (ow) cut = Math.min(cut, ow.index);
+    const om = origMsg.exec(body);
+    if (om) cut = Math.min(cut, om.index);
+    const head = body.slice(0, cut);
+    return head
+      .split(/\r?\n/)
+      .filter((l) => !/^\s*>/.test(l))
+      .join("\n");
   }
 
   private async plainFallback(raw: string): Promise<FileReadResult> {
