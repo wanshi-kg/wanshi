@@ -4,7 +4,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { Logger } from "../../shared";
 import { parseJsonLenient } from "../../shared/utils";
 import { ILLMProvider, LLMOptions, LLMMessage, LLMUsage } from "../../types/ILLMProvider";
-import { meter } from "../cost";
+import { meter, CHARS_PER_TOKEN } from "../cost";
 
 /**
  * LLM provider for any OpenAI-compatible chat-completions endpoint
@@ -227,7 +227,25 @@ export class OpenAICompatibleService implements ILLMProvider {
           total_tokens: completion.usage.total_tokens,
         })}`
       );
+      return;
     }
+
+    // WS-60: some OpenAI-compatible endpoints omit the usage block. Rather than
+    // silently leaving the call unmetered ($0), estimate completion tokens from
+    // the response length so meter.record still fires (the invariant: every
+    // generation is metered). Prompt tokens are unknown here, so only the
+    // completion side is estimated — approximate, but better than silence.
+    const responseContent = completion.choices?.[0]?.message?.content ?? "";
+    const completionTokens = Math.ceil(responseContent.length / CHARS_PER_TOKEN);
+    this.lastUsage = {
+      promptTokens: 0,
+      completionTokens,
+      totalTokens: completionTokens,
+    };
+    if (meter.enabled) meter.record(this.options.model, this.lastUsage);
+    this.logger.debug(
+      `LLM stats: no usage block returned; estimated ${completionTokens} completion tokens from response length.`
+    );
   }
 
   getLastUsage(): LLMUsage | undefined {
