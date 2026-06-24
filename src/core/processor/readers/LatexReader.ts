@@ -120,6 +120,12 @@ export class LatexReader extends FileReader {
       ""
     );
 
+    // 7b. strip remaining \begin{env}/\end{env} wrappers for ALL environments
+    // (the noise envs were dropped wholesale in step 4; surviving structural ones
+    // like itemize/abstract/enumerate/quote keep their CONTENT but the wrappers
+    // must go, else step 8 unwraps \begin{itemize} → the orphan token "itemize").
+    s = s.replace(/\\(?:begin|end)\s*\{[^}]*\}(?:\[[^\]]*\])?/g, "");
+
     // 8. unwrap remaining single-arg commands (two passes for light nesting)
     for (let i = 0; i < 2; i++) {
       s = s.replace(/\\[a-zA-Z@]+\*?\s*\{([^{}]*)\}/g, "$1");

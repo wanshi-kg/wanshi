@@ -69,6 +69,38 @@ describe("LatexReader", () => {
     expect((res.metadata as any)?.references).toBeUndefined();
   });
 
+  it("WS-27: de-TeX does not leak environment names (itemize/abstract/enumerate) as orphan tokens", async () => {
+    const tex = [
+      "\\begin{document}",
+      "\\begin{abstract}",
+      "This is the abstract content.",
+      "\\end{abstract}",
+      "\\section{Body}",
+      "\\begin{itemize}",
+      "\\item First point about owls.",
+      "\\item Second point about strays.",
+      "\\end{itemize}",
+      "\\begin{enumerate}",
+      "\\item Ordered one.",
+      "\\end{enumerate}",
+      "\\end{document}",
+    ].join("\n");
+    const res = await reader().read(write(tex));
+    const text = res.chunks.map((c) => c.content).join("\n");
+    // content survives
+    expect(text).toContain("This is the abstract content.");
+    expect(text).toContain("First point about owls.");
+    expect(text).toContain("Second point about strays.");
+    expect(text).toContain("Ordered one.");
+    // env names must NOT leak as orphan prose tokens
+    expect(text).not.toMatch(/\bitemize\b/);
+    expect(text).not.toMatch(/\benumerate\b/);
+    // the lone word "abstract" must not appear as an orphan token on its own line
+    expect(text).not.toMatch(/^\s*abstract\s*$/m);
+    expect(text).not.toContain("\\begin");
+    expect(text).not.toContain("\\end");
+  });
+
   it("claims .tex and defers other extensions", () => {
     const r = reader();
     expect(r.canRead("/x/paper.tex")).toBe(true);
