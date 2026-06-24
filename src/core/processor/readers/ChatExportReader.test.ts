@@ -62,6 +62,55 @@ describe("ChatExportReader", () => {
     expect(text).not.toContain("Media omitted");
   });
 
+  it("WS-26: continuation of a DROPPED system message does not leak into the prior turn", async () => {
+    const p = write(
+      "wa-sys-cont.txt",
+      [
+        "[15/01/2023, 14:30:45] Alice: real user message",
+        "[15/01/2023, 14:31:00] Messages and calls are end-to-end encrypted.",
+        "Tap to learn more.", // continuation of the dropped system notice
+        "[15/01/2023, 14:32:00] Bob: another real message",
+      ].join("\n")
+    );
+    const res = await reader().read(p);
+    const text = allText(res.chunks);
+    expect(text).toContain("Alice: real user message");
+    expect(text).toContain("Bob: another real message");
+    expect(text).not.toContain("end-to-end encrypted"); // system notice dropped
+    expect(text).not.toContain("Tap to learn more"); // its continuation swallowed, NOT leaked into Alice's turn
+  });
+
+  it("WS-26: continuation IS appended when the system message is kept (skipSystem off)", async () => {
+    const p = write(
+      "wa-sys-keep.txt",
+      [
+        "[15/01/2023, 14:31:00] Messages and calls are end-to-end encrypted.",
+        "Tap to learn more.",
+      ].join("\n")
+    );
+    const res = await reader({ maxMessages: 50000, skipSystem: false }).read(p);
+    const text = allText(res.chunks);
+    expect(text).toContain("end-to-end encrypted");
+    expect(text).toContain("Tap to learn more"); // continuation joins the kept system turn
+  });
+
+  it("WS-50: Slack labeled mentions <@U…|name> and <!here>/<!channel> are resolved, not leaked raw", async () => {
+    const p = write(
+      "general/2023-02-01.json",
+      JSON.stringify([
+        { type: "message", user: "U1", text: "hey <@U2|bob> and <!here> and <!channel>", ts: "1675238400.000100" },
+      ])
+    );
+    const res = await reader().read(p);
+    const text = allText(res.chunks);
+    expect(text).toContain("@bob"); // labeled mention → label
+    expect(text).toContain("@here"); // special mention resolved
+    expect(text).toContain("@channel");
+    expect(text).not.toContain("<@U2|bob>"); // raw syntax gone
+    expect(text).not.toContain("<!here>");
+    expect(text).not.toContain("<!channel>");
+  });
+
   it("Telegram — text_entities flattened, date_unixtime→ISO, service msg skipped", async () => {
     const p = write(
       "result.json",

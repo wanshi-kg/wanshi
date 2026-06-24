@@ -157,6 +157,9 @@ export class ChatExportReader extends FileReader {
 
   private parseWhatsApp(raw: string): Turn[] {
     const turns: Turn[] = [];
+    // True after a timestamped system message was *dropped* (skipSystem), so its
+    // continuation lines are swallowed instead of leaking into the previous real turn.
+    let lastWasDroppedSystem = false;
     for (const line of raw.split(/\r?\n/)) {
       const m = WA_IOS.exec(line) ?? WA_ANDROID.exec(line);
       if (m) {
@@ -164,9 +167,15 @@ export class ChatExportReader extends FileReader {
         const sm = WA_SENDER.exec(rest);
         if (sm) {
           turns.push({ speaker: sm[1].trim(), text: sm[2], occurredAt: this.waDate(date, time), conversation: 0 });
+          lastWasDroppedSystem = false;
         } else if (!this.skipSystem) {
           turns.push({ speaker: "system", text: rest, occurredAt: this.waDate(date, time), conversation: 0 });
+          lastWasDroppedSystem = false;
+        } else {
+          lastWasDroppedSystem = true; // dropped a system message; swallow its continuations
         }
+      } else if (lastWasDroppedSystem) {
+        continue; // continuation of a dropped system message — do not leak into the prior turn
       } else if (turns.length > 0) {
         turns[turns.length - 1].text += "\n" + line; // continuation of the previous message
       }
@@ -282,6 +291,13 @@ export class ChatExportReader extends FileReader {
 
   private resolveSlackMentions(text: string, users: Map<string, string>): string {
     return text
+      // Labeled user mention `<@U…|name>` — prefer the export's own label, then
+      // the users.json lookup, then the bare id (must run before the bare rule).
+      .replace(/<@([A-Z0-9]+)\|([^>]+)>/g, (_, id, label) => "@" + (label || users.get(id) || id))
+      // Special mentions `<!here>` / `<!channel>` / `<!everyone>` (with or without a label).
+      .replace(/<!(here|channel|everyone)(?:\|[^>]+)?>/g, "@$1")
+      // Other `<!subteam^…|@group>` / `<!date^…|fallback>` specials — keep the label.
+      .replace(/<![^>|]+\|([^>]+)>/g, "$1")
       .replace(/<@([A-Z0-9]+)>/g, (_, id) => "@" + (users.get(id) ?? id))
       .replace(/<#[A-Z0-9]+\|([^>]+)>/g, "#$1")
       .replace(/<(https?:[^|>]+)\|([^>]+)>/g, "$2")
