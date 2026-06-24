@@ -114,4 +114,82 @@ describe("MiniCheckGroundingChecker", () => {
     expect(v.checker).toBe("keyword");
     expect(v.supported).toBe(false);
   });
+
+  // WS-43: parseVerdict must match a leading WHOLE positive token, not any
+  // digit-prefixed prose. A "1. No" answer is negative.
+  describe("parseVerdict tolerance (WS-43)", () => {
+    const reply = (response: string): MiniCheckClient => ({ async generate() { return { response }; } });
+    // A single-content-word claim with no source overlap so the pre-filter never
+    // short-circuits — the NLI reply alone decides the verdict.
+    const claim = "xenophonic";
+    const source = "completely unrelated body of prose";
+
+    it("reads `1. No` as NEGATIVE (the bug: startsWith('1') accepted it)", async () => {
+      const mc = new MiniCheckGroundingChecker(opts, stubLogger(), reply("1. No"));
+      expect((await mc.check(claim, source)).supported).toBe(false);
+    });
+    it("reads `1) Maybe` as NEGATIVE", async () => {
+      const mc = new MiniCheckGroundingChecker(opts, stubLogger(), reply("1) Maybe"));
+      expect((await mc.check(claim, source)).supported).toBe(false);
+    });
+    it("reads a bare `1` as POSITIVE", async () => {
+      const mc = new MiniCheckGroundingChecker(opts, stubLogger(), reply("1"));
+      expect((await mc.check(claim, source)).supported).toBe(true);
+    });
+    it("reads `yes` and `true` as POSITIVE", async () => {
+      expect((await new MiniCheckGroundingChecker(opts, stubLogger(), reply("yes")).check(claim, source)).supported).toBe(true);
+      expect((await new MiniCheckGroundingChecker(opts, stubLogger(), reply("true")).check(claim, source)).supported).toBe(true);
+    });
+  });
+
+  // WS-17: a hung Ollama daemon must not stall the gate — the NLI call is bounded
+  // by a timeout and degrades to the keyword fallback.
+  it("times out a hung NLI call and degrades to the keyword fallback (WS-17)", async () => {
+    const hanging: MiniCheckClient = {
+      generate: () => new Promise(() => undefined), // never resolves
+    };
+    const mc = new MiniCheckGroundingChecker({ ...opts, timeoutMs: 50 }, stubLogger(), hanging);
+    const started = Date.now();
+    const v = await mc.check("unrelated lexical tokens here", "completely different source text");
+    expect(Date.now() - started).toBeLessThan(2000); // didn't hang
+    expect(v.checker).toBe("keyword"); // degraded, not stuck
+  });
+
+  // WS-16: the keyword pre-filter must require BOTH relation endpoints present in
+  // the source before it short-circuit-accepts an edge.
+  describe("relation endpoint pre-filter (WS-16)", () => {
+    it("does NOT short-circuit-accept when an endpoint is absent (predicate-only overlap)", async () => {
+      let nliCalls = 0;
+      const sayNo: MiniCheckClient = { async generate() { nliCalls++; return { response: "No" }; } };
+      const mc = new MiniCheckGroundingChecker(opts, stubLogger(), sayNo);
+      // The verbalized claim FULLY overlaps the source (ks = 1 ≥ escalateAbove), yet the
+      // `river_gauge` endpoint's tokens never appear — the old pre-filter would accept it.
+      const source = "these measures record data values here";
+      const v = await mc.check("measures record data values here", source, ["river_gauge", "values_today"]);
+      expect(v.checker).toBe("minicheck"); // fell through to NLI, not a cheap keyword accept
+      expect(v.supported).toBe(false);
+      expect(nliCalls).toBeGreaterThan(0);
+    });
+
+    it("DOES short-circuit-accept when both endpoints are present (no NLI call)", async () => {
+      let nliCalls = 0;
+      const counting: MiniCheckClient = { async generate() { nliCalls++; return { response: "No" }; } };
+      const mc = new MiniCheckGroundingChecker(opts, stubLogger(), counting);
+      const source = "the river flows through the green valley below";
+      const v = await mc.check("river flows through valley", source, ["river", "valley"]);
+      expect(v.checker).toBe("keyword");
+      expect(v.supported).toBe(true);
+      expect(nliCalls).toBe(0);
+    });
+
+    it("observation path (no endpoints) keeps the original pre-filter behavior", async () => {
+      let nliCalls = 0;
+      const counting: MiniCheckClient = { async generate() { nliCalls++; return { response: "No" }; } };
+      const mc = new MiniCheckGroundingChecker(opts, stubLogger(), counting);
+      const v = await mc.check("embedding service batches requests", "embedding service batches requests in groups of ten");
+      expect(v.checker).toBe("keyword");
+      expect(v.supported).toBe(true);
+      expect(nliCalls).toBe(0);
+    });
+  });
 });

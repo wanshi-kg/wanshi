@@ -19,6 +19,11 @@ export interface IGroundingChecker {
    * Judge `claim` against `source`. Implementations may decompose a multi-
    * sentence claim internally (MiniCheck wants atomic claims) and may keep a
    * keyword pre-filter to avoid an NLI call on obviously-grounded claims.
+   *
+   * `endpoints` (optional) names a relation's two entity endpoints; a keyword
+   * pre-filter must require BOTH present in the source before it short-circuit-
+   * accepts (a predicate-only overlap mustn't pass an edge). Omitted for a plain
+   * observation claim, where the pre-filter behaves as before.
    */
-  check(claim: string, source: string): Promise<GroundingVerdict>;
+  check(claim: string, source: string, endpoints?: string[]): Promise<GroundingVerdict>;
 }

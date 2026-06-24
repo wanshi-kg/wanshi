@@ -642,7 +642,9 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
     const keptRel: typeof kg.relations = [];
     for (const r of kg.relations) {
       const claim = verbalizeRelation(r.from, r.relationType, r.to);
-      const v = await this.groundingChecker.check(claim, source);
+      // Pass the edge endpoints so a checker's keyword pre-filter can require both
+      // are actually present in the source (a predicate-only overlap mustn't pass).
+      const v = await this.groundingChecker.check(claim, source, [r.from, r.to]);
       const decision = v.supported ? 'accept' : drop ? 'drop' : 'flag';
       if (trace.enabled && extractionId) {
         this.traceGrounding(extractionId, 'relation', `${r.from}→${r.to}`, claim, v.score, decision,
