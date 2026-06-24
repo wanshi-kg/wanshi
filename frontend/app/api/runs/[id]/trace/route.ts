@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs"
 import { NextResponse } from "next/server"
-import { getRunOutput } from "@/server/run-registry"
-import { loadTrace, tracePathFor } from "@/server/trace-loader"
+import { getRunOutput, getRunTracePath } from "@/server/run-registry"
+import { loadTrace } from "@/server/trace-loader"
 
 export const dynamic = "force-dynamic"
 
@@ -23,7 +23,10 @@ export async function GET(
       { status: 404 }
     )
   }
-  const tracePath = tracePathFor(output)
+  // Trace sidecars are keyed off the *configured* output, which may differ in
+  // extension from the export-rewritten `summary.output` — getRunTracePath
+  // reconciles that (and honors an explicit trace.path).
+  const tracePath = getRunTracePath(id) ?? `${output}.trace.jsonl`
   if (!existsSync(tracePath)) {
     return NextResponse.json(
       { error: "No trace for this run. Re-run with `--trace` (trace.enabled) to capture one." },
