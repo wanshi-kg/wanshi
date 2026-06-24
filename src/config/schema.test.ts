@@ -192,7 +192,11 @@ describe("config schema", () => {
       "extraction",
       "grounding",
       "canonicalization",
+      "relationFilter",
     ]);
+    // relationFilter is in the default stage list (WS-14) but defaults to mode:"off",
+    // so a default run is unchanged — the transform is a no-op when off.
+    expect(c.pipeline.relationFilter.mode).toBe("off");
     // Extraction defaults to the closed vocabulary (open-predicate is opt-in).
     expect(c.pipeline.extraction.enabled).toBe(true);
     expect(c.pipeline.extraction.openPredicate).toBe(false);

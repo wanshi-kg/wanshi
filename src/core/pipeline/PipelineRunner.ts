@@ -31,7 +31,7 @@ export interface GraphTransform {
 }
 
 /** Stage tokens that resolve to post-extraction graph→graph transforms. */
-export const TRANSFORM_STAGES = ["grounding", "canonicalization"] as const;
+export const TRANSFORM_STAGES = ["grounding", "canonicalization", "relationFilter"] as const;
 
 /**
  * Runs the enabled graph→graph transforms in the order given by
@@ -53,8 +53,18 @@ export class PipelineRunner {
 
   async run(graph: KnowledgeGraph): Promise<KnowledgeGraph> {
     const byStage = new Map(this.transforms.map((t) => [t.stage, t]));
+    const stages = this.ctx.options.pipeline.stages;
+    // WS-29: an enabled transform whose stage token is absent from `pipeline.stages`
+    // would silently never run (hasWork() reports it enabled, run() never reaches it).
+    for (const t of this.transforms) {
+      if (t.isEnabled(this.ctx) && !stages.includes(t.stage)) {
+        this.ctx.logger.warn(
+          `Pipeline transform '${t.stage}' is enabled but not in pipeline.stages — it will not run; add '${t.stage}' to pipeline.stages.`
+        );
+      }
+    }
     let current = graph;
-    for (const token of this.ctx.options.pipeline.stages) {
+    for (const token of stages) {
       const transform = byStage.get(token);
       if (!transform) continue; // producer/unknown stage — not our concern here
       if (!transform.isEnabled(this.ctx)) {

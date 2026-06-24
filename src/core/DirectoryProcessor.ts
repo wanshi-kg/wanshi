@@ -792,7 +792,7 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     const transforms: GraphTransform[] = [
       new GroundingTransform(),
       new Canonicalizer(),
-      new RelationFilterTransform(), // after canon: endpoints are canonical before pairing
+      new RelationFilterTransform(), // run order is governed by pipeline.stages, not this array (relationFilter is listed after canonicalization there)
     ];
 
     const ctx: TransformContext = {

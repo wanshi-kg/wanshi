@@ -719,6 +719,7 @@ const DEFAULT_STAGES = [
   "extraction",
   "grounding",
   "canonicalization",
+  "relationFilter", // WS-14: was missing, so the registered transform never ran
 ];
 
 const StageToggleSchema = z

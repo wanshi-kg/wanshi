@@ -53,4 +53,29 @@ describe("RelationFilterTransform via PipelineRunner", () => {
     expect(out.relations).toHaveLength(1);
     expect(out.relations[0].relationType).toEqual(["pairs_with"]);
   });
+
+  it("runner.run() actually invokes the transform when listed + enabled (WS-14)", async () => {
+    // Before WS-14, "relationFilter" was missing from DEFAULT_STAGES, so the runner
+    // iterated the stage list and never reached the registered transform — even with
+    // mode:"all". With the token now in the default stages, run() prunes for real.
+    const c = ctx({ pipeline: { relationFilter: { mode: "all" } } });
+    const runner = new PipelineRunner([new RelationFilterTransform()], c);
+    expect(runner.hasWork()).toBe(true);
+    const out = await runner.run(graph);
+    expect(out.relations).toHaveLength(1);
+    expect(out.relations[0].relationType).toEqual(["pairs_with"]);
+  });
+
+  it("runner.run() warns + no-ops an enabled transform absent from pipeline.stages (WS-29)", async () => {
+    const warnings: string[] = [];
+    const c: TransformContext = {
+      options: parseConfig({ pipeline: { relationFilter: { mode: "all" }, stages: ["extraction"] } }),
+      embeddings: {} as any,
+      llm: {} as any,
+      logger: { info() {}, debug() {}, warn: (m: string) => warnings.push(m), error() {} } as any,
+    };
+    const out = await new PipelineRunner([new RelationFilterTransform()], c).run(graph);
+    expect(out.relations).toHaveLength(4); // token not in stages → never reached
+    expect(warnings.some((w) => w.includes("relationFilter") && w.includes("not in pipeline.stages"))).toBe(true);
+  });
 });
