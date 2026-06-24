@@ -66,6 +66,15 @@ export class MistralOcrReader extends FileReader {
       const usable = pages.filter((p) => p.markdown.trim());
       if (usable.length === 0) throw new Error("Mistral OCR returned no page text");
 
+      // WS-54: empty pages are silently dropped; surface that as a warning + a
+      // `pagesDropped` signal so a partial OCR isn't mistaken for a complete read.
+      const pagesDropped = pages.length - usable.length;
+      if (pagesDropped > 0) {
+        this.logger.warn(
+          `Mistral OCR dropped ${pagesDropped}/${pages.length} empty page(s) for ${filePath}`
+        );
+      }
+
       const chunks: ChunkResult[] = [];
       let offset = 0;
       usable.forEach((p, i) => {
@@ -89,6 +98,8 @@ export class MistralOcrReader extends FileReader {
           mistralModel: this.opts.model,
           mistralCached: cached,
           pageCount: usable.length,
+          totalPages: pages.length,
+          pagesDropped,
           processingTimeMs: Date.now() - startTime,
           status: "success",
         },
