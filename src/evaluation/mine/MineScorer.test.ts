@@ -88,6 +88,38 @@ describe('MineScorer', () => {
     expect(par.accuracy).toBe(seq.accuracy);
   });
 
+  it('treats an embedBatch outage as all-miss, not a thrown run (WS-42)', async () => {
+    const failing: IEmbeddingProvider = {
+      ...fakeEmbeddings,
+      embedBatch: async () => {
+        throw new Error('embedding service down');
+      },
+    };
+    const { judge, calls } = makeJudge();
+    const res = await new MineScorer(failing, judge).score('wanshi', graph, [
+      'Butterflies undergo a remarkable transformation.',
+    ]);
+    expect(res.accuracy).toBe(0); // graceful miss, like a judge failure — not an abort
+    expect(res.total).toBe(1);
+    expect(calls).toHaveLength(0); // no usable context ⇒ judge never invoked
+  });
+
+  it('treats a per-fact embed failure as a miss, scoring the rest (WS-42)', async () => {
+    const flaky: IEmbeddingProvider = {
+      ...fakeEmbeddings,
+      embed: async (t: string) =>
+        t.includes('undergo') ? Promise.reject(new Error('transient')) : bow(t),
+    };
+    const { judge } = makeJudge();
+    const res = await new MineScorer(flaky, judge, { topK: 15, concurrency: 1 }).score('wanshi', graph, [
+      'Butterflies undergo a remarkable transformation.', // embed throws ⇒ miss
+      'Caterpillars become butterflies.',                 // supported ⇒ 1
+    ]);
+    expect(res.perFact[0].evaluation).toBe(0);
+    expect(res.perFact[1].evaluation).toBe(1);
+    expect(res.accuracy).toBe(0.5);
+  });
+
   it('honors topK (fewer retrieved nodes ⇒ smaller context)', async () => {
     const { judge } = makeJudge();
     const wide = new MineScorer(fakeEmbeddings, judge, { topK: 15 });

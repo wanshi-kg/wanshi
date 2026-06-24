@@ -55,7 +55,14 @@ export class MineScorer {
 
   async score(tool: MineTool, graph: KnowledgeGraph, facts: string[]): Promise<MineGraphScore> {
     const nodes = graph.entities.map((e) => e.name).filter((n): n is string => !!n);
-    const nodeEmb = nodes.length ? await this.embeddings.embedBatch(nodes) : [];
+    let nodeEmb: number[][] = [];
+    try {
+      nodeEmb = nodes.length ? await this.embeddings.embedBatch(nodes) : [];
+    } catch {
+      nodeEmb = []; // WS-42: an embedding outage is a miss for every fact, never a thrown run (mirrors judgeFact's catch)
+    }
+    // Only retrieve when every node embedded; a partial/empty result ⇒ context '' ⇒ miss.
+    const usable = nodeEmb.length === nodes.length ? nodes : [];
     const incident = this.buildIncident(graph);
 
     // Judge facts through a bounded-concurrency pool (order preserved by index).
@@ -65,7 +72,7 @@ export class MineScorer {
     const worker = async (): Promise<void> => {
       for (let i = next++; i < facts.length; i = next++) {
         const fact = facts[i];
-        const context = nodes.length ? await this.retrieve(fact, nodes, nodeEmb, incident) : '';
+        const context = usable.length ? await this.retrieve(fact, usable, nodeEmb, incident) : '';
         const evaluation = context ? await this.judgeFact(context, fact) : 0;
         perFact[i] = { fact, context, evaluation };
       }
@@ -100,7 +107,12 @@ export class MineScorer {
     nodeEmb: number[][],
     incident: Map<string, string[]>
   ): Promise<string> {
-    const q = await this.embeddings.embed(fact);
+    let q: number[];
+    try {
+      q = await this.embeddings.embed(fact);
+    } catch {
+      return ''; // WS-42: a per-fact embedding failure is a miss, not an aborted run
+    }
     const ranked = nodes
       .map((name, i) => ({ name, sim: cosineSimilarity(q, nodeEmb[i]) }))
       .sort((a, b) => b.sim - a.sim)
