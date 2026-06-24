@@ -74,13 +74,12 @@ export interface RelationMentionRef {
 export interface ExtractionEvent {
   stage: "extract";
   type: "extraction";
-  extractionId: string; // `<chunkId>@<attempt>`
+  extractionId: string; // `<chunkId>@0` (the builder retries in-place; no per-attempt event)
   chunkId: string;
   file: string;
   chunkIndex: number;
   model: string;
   promptVersion: string;
-  attempt: number;
   checkpointHit: boolean;
   entityMentions: EntityMentionRef[];
   relationMentions: RelationMentionRef[];
@@ -113,14 +112,12 @@ export interface MergeDecisionEvent {
   /** Pre-merge mention IDs that fold into the canonical node (lineage thread). */
   foldedMentionIds?: string[];
   cosine?: number;
-  jaroWinkler?: number;
   method: string; // "string-exact" | "string-jw" | "embeddings" | "llm" | "hybrid"
   /** Final accept (merged) vs reject (kept distinct). */
   verdict: "accept" | "reject";
   /** Whether an LLM adjudicator was consulted, and what it returned (was discarded before). */
   adjudicated?: boolean;
   adjudicatorVerdict?: boolean;
-  digitVeto?: boolean;
 }
 
 export interface ExportEvent {
@@ -129,7 +126,6 @@ export interface ExportEvent {
   format: string;
   entities: number;
   relations: number;
-  droppedByGate?: number;
 }
 
 export type TraceEvent =

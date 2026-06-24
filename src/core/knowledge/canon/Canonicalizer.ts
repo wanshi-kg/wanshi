@@ -324,7 +324,7 @@ export class Canonicalizer implements GraphTransform {
         type: "merge_decision",
         mergeDecisionId: `adj:${which}:${a}␟${b}`,
         target: which,
-        canonical: verdict ? a : a,
+        canonical: a,
         surfaceForms: [a, b],
         method: "llm",
         verdict: verdict ? "accept" : "reject",

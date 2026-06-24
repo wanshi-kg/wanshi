@@ -724,7 +724,7 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
     trace.emit({
       stage: 'extract', type: 'extraction',
       extractionId: ctx.extractionId, chunkId: ctx.chunkId, file: ctx.filePath, chunkIndex: ctx.chunkIndex,
-      model: this.model, promptVersion: this.promptVersion, attempt: 0,
+      model: this.model, promptVersion: this.promptVersion,
       checkpointHit: ctx.checkpointHit, entityMentions, relationMentions,
       ...(ctx.usage ? { usage: ctx.usage } : {}),
       ...(ctx.failed ? { failed: true } : {}),
