@@ -64,7 +64,8 @@ describe("AstSeedService (Phase 8)", () => {
     const store = new AstSymbolStore(path.join(tmp, "c.json"), stubLogger());
     const content = "export function real() {}";
     // Pre-seed the cache with a SENTINEL the real parser would never produce.
-    store.set(hashContent(content), {
+    // Key form mirrors AstSeedService: `${ext}::${content}` (WS-31), ext = "ts" (tok.ts).
+    store.set(hashContent("ts::" + content), {
       schemaVersion: 1,
       symbols: [{ name: "SENTINEL", qualifiedName: "SENTINEL", kind: "function", span: { startLine: 1, endLine: 1 }, exported: true }],
       references: [],
@@ -131,6 +132,52 @@ describe("AstSeedService (Phase 8)", () => {
       expect(await svc.seedGraph(file)).toBeNull();
       expect(extract).not.toHaveBeenCalled();
       expect(store.get(hashContent(content))).toBeUndefined();
+    });
+  });
+
+  // WS-31: byte-identical files of different extensions parse under different
+  // grammars; the cache key must include the extension so a `.js` lookup can't
+  // reuse a `.ts` parse.
+  describe("ext-collision cache key (WS-31)", () => {
+    const sym = (name: string) =>
+      ({ name, qualifiedName: name, kind: "function" as const, span: { startLine: 1, endLine: 1 }, exported: true });
+
+    it("does not return a .ts parse for a byte-identical .js file (no cross-ext collision)", async () => {
+      const store = new AstSymbolStore(path.join(tmp, "c.json"), stubLogger());
+      const svc = new AstSeedService(store, stubLogger(), tmp);
+      // The SAME byte content; the mock simulates two grammars yielding distinct symbols.
+      const content = "const foo = 42;\n";
+      const extract = jest.fn(async (_c: string, ext: string) => ({
+        schemaVersion: 1 as const,
+        symbols: [sym(ext === "ts" ? "fromTS" : "fromJS")],
+        references: [],
+      }));
+      (svc as any).generator = { isSupported: () => true, extractSymbolsSafe: extract };
+
+      const tsf: ProcessedFile = { path: path.join(tmp, "same.ts"), content, chunks: [] } as any;
+      const jsf: ProcessedFile = { path: path.join(tmp, "same.js"), content, chunks: [] } as any;
+
+      const gts = (await svc.seedGraph(tsf))!;
+      const gjs = (await svc.seedGraph(jsf))!;
+
+      // Each extension parsed independently — no cache hit leaked across them.
+      expect(gts.entities.map((e) => e.name)).toContain("fromTS");
+      expect(gjs.entities.map((e) => e.name)).toContain("fromJS");
+      expect(gjs.entities.map((e) => e.name)).not.toContain("fromTS");
+      expect(extract).toHaveBeenCalledTimes(2); // both files parsed, distinct cache keys
+    });
+
+    it("still a no-op on the SAME file (same content + ext) — cache hit, one parse", async () => {
+      const store = new AstSymbolStore(path.join(tmp, "c.json"), stubLogger());
+      const svc = new AstSeedService(store, stubLogger(), tmp);
+      const content = "const foo = 42;\n";
+      const extract = jest.fn(async () => ({ schemaVersion: 1 as const, symbols: [sym("foo")], references: [] }));
+      (svc as any).generator = { isSupported: () => true, extractSymbolsSafe: extract };
+
+      const f: ProcessedFile = { path: path.join(tmp, "same.ts"), content, chunks: [] } as any;
+      await svc.seedGraph(f);
+      await svc.seedGraph(f);
+      expect(extract).toHaveBeenCalledTimes(1); // second call served from cache
     });
   });
 });
