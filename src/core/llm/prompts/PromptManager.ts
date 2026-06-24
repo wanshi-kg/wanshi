@@ -21,6 +21,14 @@ export interface PromptContext {
   contentClasses?: ClassificationResult[];
   /** Corpus-specific glossary from the pre-pass, injected as soft naming hints. */
   corpusGlossary?: CorpusGlossary;
+  /**
+   * Strict closed vocabulary (KG-05): under strict + a glossary, the Zod enum is
+   * glossary∪escape only, so the domain hints must teach *only* the glossary
+   * predicates — any domain type the strict enum throws away is dropped from the
+   * hints (else it's taught then silently coerced to `related_to`/`other`).
+   * Off (default) ⇒ hints rendering is unchanged.
+   */
+  strictVocabulary?: boolean;
 }
 
 /** Maps content class to its example partial filename */
@@ -105,7 +113,8 @@ export class PromptManager {
     description?: string,
     contentClasses?: ClassificationResult[],
     glossary?: CorpusGlossary,
-    openVocabulary?: boolean
+    openVocabulary?: boolean,
+    strictVocabulary?: boolean
   ): Promise<string> {
     if (this.customSystemPrompt) {
       return this.customSystemPrompt;
@@ -144,8 +153,17 @@ export class PromptManager {
         }
       }
 
+      // Strict closed vocabulary (KG-05): when a glossary supplies the authoritative
+      // ontology, the Zod enum is glossary∪escape only — so the domain worked-examples
+      // partial (which demonstrates domain predicates the strict enum forbids) must
+      // NOT be injected; teaching them only to have the per-field `.catch` coerce them
+      // to `related_to`/`other` is exactly the bug. Off (default) ⇒ examples unchanged.
+      const strictOntology =
+        !!strictVocabulary &&
+        (!!glossary?.entityTypes?.length || !!glossary?.relationTypes?.length);
+
       // Inject domain-specific examples if classification is available
-      const topClass = this.getTopClass(contentClasses);
+      const topClass = strictOntology ? undefined : this.getTopClass(contentClasses);
       if (topClass) {
         const domainExamples = await this.loadDomainPartial(topClass.class);
         if (domainExamples) {
@@ -200,8 +218,14 @@ export class PromptManager {
         templateContext.retrievedObservations = context.retrievedContext.observations;
       }
 
-      // Add domain hints from NER_DOMAIN_EXAMPLES if classification is available
-      const domainHints = this.buildDomainHints(context.contentClasses);
+      // Add domain hints from NER_DOMAIN_EXAMPLES if classification is available.
+      // Under strict vocabulary (KG-05) the glossary types are the authoritative
+      // ontology, so the hints are restricted to them — domain types the strict
+      // enum throws away must not be taught (else they coerce to related_to/other).
+      const domainHints = this.buildDomainHints(
+        context.contentClasses,
+        context.strictVocabulary ? context.corpusGlossary : undefined
+      );
       if (domainHints) {
         templateContext.domainHints = domainHints;
       }
@@ -263,8 +287,17 @@ export class PromptManager {
   /**
    * Builds a human-readable domain hints string from classification results.
    * Handles mixed-domain case (top-2 classes within MIXED_DOMAIN_THRESHOLD).
+   *
+   * `strictGlossary` (KG-05): when supplied (strict vocabulary on + a glossary),
+   * the prioritized entity/relation type lines are intersected with the glossary's
+   * types — under strict the Zod enum is glossary∪escape only, so a domain type
+   * not in the glossary must not be taught (the per-field `.catch` would otherwise
+   * silently coerce it to `related_to`/`other`). Absent ⇒ unchanged hints.
    */
-  private buildDomainHints(contentClasses?: ClassificationResult[]): string | undefined {
+  private buildDomainHints(
+    contentClasses?: ClassificationResult[],
+    strictGlossary?: CorpusGlossary
+  ): string | undefined {
     // Class selection + vocabulary come from the shared single source so the
     // hints can never diverge from the Zod enum (KG-05).
     const activeClasses = activeDomainClasses(contentClasses);
@@ -282,8 +315,16 @@ export class PromptManager {
     }
 
     const { entityTypes, relationTypes } = domainVocabulary(contentClasses);
-    const uniqueEntityTypes = Array.from(new Set(entityTypes));
-    const uniqueRelationTypes = Array.from(new Set(relationTypes));
+    let uniqueEntityTypes = Array.from(new Set(entityTypes));
+    let uniqueRelationTypes = Array.from(new Set(relationTypes));
+
+    // Strict: keep only the domain types the strict enum actually allows.
+    if (strictGlossary) {
+      const allowedEntity = new Set(strictGlossary.entityTypes ?? []);
+      const allowedRelation = new Set(strictGlossary.relationTypes ?? []);
+      uniqueEntityTypes = uniqueEntityTypes.filter((t) => allowedEntity.has(t));
+      uniqueRelationTypes = uniqueRelationTypes.filter((t) => allowedRelation.has(t));
+    }
 
     if (uniqueEntityTypes.length > 0) {
       lines.push(`Prioritize these entity types: ${uniqueEntityTypes.join(', ')}`);

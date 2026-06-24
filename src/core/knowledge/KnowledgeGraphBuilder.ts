@@ -784,7 +784,8 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
       totalChunks,
       retrievedContext,
       contentClasses,
-      corpusGlossary: glossary
+      corpusGlossary: glossary,
+      strictVocabulary: this.strictVocabulary
     });
 
     return this.generateKnowledgeGraph(
@@ -818,7 +819,8 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
       chunkContent: content,
       retrievedContext,
       contentClasses,
-      corpusGlossary: glossary
+      corpusGlossary: glossary,
+      strictVocabulary: this.strictVocabulary
     });
 
     return this.generateKnowledgeGraph(
