@@ -69,4 +69,57 @@ describe("TraceWriter", () => {
     trace.emit({ stage: "export", type: "export", format: "json", entities: 2, relations: 2 });
     expect(readRecords()[0].seq).toBe(0);
   });
+
+  // WS-61: a fresh (non-resumed) configure must truncate a stale sidecar so a
+  // re-run doesn't leave duplicate events from the prior run (seq restarts per
+  // run, so they'd be indistinguishable). A resumed run keeps & appends.
+  it("truncates a stale sidecar on a fresh (non-resumed) configure", () => {
+    trace.configure({ enabled: true, path: out, runId: "r1" });
+    trace.emit({ stage: "export", type: "export", format: "json", entities: 1, relations: 1 });
+    expect(readRecords()).toHaveLength(1);
+
+    // fresh run at the SAME path — prior event must be gone, not appended to.
+    trace.configure({ enabled: true, path: out, runId: "r2", resumed: false });
+    trace.emit({ stage: "export", type: "export", format: "json", entities: 2, relations: 2 });
+    const recs = readRecords();
+    expect(recs).toHaveLength(1);
+    expect(recs[0].runId).toBe("r2");
+    expect((recs[0] as any).entities).toBe(2);
+  });
+
+  it("appends (does NOT truncate) on a resumed configure", () => {
+    trace.configure({ enabled: true, path: out, runId: "r1" });
+    trace.emit({ stage: "export", type: "export", format: "json", entities: 1, relations: 1 });
+
+    // resumed run at the SAME path — prior events are intentionally preserved.
+    trace.configure({ enabled: true, path: out, runId: "r2", resumed: true });
+    trace.emit({ stage: "export", type: "export", format: "json", entities: 2, relations: 2 });
+    const recs = readRecords();
+    expect(recs).toHaveLength(2);
+    expect(recs.map((r) => r.runId)).toEqual(["r1", "r2"]);
+  });
+
+  it("does not create a file on configure alone (only the truncate runs lazily-safe)", () => {
+    // Truncating ensures a clean start; no events ⇒ the file is empty but present.
+    trace.configure({ enabled: true, path: out, runId: "r1", resumed: false });
+    expect(fs.existsSync(out)).toBe(true);
+    expect(fs.readFileSync(out, "utf-8")).toBe("");
+  });
+
+  // WS-62: vestigial fields dropped from the event taxonomy. The extraction
+  // event no longer carries `attempt` and the export event no longer carries
+  // `droppedByGate` (both were always-0 / never-set).
+  it("extraction + export events carry no vestigial fields", () => {
+    trace.configure({ enabled: true, path: out, runId: "r1" });
+    trace.emit({
+      stage: "extract", type: "extraction",
+      extractionId: "f.txt#0@0", chunkId: "f.txt#0", file: "f.txt", chunkIndex: 0,
+      model: "m", promptVersion: "v5", checkpointHit: false,
+      entityMentions: [], relationMentions: [],
+    });
+    trace.emit({ stage: "export", type: "export", format: "json", entities: 1, relations: 0 });
+    const [ext, exp] = readRecords() as any[];
+    expect("attempt" in ext).toBe(false);
+    expect("droppedByGate" in exp).toBe(false);
+  });
 });

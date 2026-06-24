@@ -117,6 +117,7 @@ export class ContainerFactory {
       enabled: !!traceCfg.enabled,
       path: traceCfg.path || (resolvedOutputPath ? `${resolvedOutputPath}.trace.jsonl` : undefined),
       runId,
+      resumed: !!processingOptions.resume?.enabled,
     });
 
     // Configure the run-global cost meter singleton (off by default; logger attached

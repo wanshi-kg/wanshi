@@ -7,6 +7,13 @@ export interface TraceConfig {
   enabled: boolean;
   path?: string;
   runId: string;
+  /**
+   * A resumed run continues an existing sidecar (its seq restarts, but the prior
+   * run's events are intentionally kept). A fresh run truncates any stale sidecar
+   * left from a previous run at the same path, so its events aren't double-counted
+   * by an inspector (WS-61). Defaults to false (fresh ⇒ truncate).
+   */
+  resumed?: boolean;
 }
 
 /**
@@ -40,6 +47,19 @@ export class TraceWriter {
     this.seq = 0;
     this.dirEnsured = false;
     this.lineage.reset();
+    // A fresh (non-resumed) run starts a clean sidecar — otherwise a stale trace
+    // from a prior run at the same path is appended to, duplicating extraction
+    // events (seq restarts per run, so they aren't even distinguishable by seq).
+    // Resumed runs intentionally keep the prior events and append (WS-61).
+    if (this._enabled && this.outputPath && !config.resumed) {
+      try {
+        fs.mkdirSync(path.dirname(this.outputPath), { recursive: true });
+        fs.writeFileSync(this.outputPath, "");
+        this.dirEnsured = true;
+      } catch {
+        // Best-effort — a truncate failure must not take down the run.
+      }
+    }
   }
 
   emit(event: TraceEvent): void {
