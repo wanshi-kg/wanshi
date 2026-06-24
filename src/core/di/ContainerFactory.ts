@@ -802,6 +802,9 @@ export class ContainerFactory {
           // Free-vocabulary extraction (canonicalization-tax measurement): drops the
           // closed entity/relation enum so the model emits any predicate/type.
           openPredicate: options.pipeline.extraction.openPredicate,
+          // Strict closed vocabulary: a supplied glossary REPLACES (not augments) the
+          // base/domain vocab — feed a known ontology as the authoritative schema.
+          strictVocabulary: options.pipeline.extraction.strictVocabulary,
         },
         logger
       );

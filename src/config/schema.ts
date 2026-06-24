@@ -724,6 +724,12 @@ const ExtractionStageSchema = z
       .describe(
         "Free-vocabulary extraction: emit any predicate/entity type (no closed enum, no related_to/other coercion). Lifts recall, costs merge hygiene. Default closed."
       ),
+    strictVocabulary: z
+      .boolean()
+      .default(false)
+      .describe(
+        "Strict closed vocabulary: when a glossary supplies entity/relation types, the enum is EXACTLY those (+escape) — the base/domain sets are NOT unioned in. For feeding a known ontology as the authoritative schema. Ignored under openPredicate. Default off (augment base)."
+      ),
   })
   .strict();
 

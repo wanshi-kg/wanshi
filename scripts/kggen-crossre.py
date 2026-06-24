@@ -109,8 +109,14 @@ def main() -> None:
     # Lazy import so --help / arg errors don't require the package installed.
     from kg_gen import KGGen
     model = args.model if args.model.startswith(args.model_prefix) else f"{args.model_prefix}{args.model}"
-    kg = KGGen(model=model, api_key=api_key, temperature=args.temperature)
-    print(f"[kggen-crossre] model={model} temp={args.temperature}", flush=True)
+    # kg-gen hard-requires temperature 1.0 for the gpt-5 family (and the reasoning
+    # models ignore <1.0 anyway). Force it so a temp-0 default doesn't abort the run.
+    temperature = args.temperature
+    if "gpt-5" in model and temperature != 1.0:
+        print(f"[kggen-crossre] gpt-5 family requires temperature=1.0 — overriding {temperature}", flush=True)
+        temperature = 1.0
+    kg = KGGen(model=model, api_key=api_key, temperature=temperature)
+    print(f"[kggen-crossre] model={model} temp={temperature}", flush=True)
 
     todo = [s for s in samples if s["id"] not in done]
     ok = fail = 0

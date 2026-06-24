@@ -25,48 +25,67 @@ async function fetchPage(split: string, offset: number): Promise<RowsResponse> {
   const url =
     `https://datasets-server.huggingface.co/rows?dataset=${encodeURIComponent(DATASET)}` +
     `&config=default&split=${split}&offset=${offset}&length=${PAGE}`;
-  for (let attempt = 1; attempt <= 4; attempt++) {
-    const res = await fetch(url);
-    if (res.ok) return (await res.json()) as RowsResponse;
-    if (res.status === 429 || res.status >= 500) {
-      await new Promise((r) => setTimeout(r, attempt * 1000));
-      continue;
+  // The HF datasets-server rate-limits a long page sweep, so back off generously
+  // (exponential, capped) and tolerate transient network errors, not just HTTP codes.
+  for (let attempt = 1; attempt <= 8; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return (await res.json()) as RowsResponse;
+      if (res.status === 429 || res.status >= 500) {
+        await new Promise((r) => setTimeout(r, Math.min(30000, 1000 * 2 ** (attempt - 1))));
+        continue;
+      }
+      throw new Error(`HF rows API ${res.status} for ${split}@${offset}: ${await res.text()}`);
+    } catch (err) {
+      if (attempt === 8) throw err;
+      await new Promise((r) => setTimeout(r, Math.min(30000, 1000 * 2 ** (attempt - 1))));
     }
-    throw new Error(`HF rows API ${res.status} for ${split}@${offset}: ${await res.text()}`);
   }
   throw new Error(`HF rows API kept failing for ${split}@${offset}`);
 }
 
-async function fetchSplit(split: string): Promise<void> {
+async function fetchSplit(split: string, max: number): Promise<void> {
   const outPath = path.join(OUT_DIR, `${split}.jsonl`);
-  const lines: string[] = [];
+  // Resume: count rows already on disk and skip past them (append-only), so a
+  // rate-limit interruption mid-sweep doesn't throw away progress — re-run continues.
   let offset = 0;
+  if (fs.existsSync(outPath)) {
+    offset = fs.readFileSync(outPath, 'utf-8').split('\n').filter((l) => l.trim()).length;
+    if (offset) console.log(`  ${split}: resuming from ${offset} rows already on disk`);
+  }
   let total = Infinity;
 
-  while (offset < total) {
+  while (offset < total && offset < max) {
     const page = await fetchPage(split, offset);
     total = page.num_rows_total;
     if (page.rows.length === 0) break;
+    const batch: string[] = [];
     for (const { row } of page.rows) {
       // Resolve the ClassLabel integer to its canonical string for a readable,
       // self-contained JSONL (the loader also tolerates the raw integer).
       const relation =
         typeof row.relation === 'number' ? SEMEVAL_LABELS[row.relation] ?? row.relation : row.relation;
-      lines.push(JSON.stringify({ sentence: row.sentence, relation }));
+      batch.push(JSON.stringify({ sentence: row.sentence, relation }));
     }
+    fs.appendFileSync(outPath, batch.join('\n') + '\n');  // incremental → resumable
     offset += page.rows.length;
-    process.stdout.write(`\r  ${split}: ${offset}/${total}`);
+    process.stdout.write(`\r  ${split}: ${offset}/${Math.min(total, max)}`);
   }
   process.stdout.write('\n');
-  fs.writeFileSync(outPath, lines.join('\n') + '\n');
-  console.log(`  → wrote ${lines.length} rows to ${outPath}`);
+  console.log(`  → ${outPath} now holds ${Math.min(offset, max)} rows`);
 }
 
 async function main(): Promise<void> {
   fs.mkdirSync(OUT_DIR, { recursive: true });
-  console.log(`Fetching ${DATASET} …`);
-  for (const split of ['train', 'test']) {
-    await fetchSplit(split);
+  // Args: `--split test` (default both), `--limit N` (per-split cap; 0 = all).
+  const argv = process.argv.slice(2);
+  const splitArg = argv.includes('--split') ? argv[argv.indexOf('--split') + 1] : undefined;
+  const limitArg = argv.includes('--limit') ? parseInt(argv[argv.indexOf('--limit') + 1], 10) : 0;
+  const splits = splitArg ? [splitArg] : ['train', 'test'];
+  const max = limitArg > 0 ? limitArg : Infinity;
+  console.log(`Fetching ${DATASET} … splits=[${splits.join(', ')}]${limitArg ? ` limit=${limitArg}` : ''}`);
+  for (const split of splits) {
+    await fetchSplit(split, max);
   }
   console.log('Done.');
 }

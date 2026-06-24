@@ -6,7 +6,7 @@ import { PromptManager, PromptContext } from '../llm/prompts/PromptManager';
 import { ProcessedFile, KnowledgeGraph, ProcessedImage, IKnowledgeGraphBuilder, ClassificationResult, IProgressEmitter, ChunkProvenance, Observation, obsText, normalizeObservations, GroundingMode, CorpusGlossary, FailedChunk, GroundingRejection, IGroundingChecker } from '../../types';
 import { CheckpointService } from '../checkpoint';
 import { NoopProgressEmitter } from '../progress';
-import { allowedEntityTypes, allowedRelationTypes } from './vocabulary';
+import { allowedEntityTypes, allowedRelationTypes, ENTITY_TYPE_ESCAPE, RELATION_TYPE_ESCAPE } from './vocabulary';
 import { KeywordGroundingChecker, verbalizeRelation } from './grounding';
 import { Logger, shutdown } from '../../shared';
 import { trace, LineageRegistry } from '../trace';
@@ -130,6 +130,11 @@ export interface BuilderOptions {
   // the model emits any predicate/type (no `related_to`/`other` coercion). The
   // canonicalization-tax measurement. Wired from `pipeline.extraction.openPredicate`.
   openPredicate?: boolean;
+  // Strict closed vocabulary: a supplied glossary's entity/relation types REPLACE the
+  // base/domain sets (enum = glossary ∪ escape only), instead of unioning with them.
+  // For feeding a known ontology as the authoritative schema. Wired from
+  // `pipeline.extraction.strictVocabulary`. Ignored when openPredicate is on.
+  strictVocabulary?: boolean;
 }
 
 /**
@@ -147,6 +152,7 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
   private progress: IProgressEmitter;
   private grounding: GroundingMode;
   private openPredicate: boolean;
+  private strictVocabulary: boolean;
   private groundingMinScore: number;
   private groundingChecker: IGroundingChecker;
   private groundingSignature: string;
@@ -173,6 +179,7 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
     this.groundingSignature = options.groundingSignature ?? '';
     this.attachSourceSpans = options.attachSourceSpans ?? false;
     this.openPredicate = options.openPredicate ?? false;
+    this.strictVocabulary = options.strictVocabulary ?? false;
   }
 
   /** Chunks whose extraction failed this run (empty when all succeeded). */
@@ -498,6 +505,10 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
   ): string[] | undefined {
     // Open-predicate: no enum at all → buildGraphSchema falls to free `z.string()`.
     if (this.openPredicate) return undefined;
+    // Strict: a supplied glossary REPLACES the base/domain sets (exact ontology).
+    if (this.strictVocabulary && glossary?.entityTypes?.length) {
+      return Array.from(new Set([...glossary.entityTypes, ENTITY_TYPE_ESCAPE]));
+    }
     return allowedEntityTypes(contentClasses, glossary?.entityTypes ?? []);
   }
 
@@ -514,6 +525,10 @@ export class KnowledgeGraphBuilder implements IKnowledgeGraphBuilder {
   ): string[] | undefined {
     // Open-predicate: no enum at all → buildGraphSchema falls to free `z.string()`.
     if (this.openPredicate) return undefined;
+    // Strict: a supplied glossary REPLACES the base/domain sets (exact ontology).
+    if (this.strictVocabulary && glossary?.relationTypes?.length) {
+      return Array.from(new Set([...glossary.relationTypes, RELATION_TYPE_ESCAPE]));
+    }
     return allowedRelationTypes(contentClasses, glossary?.relationTypes ?? []);
   }
 

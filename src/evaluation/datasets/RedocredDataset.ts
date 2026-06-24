@@ -66,6 +66,7 @@ const WIKIDATA_PROP_LABELS: Record<string, string> = {
   P176:  'manufacturer',
   P178:  'developer',
   P179:  'series',
+  P190:  'twinned administrative body',
   P194:  'legislative body',
   P205:  'basin country',
   P206:  'located next to body of water',

@@ -1,0 +1,50 @@
+name: Publish to npm
+
+# Manual trigger. Defaults to a dry run so the first dispatch validates the
+# pipeline + token without actually publishing. Flip `dry_run` to false to
+# publish for real. Uses the NPM_TOKEN repo secret as NODE_AUTH_TOKEN.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (build/test/pack, but do NOT publish)"
+        type: boolean
+        default: true
+      tag:
+        description: "npm dist-tag (latest, next, beta, ...)"
+        type: string
+        default: latest
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Publish (dry run)
+        if: ${{ inputs.dry_run }}
+        run: npm publish --dry-run --access public --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish
+        if: ${{ !inputs.dry_run }}
+        run: npm publish --access public --tag ${{ inputs.tag }} --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

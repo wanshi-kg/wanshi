@@ -18,7 +18,7 @@
 | Schema validation | Zod + `zod-to-json-schema` |
 | Text splitting | `@langchain/textsplitters` `RecursiveCharacterTextSplitter` |
 | Prompt templating | Handlebars |
-| Embeddings | Ollama embeddings API or OpenAI-compatible (default: local `mxbai-embed-large:335m`) |
+| Embeddings | Ollama embeddings API or OpenAI-compatible (default: local `nomic-embed-text`) |
 | Logging | `tslog` via `LoggerFactory` |
 | Testing | Jest + ts-jest (active unit/integration suite, network-free via mocked `ILLMProvider`) |
 
@@ -635,7 +635,7 @@ llm:
 # Embeddings stay local & free (default), so dedup/merge costs nothing
 embeddings:
   provider: ollama
-  model: mxbai-embed-large:335m
+  model: nomic-embed-text
 
 resume:
   enabled: true   # writes <output>.checkpoint.jsonl; re-run the same command to continue

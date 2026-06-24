@@ -1,7 +1,7 @@
-import { default as DocumentOutline, formatOutline } from "document-outline-gen";
+import { default as DocumentOutline, formatOutline } from "@wanshi-kg/outlion";
 
 /**
- * Subset of document-outline-gen's GeneratorOptions we expose via config, plus
+ * Subset of @wanshi-kg/outlion's GeneratorOptions we expose via config, plus
  * the ascii-tree `compact` formatter toggle.
  */
 export interface OutlineGeneratorOptions {

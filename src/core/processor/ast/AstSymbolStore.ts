@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { SYMBOL_SCHEMA_VERSION } from "document-outline-gen";
+import { SYMBOL_SCHEMA_VERSION } from "@wanshi-kg/outlion";
 import { Logger } from "../../../shared";
 import { SymbolTable } from "../../../shared/utils/astSymbols";
 

@@ -123,6 +123,47 @@ describe("KnowledgeGraphBuilder", () => {
     );
   });
 
+  it("strictVocabulary REPLACES the base/domain sets with EXACTLY the glossary (+escape)", async () => {
+    // H4 seam: feed a known ontology as the authoritative schema. Default (augment)
+    // unions base in; strict must NOT, else base predicates ('uses','produces') leak
+    // and a typed-relation benchmark scores them as wrong → the test looks like failure.
+    let capturedSchema: any;
+    const promptManager = {
+      getUserPrompt: async () => "u",
+      getSystemPrompt: async () => "s",
+    } as any;
+    const llmService = {
+      generateStructured: async (_m: any, schema: any) => {
+        capturedSchema = schema;
+        return { entities: [], relations: [] };
+      },
+      getModelCapabilities: async () => [],
+    } as any;
+    const builder = new KnowledgeGraphBuilder(
+      { llmService, promptManager, model: "m", strictVocabulary: true },
+      stubLogger()
+    );
+
+    const processedFile = {
+      path: "f.txt",
+      content: "x",
+      chunks: [{ content: "c", index: 1, totalChunks: 1, startOffset: 0, endOffset: 1 }],
+    } as any;
+    const glossary = { entityNames: [], entityTypes: ["gene"], relationTypes: ["cause-effect", "usage"] };
+
+    await builder.build(processedFile, "s", undefined, glossary as any);
+
+    // relation enum = EXACTLY the glossary predicates + escape — base excluded.
+    const relationType = capturedSchema.shape.relations.element.shape.relationType._def.schema;
+    const rels = enumOptions(relationType.element)!;
+    expect(new Set(rels)).toEqual(new Set(["cause-effect", "usage", "related_to"]));
+    expect(rels).not.toContain("uses");
+    expect(rels).not.toContain("produces");
+    // entity enum = EXACTLY the glossary types + escape.
+    const ents = enumOptions(capturedSchema.shape.entities.element.shape.entityType)!;
+    expect(new Set(ents)).toEqual(new Set(["gene", "other"]));
+  });
+
   it("unions corpus-glossary entity types into the enum and injects the glossary", async () => {
     let capturedSchema: any;
     const capturedCtx: any[] = [];
