@@ -26,7 +26,7 @@ interface NavItem {
 
 /**
  * One app, modes (the brief). The shared explorer + inspector underlie Explore
- * and Debug; Review/Timeline are parked stubs. Chrome is deliberately plain —
+ * and Debug; Review is a parked stub. Chrome is deliberately plain —
  * Sable's "tactical instrument" aesthetic converges here later.
  */
 const NAV_GROUPS: { mode: string; items: NavItem[] }[] = [
@@ -36,7 +36,7 @@ const NAV_GROUPS: { mode: string; items: NavItem[] }[] = [
       { to: "/", icon: LayoutDashboard, label: "Dashboard" },
       { to: "/graph", icon: Network, label: "Graph" },
       { to: "/results", icon: Share2, label: "Results" },
-      { to: "/timeline", icon: History, label: "Timeline", soon: true },
+      { to: "/timeline", icon: History, label: "Timeline" },
     ],
   },
   {
