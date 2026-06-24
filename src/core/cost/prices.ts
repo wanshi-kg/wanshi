@@ -23,10 +23,15 @@ export const DEFAULT_PRICES: Record<string, ModelPrice> = {
   "gpt-4.1-mini": { in: 0.4, out: 1.6 },
   "gpt-4.1": { in: 2, out: 8 },
   "o4-mini": { in: 1.1, out: 4.4 },
-  // Anthropic
+  // Anthropic. OpenRouter and Anthropic's own ids use DOTTED minor versions
+  // (`claude-3.5-sonnet`); the hyphenated keys don't substring-match those, so
+  // both spellings are listed (WS-22).
   "claude-3-5-haiku": { in: 0.8, out: 4 },
+  "claude-3.5-haiku": { in: 0.8, out: 4 },
   "claude-3-5-sonnet": { in: 3, out: 15 },
+  "claude-3.5-sonnet": { in: 3, out: 15 },
   "claude-3-7-sonnet": { in: 3, out: 15 },
+  "claude-3.7-sonnet": { in: 3, out: 15 },
   "claude-3-opus": { in: 15, out: 75 },
   // Google (Gemini, incl. OpenRouter ids like `google/gemini-1.5-pro`)
   "gemini-1.5-flash": { in: 0.075, out: 0.3 },
