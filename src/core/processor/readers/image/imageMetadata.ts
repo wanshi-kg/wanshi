@@ -148,10 +148,28 @@ function parseC2pa(json: any): C2paMetadata {
   const sigInfo = (m as any)?.signature_info ?? {};
   const signer = typeof sigInfo.issuer === "string" ? sigInfo.issuer : typeof sigInfo.common_name === "string" ? sigInfo.common_name : undefined;
   const vstatus: any[] = Array.isArray(json?.validation_status) ? json.validation_status : [];
-  const valid = vstatus.every((v) => !/error|invalid|fail/i.test(String(v?.code ?? "")));
+  const valid = isC2paValid(json, vstatus);
   // C2PA's AI-generation indicator (digitalSourceType …trainedAlgorithmicMedia).
   const aiGenerated = /trainedAlgorithmicMedia/i.test(JSON.stringify(json));
   return { present: true, valid, signer, aiGenerated };
+}
+
+/**
+ * Decide C2PA validity FAIL-CLOSED. The old check passed whenever no status `code`
+ * contained the substrings `error`/`invalid`/`fail` — but the real C2PA failure codes
+ * (`signingCredential.untrusted`, `assertion.dataHash.mismatch`, `timeStamp.mismatch`,
+ * …) contain NONE of those, so a tampered manifest read as valid. We now use explicit
+ * signals: the report's own `validation_state` (c2patool ≥0.9: `Trusted`/`Valid` vs
+ * `Invalid`) when present; otherwise treat a `validation_status` array — which by
+ * convention lists only FAILURES — as invalid if it has any entry that isn't an
+ * explicit `success: true` (covers both the `success` boolean and code-only entries).
+ */
+function isC2paValid(json: any, vstatus: any[]): boolean {
+  const state = typeof json?.validation_state === "string" ? json.validation_state.toLowerCase() : undefined;
+  if (state) return state === "trusted" || state === "valid";
+  if (vstatus.length === 0) return true; // no reported problems
+  // Any entry that is not explicitly a success marker is a failure (fail-closed).
+  return vstatus.every((v) => v?.success === true);
 }
 
 /** Spawn a CLI with captured output + timeout; rejects on launch error (ENOENT). */
