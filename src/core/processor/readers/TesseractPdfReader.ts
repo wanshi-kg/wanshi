@@ -116,7 +116,17 @@ export class TesseractPdfReader extends FileReader {
       this.logger.warn(
         `Tesseract OCR engine failed for ${filePath} (${error.message}); falling back to pdf2json`
       );
-      return this.fallback.read(filePath);
+      // Stamp the fallback's adapterId so per-engine provenance reflects what
+      // actually produced the text (pdf2json), not this engine (WS-11).
+      const fallbackResult = await this.fallback.read(filePath);
+      const fallbackAdapter = this.fallback.adapterId();
+      return {
+        ...fallbackResult,
+        chunks: fallbackResult.chunks.map((c) => ({
+          ...c,
+          provenance: { ...c.provenance, sourceAdapter: fallbackAdapter },
+        })),
+      };
     }
   }
 

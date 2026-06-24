@@ -25,6 +25,7 @@ describe("TesseractPdfReader", () => {
       read: jest.fn().mockResolvedValue({
         chunks: [{ content: "PDF2JSON-FALLBACK", index: 1, totalChunks: 1, startOffset: 0, endOffset: 17 }],
       }),
+      adapterId: () => "pdf:pdf2json",
     }) as unknown as FileReader & { read: jest.Mock };
 
   // Injected rasterize+OCR doubles: N fake pages, OCR text = "OCR <n>".
@@ -79,6 +80,8 @@ describe("TesseractPdfReader", () => {
     const res = await reader.read(p);
     expect(fallback.read).toHaveBeenCalledWith(p);
     expect(res.chunks[0].content).toBe("PDF2JSON-FALLBACK");
+    // Provenance must reflect what produced the text (pdf2json), not "pdf:tesseract" (WS-11).
+    expect(res.chunks[0].provenance?.sourceAdapter).toBe("pdf:pdf2json");
   });
 
   it("degrades when OCR yields no text", async () => {

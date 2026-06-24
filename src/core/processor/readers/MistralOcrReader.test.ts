@@ -32,6 +32,7 @@ const fallbackReader = (): FileReader =>
       metadata: { type: "pdf", pdfEngine: "pdf2json" },
     })),
     getName: () => "StubFallback",
+    adapterId: () => "pdf:pdf2json",
     canRead: () => true,
   } as any);
 
@@ -111,5 +112,18 @@ describe("MistralOcrReader", () => {
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("falling back to pdf2json"));
     expect((fallback as any).read).toHaveBeenCalled();
     expect(res.chunks[0].content).toBe("PDF2JSON FALLBACK");
+  });
+
+  it("stamps the fallback's adapterId on chunks when the fallback fires (WS-11)", async () => {
+    const fetchFn = jest.fn(async (url: string, init?: any) => {
+      if (url.endsWith("/v1/files") && init?.method === "POST") return jsonRes({ id: "file_123" });
+      if (url.includes("/url")) return jsonRes({ url: "https://signed.example/doc.pdf" });
+      if (url.endsWith("/v1/ocr")) return jsonRes({ error: "boom" }, false, 500);
+      return jsonRes({ deleted: true });
+    });
+    const res = await reader(fetchFn).read(writePdf());
+    expect((fallback as any).read).toHaveBeenCalled();
+    // Provenance must reflect what produced the text (pdf2json), not "pdf:mistral".
+    expect(res.chunks[0].provenance?.sourceAdapter).toBe("pdf:pdf2json");
   });
 });

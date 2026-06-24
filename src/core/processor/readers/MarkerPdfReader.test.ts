@@ -41,6 +41,7 @@ const fallbackReader = (): FileReader => {
       metadata: { type: "pdf", pdfEngine: "pdf2json" },
     })),
     getName: () => "StubFallback",
+    adapterId: () => "pdf:pdf2json",
     canRead: () => true,
   };
   return r as FileReader;
@@ -110,5 +111,14 @@ describe("MarkerPdfReader", () => {
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("falling back to pdf2json"));
     expect((fallback as any).read).toHaveBeenCalledWith(pdf);
     expect(res.chunks[0].content).toBe("PDF2JSON FALLBACK");
+  });
+
+  it("stamps the fallback's adapterId on chunks when the fallback fires (WS-11)", async () => {
+    mockSpawn.mockImplementation(fakeMarker(null, 1));
+    const pdf = writePdf();
+    const res = await reader().read(pdf);
+    expect((fallback as any).read).toHaveBeenCalledWith(pdf);
+    // Provenance must reflect what produced the text (pdf2json), not "pdf:marker".
+    expect(res.chunks[0].provenance?.sourceAdapter).toBe("pdf:pdf2json");
   });
 });

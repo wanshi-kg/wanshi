@@ -24,6 +24,7 @@ describe("ChandraPdfReader", () => {
       read: jest.fn().mockResolvedValue({
         chunks: [{ content: "PDF2JSON-FALLBACK", index: 1, totalChunks: 1, startOffset: 0, endOffset: 17 }],
       }),
+      adapterId: () => "pdf:pdf2json",
     }) as unknown as FileReader & { read: jest.Mock };
 
   it("reuses a fresh <pdf>.chandra.md sidecar (no subprocess) and chunks it", async () => {
@@ -50,6 +51,8 @@ describe("ChandraPdfReader", () => {
     const res = await reader.read(p);
     expect(fallback.read).toHaveBeenCalledWith(p);
     expect(res.chunks[0].content).toBe("PDF2JSON-FALLBACK");
+    // Provenance must reflect what produced the text (pdf2json), not "pdf:chandra" (WS-11).
+    expect(res.chunks[0].provenance?.sourceAdapter).toBe("pdf:pdf2json");
   });
 
   it("claims .pdf, defers other extensions, and tags adapterId", () => {
