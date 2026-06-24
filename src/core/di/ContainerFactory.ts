@@ -383,7 +383,7 @@ export class ContainerFactory {
         case "docling":
           logger.info(`PDF engine: docling`);
           factory.registerReader(
-            new DoclingReader(undefined, undefined, undefined, "./temp", chunker, logger, [".pdf"])
+            new DoclingReader(undefined, undefined, undefined, "./temp", chunker, logger, [".pdf"], pdf2json)
           );
           break;
         case "marker": {
