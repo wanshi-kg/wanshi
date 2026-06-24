@@ -64,21 +64,29 @@ export class CascadeContentClassifier implements IContentClassifier {
       return results;
     }
 
-    this.traceEscalation(path, results, active, pick ?? null);
-
     // Honor the LLM only when it picks one of the two tied candidates — a single
     // call must not promote a class the heuristic ranked far down.
     if (!pick || !active.includes(pick)) {
       this.logger.debug(
         `Cascade tie-break pick "${pick}" not in [${active.join(", ")}]; keeping heuristic multi`
       );
+      this.traceEscalation(path, results, active, pick ?? null);
       return results;
     }
 
-    return this.collapseTie(results, active[0], active[1], pick);
+    const collapsed = this.collapseTie(results, active[0], active[1], pick);
+    this.traceEscalation(path, collapsed, active, pick);
+    return collapsed;
   }
 
-  /** Debug trace: record a cascade tie-break escalation (observe-only). */
+  /**
+   * Debug trace: record a cascade tie-break escalation (observe-only). Emitted
+   * **once** per escalated chunk, with the *post-collapse* distribution so the
+   * gate it reports matches what the run actually routed — a resolved tie reads
+   * `single`, a kept-multi (failed/rejected pick) still reads `multi`.
+   * `FileProcessor` deliberately skips its own classify event when the classifier
+   * already emitted one (this is the escalated counterpart).
+   */
   private traceEscalation(
     path: string,
     results: ClassificationResult[],
@@ -86,10 +94,12 @@ export class CascadeContentClassifier implements IContentClassifier {
     pick: ContentClass | null
   ): void {
     if (!trace.enabled) return;
+    const post = activeDomainClasses(results);
     trace.emit({
       stage: "classify", type: "classification", file: path,
       distribution: results.map((r) => ({ class: r.class, confidence: r.confidence })),
-      gate: "multi", activeClasses: active, escalated: true,
+      gate: post.length === 0 ? "abstain" : post.length === 1 ? "single" : "multi",
+      activeClasses: post, escalated: true,
       tieBreak: { tied: [active[0], active[1]], pick },
     });
   }

@@ -1,8 +1,12 @@
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { CascadeContentClassifier } from "./CascadeContentClassifier";
 import { IContentClassifier } from "./IContentTypeClassifier";
 import { ClassificationResult, ContentClass } from "../../../types";
 import { activeDomainClasses } from "../../knowledge/vocabulary";
 import { stubLogger } from "../../../__tests__/helpers";
+import { trace } from "../../trace";
 
 const dist = (entries: [ContentClass, number][]): ClassificationResult[] =>
   entries.map(([cls, confidence]) => ({ class: cls, confidence }));
@@ -125,5 +129,76 @@ describe("CascadeContentClassifier (Phase B)", () => {
     expect(llm.calls).toHaveLength(1);
     expect(activeDomainClasses(first)).toEqual(["documentation"]); // escalated
     expect(activeDomainClasses(second)).toEqual(["code", "documentation"]); // budget spent
+  });
+});
+
+// WS-38: the escalation trace must report the *post-collapse* gate (a resolved
+// tie reads `single`, not the hardcoded `multi`) and emit exactly once.
+describe("CascadeContentClassifier trace (WS-38)", () => {
+  let tmp: string;
+  let out: string;
+
+  const readEvents = () =>
+    fs
+      .readFileSync(out, "utf-8")
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "kgcascade-"));
+    out = path.join(tmp, "graph.json.trace.jsonl");
+    trace.reset();
+  });
+
+  afterEach(() => {
+    trace.reset();
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it("reports gate:single (post-collapse) and emits one classify event on a resolved tie", async () => {
+    trace.configure({ enabled: true, path: out, runId: "r-cascade" });
+    const llm = llmStub("documentation");
+    const cascade = new CascadeContentClassifier(
+      heuristicStub(TIE),
+      llm.classifier,
+      stubLogger()
+    );
+    await cascade.classify("x", "f.md");
+
+    const events = readEvents();
+    expect(events).toHaveLength(1); // not double-emitted
+    expect(events[0].type).toBe("classification");
+    expect(events[0].gate).toBe("single"); // was hardcoded "multi"
+    expect(events[0].escalated).toBe(true);
+    expect(events[0].activeClasses).toEqual(["documentation"]);
+    expect((events[0].tieBreak as { pick: string }).pick).toBe("documentation");
+  });
+
+  it("reports gate:multi when the LLM pick is outside the tied pair (kept multi)", async () => {
+    trace.configure({ enabled: true, path: out, runId: "r-cascade" });
+    const llm = llmStub("narrative"); // not in [code, documentation]
+    const cascade = new CascadeContentClassifier(
+      heuristicStub(TIE),
+      llm.classifier,
+      stubLogger()
+    );
+    await cascade.classify("x", "f.md");
+
+    const events = readEvents();
+    expect(events).toHaveLength(1);
+    expect(events[0].gate).toBe("multi"); // distribution unchanged → still multi
+    expect(events[0].activeClasses).toEqual(["code", "documentation"]);
+  });
+
+  it("emits nothing when trace is off (default byte-identical path)", async () => {
+    const llm = llmStub("documentation");
+    const cascade = new CascadeContentClassifier(
+      heuristicStub(TIE),
+      llm.classifier,
+      stubLogger()
+    );
+    await cascade.classify("x", "f.md");
+    expect(fs.existsSync(out)).toBe(false);
   });
 });
