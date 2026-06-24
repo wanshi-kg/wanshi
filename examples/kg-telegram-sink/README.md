@@ -64,7 +64,7 @@ Add the official memory server, pointed at this bot's output file, to
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-memory"],
       "env": {
-        "MEMORY_FILE_PATH": "/Volumes/2TB/repos/kg-gen/examples/kg-telegram-sink/data/output/graph.mcp-jsonl"
+        "MEMORY_FILE_PATH": "/absolute/path/to/wanshi/examples/kg-telegram-sink/data/output/graph.mcp-jsonl"
       }
     }
   }

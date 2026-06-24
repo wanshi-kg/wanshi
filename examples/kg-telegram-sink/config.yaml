@@ -88,6 +88,6 @@ merging:
 
 logging:
   level: info
-  file: /Volumes/2TB/repos/kg-gen/kg_tests/self/app.log
+  file: ./data/output/app.log
   debug: false
   silent: false
