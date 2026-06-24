@@ -16,6 +16,7 @@ import { IContentClassifier } from "../processor/classifier";
 import { LlmContentClassifier } from "../processor/classifier/LlmContentClassifier";
 import { ObjectDetectionService } from "../cv/ObjectDetectionService";
 import { configureDomainGate } from "../knowledge/vocabulary";
+import { resolveOutputPath } from "../../shared/utils";
 import { createHash } from "crypto";
 import { trace } from "../trace";
 import { meter } from "../cost";
@@ -94,6 +95,14 @@ export class ContainerFactory {
       mixedDomain: processingOptions.classifier?.mixedDomainThreshold,
     });
 
+    // Resolve the final graph path ONCE so every sidecar (trace, cost, …) hangs
+    // off the same extension-rewritten stem the export writer uses, not the raw
+    // `--output` value (KG-11 / WS-59). When output ext already matches the
+    // format this is a no-op, so a default run stays byte-identical.
+    const resolvedOutputPath = processingOptions.output
+      ? resolveOutputPath(processingOptions.output, processingOptions.export?.format ?? "")
+      : undefined;
+
     // Configure the run-global debug trace singleton (observe-only; off by default).
     // Mint a runId from time + a config digest so each run's trace is identifiable.
     const traceCfg = processingOptions.trace ?? { enabled: false };
@@ -106,7 +115,7 @@ export class ContainerFactory {
         .slice(0, 8);
     trace.configure({
       enabled: !!traceCfg.enabled,
-      path: traceCfg.path || (processingOptions.output ? `${processingOptions.output}.trace.jsonl` : undefined),
+      path: traceCfg.path || (resolvedOutputPath ? `${resolvedOutputPath}.trace.jsonl` : undefined),
       runId,
     });
 
@@ -118,7 +127,7 @@ export class ContainerFactory {
       maxCost: costCfg.maxCost,
       currency: costCfg.currency || "USD",
       prices: costCfg.prices ?? {},
-      ledgerPath: costCfg.ledgerPath || (processingOptions.output ? `${processingOptions.output}.cost.json` : undefined),
+      ledgerPath: costCfg.ledgerPath || (resolvedOutputPath ? `${resolvedOutputPath}.cost.json` : undefined),
     });
 
     // Register configuration
