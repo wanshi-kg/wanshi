@@ -1,0 +1,37 @@
+[
+  {
+    "title": "Alpha Doc",
+    "sents": [["Alpha", "was", "published", "in", "2020", "."]],
+    "vertexSet": [
+      [{ "name": "Alpha", "pos": [0, 1], "sent_id": 0, "type": "MISC", "global_pos": [0, 1], "index": "0" }],
+      [{ "name": "2020", "pos": [4, 5], "sent_id": 0, "type": "TIME", "global_pos": [4, 5], "index": "1" }]
+    ],
+    "labels": [{ "r": "P577", "h": 0, "t": 1, "evidence": [0] }]
+  },
+  {
+    "title": "Empty Doc",
+    "sents": [["Nothing", "to", "extract", "here", "."]],
+    "vertexSet": [
+      [{ "name": "Nothing", "pos": [0, 1], "sent_id": 0, "type": "MISC", "global_pos": [0, 1], "index": "0" }]
+    ],
+    "labels": []
+  },
+  {
+    "title": "Beta Doc",
+    "sents": [["Beta", "was", "written", "by", "Carol", "."]],
+    "vertexSet": [
+      [{ "name": "Beta", "pos": [0, 1], "sent_id": 0, "type": "MISC", "global_pos": [0, 1], "index": "0" }],
+      [{ "name": "Carol", "pos": [4, 5], "sent_id": 0, "type": "PER", "global_pos": [4, 5], "index": "1" }]
+    ],
+    "labels": [{ "r": "P50", "h": 0, "t": 1, "evidence": [0] }]
+  },
+  {
+    "title": "Gamma Doc",
+    "sents": [["Gamma", "is", "in", "France", "."]],
+    "vertexSet": [
+      [{ "name": "Gamma", "pos": [0, 1], "sent_id": 0, "type": "ORG", "global_pos": [0, 1], "index": "0" }],
+      [{ "name": "France", "pos": [3, 4], "sent_id": 0, "type": "LOC", "global_pos": [3, 4], "index": "1" }]
+    ],
+    "labels": [{ "r": "P17", "h": 0, "t": 1, "evidence": [0] }]
+  }
+]
