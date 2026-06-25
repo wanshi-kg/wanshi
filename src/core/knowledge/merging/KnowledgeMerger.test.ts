@@ -334,6 +334,45 @@ describe("KnowledgeMerger — cross-RUN edge linking (KG-04 knownExternalEndpoin
     expect(stub!.entityType).toBe("other");
   });
 
+  it("does NOT clobber a real same-name entity into a stub when it's also in the external set", async () => {
+    // The subtle mixed-graph case: "Graph Store" is BOTH a real entity extracted
+    // this run (with observations) AND a name in the external set. materializeExternalStub
+    // checks entityMap.has() FIRST, so the real entity wins — no stub overwrites its
+    // facts, and the cross-file edge connects to the real node.
+    const gReal: KnowledgeGraph = {
+      entities: [
+        {
+          name: "Graph Store",
+          entityType: "service",
+          files: ["b.txt"],
+          observations: [{ text: "stores the merged graph", source: "b.txt", createdAt: "2026-01-01T00:00:00Z" }],
+        },
+      ],
+      relations: [],
+    };
+    const gEdge: KnowledgeGraph = {
+      entities: [mkEnt("Orchestrator", "service", "a.txt")],
+      relations: [{ from: "Orchestrator", to: "Graph Store", relationType: ["produces"] }],
+    };
+
+    const stats: MergeStats[] = [];
+    const merged = await mergeKnowledgeGraphs(
+      [gReal, gEdge],
+      { ...opts, onMergeStats: (s) => stats.push(s), knownExternalEndpointNames: new Set(["Graph Store"]) },
+      stubEmbed,
+      stubLogger()
+    );
+
+    // Exactly ONE "Graph Store" — the real one, facts intact, NOT a type:"other" stub.
+    const gs = merged.entities.filter((e) => e.name === "Graph Store");
+    expect(gs).toHaveLength(1);
+    expect(gs[0].entityType).toBe("service");
+    expect(gs[0].observations).toHaveLength(1);
+    // The edge survives and is NOT counted as a dropped dangler.
+    expect(merged.relations).toContainEqual(expect.objectContaining({ from: "Orchestrator", to: "Graph Store" }));
+    expect(stats[0].droppedDanglingEdges).toBe(0);
+  });
+
   it("still drops an edge whose endpoint is in NEITHER entityMap NOR the external set (no fabrication)", async () => {
     const g: KnowledgeGraph = {
       entities: [mkEnt("Orchestrator", "service", "a.txt")],
