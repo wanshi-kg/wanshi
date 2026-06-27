@@ -11,7 +11,9 @@ for d in ${SETS}; do
 done
 [ ${#args[@]} -gt 0 ] || { echo "no corpora found under data/"; exit 1; }
 echo "packing: ${args[*]}"
-tar --no-xattrs -I 'zstd -19 -T0' -cf "${OUT}" "${args[@]}"
+# Pipe tar → zstd (portable): `tar -I 'zstd -19 -T0'` is a GNU-tar-ism that macOS bsdtar
+# parses as a literal program name "zstd -19 -T0" and fails. pipefail catches a tar error.
+tar --no-xattrs -cf - "${args[@]}" | zstd -19 -T0 -o "${OUT}" -f
 ls -lh "${OUT}"
 echo "done → ${OUT}"
-echo "extract: tar -I zstd -xf ${OUT} -C <dest>   (yields data/<set>/…)"
+echo "extract: zstd -dc ${OUT} | tar -xf - -C <dest>   (yields data/<set>/…)"
