@@ -60,7 +60,9 @@ export class DrugProtDataset implements IDatasetLoader {
     const seenByPmid = new Map<string, Set<string>>();
     for (const [pmid, rtype, arg1, arg2] of readTsv(relations)) {
       const ents = entById.get(pmid);
-      if (!ents) continue;
+      // The real development split has a few malformed/short relation rows (missing an Arg
+      // id) the fixture didn't — skip them instead of crashing on arg1.split (was a TypeError).
+      if (!ents || !arg1 || !arg2) continue;
       const subject = ents.get(arg1.split(':')[1]);
       const object = ents.get(arg2.split(':')[1]);
       if (!subject || !object || !rtype) continue;
