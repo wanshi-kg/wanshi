@@ -1,0 +1,3 @@
+{"input":"NEW YORK (Reuters) - Apple Inc Chief Executive Steve Jobs sought to soothe investor concerns.","output":"founded_by: Apple Inc, Steve Jobs; chief_executive_officer: Apple Inc, Steve Jobs"}
+{"input":"VH1 is owned by Viacom.","output":"owned_by: VH1, Viacom"}
+{"input":"A sentence with no annotated relations.","output":""}

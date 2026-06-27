@@ -1,0 +1,2 @@
+{"file":"a.py","symbols":["f"],"triples":[{"subject":"f","predicate":"calls","object":"g"}]}
+{"file":"b.py","symbols":[],"triples":[{"subject":"b.py","predicate":"depends_on","object":"os"}]}

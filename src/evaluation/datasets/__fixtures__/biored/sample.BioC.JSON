@@ -1,0 +1,47 @@
+{
+  "source": "fixture",
+  "date": "2026-06-25",
+  "key": "fixture.key",
+  "documents": [
+    {
+      "id": "111",
+      "passages": [
+        {
+          "offset": 0,
+          "text": "Aspirin treats headache and fever",
+          "annotations": [
+            { "id": "0", "infons": { "identifier": "C001", "type": "ChemicalEntity" }, "text": "Aspirin", "locations": [{ "offset": 0, "length": 7 }] },
+            { "id": "1", "infons": { "identifier": "D000001,D000002", "type": "DiseaseOrPhenotypicFeature" }, "text": "headache", "locations": [{ "offset": 15, "length": 8 }] }
+          ]
+        },
+        {
+          "offset": 34,
+          "text": "Acetylsalicylic acid is an analgesic.",
+          "annotations": [
+            { "id": "2", "infons": { "identifier": "C001", "type": "ChemicalEntity" }, "text": "Acetylsalicylic acid", "locations": [{ "offset": 34, "length": 20 }] }
+          ]
+        }
+      ],
+      "relations": [
+        { "id": "R0", "infons": { "entity1": "C001", "entity2": "D000002", "type": "Positive_Correlation", "novel": "Novel" } },
+        { "id": "R1", "infons": { "entity1": "C001", "entity2": "D000001", "type": "Association", "novel": "No" } }
+      ]
+    },
+    {
+      "id": "222",
+      "passages": [
+        {
+          "offset": 0,
+          "text": "Drug X inhibits enzyme Y",
+          "annotations": [
+            { "id": "0", "infons": { "identifier": "C200", "type": "ChemicalEntity" }, "text": "Drug X", "locations": [{ "offset": 0, "length": 6 }] },
+            { "id": "1", "infons": { "identifier": "G100", "type": "GeneOrGeneProduct" }, "text": "enzyme Y", "locations": [{ "offset": 16, "length": 8 }] }
+          ]
+        }
+      ],
+      "relations": [
+        { "id": "R0", "infons": { "entity1": "C200", "entity2": "G100", "type": "Negative_Correlation", "novel": "Novel" } }
+      ]
+    }
+  ]
+}

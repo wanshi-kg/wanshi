@@ -1,0 +1,3 @@
+{"doc_id":"D1","sentence":"BERT is used for NER .","ner":[["BERT","Method"],["NER","Task"]],"rel":[["BERT","Used-For","NER"]]}
+{"doc_id":"D1","sentence":"BERT is trained with BookCorpus .","ner":[["BERT","Method"],["BookCorpus","Dataset"]],"rel":[["BERT","Trained-With","BookCorpus"],["BERT","Used-For","NER"]]}
+{"doc_id":"D2","sentence":"GPT compares with BERT .","ner":[["GPT","Method"],["BERT","Method"]],"rel":[["GPT","Compare-With","BERT"]]}
