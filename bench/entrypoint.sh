@@ -33,4 +33,38 @@ for i in $(seq 1 60); do
 done
 echo "[entrypoint] ollama up: $(curl -fsS "${base}/api/version")"
 
-exec "${APP}/scripts/bench-run.sh"
+# Self-terminate after the sweep so an idle GPU pod doesn't burn credits (the
+# budget guard). RunPod injects a pre-authenticated, pod-scoped runpodctl + the
+# $RUNPOD_POD_ID env into every pod (custom images included), so no API key is
+# needed. Controlled by SELF_TERMINATE:
+#   stop   (default) — halt GPU billing, KEEP the pod + its disk so you can
+#                      restart briefly and pull /app/results. Safe default.
+#   remove           — delete the pod entirely. Use ONLY when /app/results is on
+#                      a network volume (results survive); stops ALL billing.
+#   off              — leave the pod running (local/debug).
+# Fires on EVERY exit (success, cell failure, or crash) via the EXIT trap; the
+# sweep is resumable, so even an accidental restart re-reaches the end and stops.
+self_terminate() {
+  local rc=$?
+  local mode="${SELF_TERMINATE:-stop}"
+  if [ "${mode}" = "off" ]; then echo "[entrypoint] SELF_TERMINATE=off — pod left running (rc=${rc})"; return 0; fi
+  local pid="${RUNPOD_POD_ID:-}"
+  if [ -z "${pid}" ]; then echo "[entrypoint] no \$RUNPOD_POD_ID (not a RunPod pod?) — skip self-terminate (rc=${rc})"; return 0; fi
+  if ! command -v runpodctl >/dev/null 2>&1; then
+    echo "[entrypoint] runpodctl not found — installing (fallback)…"
+    curl -fsSL cli.runpod.net | bash >/dev/null 2>&1 || true
+  fi
+  if ! command -v runpodctl >/dev/null 2>&1; then
+    echo "[entrypoint] WARNING: runpodctl unavailable — STOP/REMOVE pod ${pid} MANUALLY to stop billing! (rc=${rc})" >&2
+    return 0
+  fi
+  echo "[entrypoint] sweep finished (rc=${rc}); self-${mode} pod ${pid} to stop billing…"
+  case "${mode}" in
+    remove) runpodctl remove pod "${pid}" 2>/dev/null || runpodctl pod delete "${pid}" 2>/dev/null || true ;;
+    *)      runpodctl stop   pod "${pid}" 2>/dev/null || runpodctl pod stop   "${pid}" 2>/dev/null || true ;;
+  esac
+}
+trap self_terminate EXIT
+
+echo "[entrypoint] starting sweep (SELF_TERMINATE=${SELF_TERMINATE:-stop} on completion)…"
+"${APP}/scripts/bench-run.sh"
