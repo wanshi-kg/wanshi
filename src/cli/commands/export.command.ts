@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as path from "path";
 import { DIContainer, TYPES } from "../../core/di";
 import { Logger } from "../../shared";
 import {
@@ -55,13 +56,29 @@ export async function exportCommand(container: DIContainer): Promise<void> {
       );
     }
 
-    const content = exporter.export(graph, format, options);
-    await fs.promises.writeFile(options.output, content);
+    // Directory-shaped formats (e.g. openwebui) write a folder of files.
+    const files = exporter.exportFiles(graph, format, options);
+    if (files) {
+      const outputDir = options.output.replace(/\.[^./\\]+$/, "");
+      await fs.promises.mkdir(outputDir, { recursive: true });
+      for (const file of files) {
+        const filePath = path.join(outputDir, file.path);
+        await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+        await fs.promises.writeFile(filePath, file.content);
+      }
+      logger.info(
+        `Exported knowledge graph from ${sourcePath} to ${outputDir}/ (${format}): ` +
+          `${graph.entities.length} entities → ${files.length} files`
+      );
+    } else {
+      const content = exporter.export(graph, format, options);
+      await fs.promises.writeFile(options.output, content);
 
-    logger.info(
-      `Exported knowledge graph from ${sourcePath} to ${options.output} (${format}): ` +
-        `${graph.entities.length} entities, ${graph.relations.length} relations`
-    );
+      logger.info(
+        `Exported knowledge graph from ${sourcePath} to ${options.output} (${format}): ` +
+          `${graph.entities.length} entities, ${graph.relations.length} relations`
+      );
+    }
   } catch (error) {
     logger.error(`Export command failed: ${error}`);
     throw error;

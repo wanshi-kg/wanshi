@@ -1,4 +1,4 @@
-import { IKnowledgeGraphExporter } from "../../types/IKnowledgeGraphExporter";
+import { ExportFile, IKnowledgeGraphExporter } from "../../types/IKnowledgeGraphExporter";
 import { KnowledgeGraph } from "../../types/KnowledgeGraph";
 import { ExportFormat, ProcessingOptions } from "../../types/ProcessingOptions";
 import { 
@@ -44,6 +44,25 @@ export class KnowledgeGraphExportService implements IKnowledgeGraphExporter {
     }
 
     return strategy.export(knowledgeGraph, processingOptions);
+  }
+
+  /**
+   * Directory-shaped export: returns one `ExportFile` per output file when the
+   * format's strategy implements `exportFiles` (e.g. `openwebui`), else
+   * `undefined` for ordinary single-file formats.
+   */
+  exportFiles(
+    knowledgeGraph: KnowledgeGraph,
+    format: ExportFormat,
+    processingOptions?: ProcessingOptions
+  ): ExportFile[] | undefined {
+    const strategy = this.strategies.get(format);
+
+    if (!strategy) {
+      throw new Error(`Unsupported export format: ${format}. Supported formats: ${this.getSupportedFormats().join(", ")}`);
+    }
+
+    return strategy.exportFiles?.(knowledgeGraph, processingOptions);
   }
 
   /**

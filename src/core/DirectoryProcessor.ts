@@ -9,6 +9,7 @@ import {
   IKnowledgeGraphSearch,
   IKnowledgeGraphMerger,
   IKnowledgeGraphExporter,
+  ExportFile,
   IDirectoryProcessor,
   ChunkingOptions,
   ProcessedFile,
@@ -867,6 +868,15 @@ export class DirectoryProcessor implements IDirectoryProcessor {
       );
     }
 
+    // Directory-shaped formats (e.g. openwebui) write a folder of files; treat
+    // `--output` as a directory and write each ExportFile into it.
+    const files = exporter.exportFiles(knowledgeGraph, exportFormat, options);
+    if (files) {
+      const outputDir = this.getOutputDir(options.output);
+      await this.writeExportFiles(outputDir, files);
+      return outputDir;
+    }
+
     const outputContent = exporter.export(knowledgeGraph, exportFormat, options);
     const outputPath = this.getOutputPath(options.output, exportFormat);
 
@@ -891,6 +901,24 @@ export class DirectoryProcessor implements IDirectoryProcessor {
     return originalPath.endsWith(`.${format}`)
       ? originalPath
       : originalPath.replace(/\.[^.]+$/, `.${format}`);
+  }
+
+  /**
+   * A directory-shaped export writes a folder, not a file — strip any trailing
+   * file extension from the output path and use it as the directory name.
+   */
+  private getOutputDir(originalPath: string): string {
+    return originalPath.replace(/\.[^./\\]+$/, "");
+  }
+
+  /** Write a directory-shaped export: one file per `ExportFile`, under `outDir`. */
+  private async writeExportFiles(outDir: string, files: ExportFile[]): Promise<void> {
+    await fs.promises.mkdir(outDir, { recursive: true });
+    for (const file of files) {
+      const filePath = path.join(outDir, file.path);
+      await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+      await fs.promises.writeFile(filePath, file.content);
+    }
   }
 
   /**

@@ -66,6 +66,7 @@ export const ExportFormatEnum = z.enum([
   "kblam",
   "lora",
   "graphiti",
+  "openwebui",
 ]);
 export const JsonStrategyEnum = z.enum(["structural", "raw"]);
 // PDF reading engine: `pdf2json` = built-in text extraction (default, no OCR,
