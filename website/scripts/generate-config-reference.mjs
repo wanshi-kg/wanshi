@@ -6,8 +6,9 @@
  * truth for config types/defaults/help), so the documented config surface can't
  * drift from the code. Run via `npm run gen:config` (wired to prebuild/prestart).
  *
- * Contract: it shells the literal `wanshi schema --json` command (built CLI at
- * ../dist/index.js), exactly the anti-drift interface the docs promise.
+ * Contract: it shells the literal `wanshi schema --json` command (CLI entry at
+ * src/cli/index.ts via ts-node, or built dist/cli/index.js), exactly the
+ * anti-drift interface the docs promise.
  */
 import {execFileSync} from 'node:child_process';
 import {writeFileSync, existsSync, mkdirSync} from 'node:fs';
@@ -19,11 +20,11 @@ const repoRoot = resolve(here, '..', '..'); // website/scripts → repo root
 const outPath = resolve(here, '..', 'docs', 'reference', 'configuration.md');
 
 // Run the schema command. Prefer ts-node against src/ (always reflects current
-// source — a built dist/ can be stale), fall back to a built dist/index.js (CI,
+// source — a built dist/ can be stale), fall back to a built dist/cli/index.js (CI,
 // after `npm run build`). The repo runs ts-node globally, so try PATH too.
 function runSchema() {
   const MAX = 64 * 1024 * 1024;
-  const srcEntry = resolve(repoRoot, 'src', 'index.ts');
+  const srcEntry = resolve(repoRoot, 'src', 'cli', 'index.ts');
   const env = {...process.env, TS_NODE_TRANSPILE_ONLY: '1'};
   if (existsSync(srcEntry)) {
     const localBin = resolve(repoRoot, 'node_modules', '.bin', 'ts-node');
@@ -35,7 +36,7 @@ function runSchema() {
       }
     }
   }
-  const distEntry = resolve(repoRoot, 'dist', 'index.js');
+  const distEntry = resolve(repoRoot, 'dist', 'cli', 'index.js');
   if (existsSync(distEntry)) {
     return execFileSync('node', [distEntry, 'schema', '--json'], {cwd: repoRoot, encoding: 'utf8', maxBuffer: MAX});
   }
