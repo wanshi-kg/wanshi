@@ -47,6 +47,10 @@ echo "[entrypoint] ollama up: $(curl -fsS "${base}/api/version")"
 self_terminate() {
   local rc=$?
   local mode="${SELF_TERMINATE:-stop}"
+  case "${mode}" in
+    stop|remove|off) ;;
+    *) echo "[entrypoint] unknown SELF_TERMINATE='${mode}' — defaulting to stop (rc=${rc})" >&2; mode="stop" ;;
+  esac
   if [ "${mode}" = "off" ]; then echo "[entrypoint] SELF_TERMINATE=off — pod left running (rc=${rc})"; return 0; fi
   local pid="${RUNPOD_POD_ID:-}"
   if [ -z "${pid}" ]; then echo "[entrypoint] no \$RUNPOD_POD_ID (not a RunPod pod?) — skip self-terminate (rc=${rc})"; return 0; fi
