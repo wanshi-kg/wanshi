@@ -14,12 +14,12 @@ const config: Config = {
     v4: true,
   },
 
-  // Production URL — GitHub Pages project site for AlexSabaka/wanshi.
-  url: 'https://AlexSabaka.github.io',
+  // Production URL — GitHub Pages project site for wanshi-kg/wanshi.
+  url: 'https://wanshi-kg.github.io',
   baseUrl: '/wanshi/',
 
   // GitHub Pages deployment config (the deploy workflow lands with the CI/CD track).
-  organizationName: 'AlexSabaka',
+  organizationName: 'wanshi-kg',
   projectName: 'wanshi',
   trailingSlash: false,
 
@@ -45,7 +45,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/AlexSabaka/wanshi/tree/master/website/',
+          editUrl: 'https://github.com/wanshi-kg/wanshi/tree/master/website/',
         },
         // No blog — this is a documentation site.
         blog: false,
@@ -80,7 +80,7 @@ const config: Config = {
           position: 'left',
         },
         {
-          href: 'https://github.com/AlexSabaka/wanshi',
+          href: 'https://github.com/wanshi-kg/wanshi',
           label: 'GitHub',
           position: 'right',
         },
@@ -101,10 +101,10 @@ const config: Config = {
         {
           title: 'Project',
           items: [
-            {label: 'GitHub', href: 'https://github.com/AlexSabaka/wanshi'},
+            {label: 'GitHub', href: 'https://github.com/wanshi-kg/wanshi'},
             {
               label: 'License (MIT)',
-              href: 'https://github.com/AlexSabaka/wanshi/blob/master/LICENSE',
+              href: 'https://github.com/wanshi-kg/wanshi/blob/master/LICENSE',
             },
           ],
         },
