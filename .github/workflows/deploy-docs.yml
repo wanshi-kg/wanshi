@@ -1,0 +1,55 @@
+name: Deploy docs
+
+# Build the Docusaurus site in website/ and publish it to GitHub Pages
+# (project site: https://wanshi-kg.github.io/wanshi/). The config reference is
+# generated from `wanshi schema`, so the backend is installed/built first.
+on:
+  push:
+    branches: [master]
+    paths:
+      - "website/**"
+      - "src/config/**"
+      - ".github/workflows/deploy-docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; don't cancel an in-flight publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            website/package-lock.json
+      - name: Build backend (gen:config shells `wanshi schema`)
+        run: npm ci && npm run build
+      - name: Build docs site
+        working-directory: website
+        run: npm ci && npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
