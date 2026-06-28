@@ -36,10 +36,6 @@ short and link the file. Remove an item when it's paid down.
   (`src/shared/utils/agglomerativeCluster.ts`) is naive greedy re-scan; `blockTopN` bounds the
   candidate set but defaults off, so a large graph with blocking disabled could be slow.
 
-- **`npm test` doesn't run the suite.** The `test` script points at a hardcoded
-  personal config path; the real Jest suite runs via `npx jest`. Point `test` at
-  Jest.
-
 - **Dead code in domain examples.** The `examples` array per domain in
   `src/core/processor/classifier/NER_DOMAIN_EXAMPLES.ts` is never read
   (`buildDomainHints()` only uses `primaryEntityTypes`/`primaryRelationTypes`).
@@ -96,6 +92,12 @@ short and link the file. Remove an item when it's paid down.
   recall lever is safe to pull.
 
 ## Paid down
+
+- **`npm test` + CLI-entry docs reconciled (0.2.0 housekeeping).** `package.json`'s `test`
+  script now points at `jest` (was a hardcoded personal config path), so the network-free
+  suite runs via `npm test`. README + `.claude/CLAUDE.md` no longer point users at the
+  library-only `src/index.ts` — the CLI is `src/cli/index.ts` (dev: `npm start`) /
+  `dist/cli/index.js` (bin: `wanshi`).
 
 - **AST-seeded code extraction (Phase 8).** A deterministic Tree-sitter symbol pass
   (`src/core/processor/ast/AstSeedService.ts`, via the pinned `document-outline-gen` Symbol API) now
