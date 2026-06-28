@@ -26,11 +26,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout harness (this branch)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Checkout private corpora
         if: ${{ inputs.include_corpora }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ github.repository_owner }}/wanshi-bench-data
           token: ${{ secrets.BENCH_DATA_TOKEN }}
