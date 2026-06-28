@@ -8,6 +8,10 @@ description: The nested config-file shape, plus the cloud-generation + resume se
 
 The config file uses a **nested** shape (the source of truth is the Zod schema in `src/config/`); CLI flags stay flat. Run `wanshi schema` to print the full JSON Schema — or read the generated **[configuration reference](../reference/configuration.md)** for every key, type, and default.
 
+:::tip Just want a config to copy?
+See **[Configuration tiers](../guides/config-tiers.md)** for four ready-made presets — Fast/Low → Balanced/Med → High-quality → Max-features — each validated against the schema.
+:::
+
 ```yaml
 input: ./my-project
 filter: ["**/*.ts", "**/*.md"]

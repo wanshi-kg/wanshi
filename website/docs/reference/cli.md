@@ -6,7 +6,7 @@ description: Every wanshi command-line flag, grouped by feature.
 
 # CLI reference
 
-CLI flags are flat and ergonomic; config **files** use the [nested shape](../getting-started/configuration.md). For the complete, authoritative option surface (generated from the schema) see the **[configuration reference](./configuration.md)**.
+CLI flags are flat and ergonomic; config **files** use the [nested shape](../getting-started/configuration.md). For the complete, authoritative option surface (generated from the schema) see the **[configuration reference](./configuration.md)** — or grab a ready-made preset from **[Configuration tiers](../guides/config-tiers.md)**.
 
 ## Core
 

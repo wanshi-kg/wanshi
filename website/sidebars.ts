@@ -21,6 +21,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'guides/supported-inputs',
         'guides/output-formats',
+        'guides/config-tiers',
         'guides/local-models',
         'guides/migration',
       ],
