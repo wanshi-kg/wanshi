@@ -245,10 +245,12 @@ Beside the text→LLM-extract path, a **structured source** (graph-native: a SQL
 `KnowledgeGraphExportService` delegates to registered `IExportStrategy` implementations. `ProcessingOptions` is forwarded to strategies — `DirectoryProcessor` passes it through `export(graph, format, options)`, and the DOT strategy reads `dotOptions` (config-only; layout, rankdir, colorScheme, clustering, legend, …) plus the graph title and processing-config cluster.
 **To add a new export format**: implement `IExportStrategy`, register in `KnowledgeGraphExportService`.
 
-Formats: `json` · `jsonl` · `mcp-jsonl` (memory-server compatible) · `dot` · and the **KBLaM/LoRA-prep** trio (Phase 4):
+Formats: `json` · `jsonl` · `mcp-jsonl` (memory-server compatible) · `dot` · `openwebui` (folder of markdown docs, below) · and the **KBLaM/LoRA-prep** trio (Phase 4):
 - **`kblam`** — JSONL `DataPoint`s `{name, description_type, description, Q, A, key_string}`, the on-disk shape KBLaM's `dataset_generation` ingests. Observations → `(entity, "fact", text)`; relations → `(from, relationType, to)`. Feeds KBLaM's KB-embedding step.
 - **`lora`** — chat SFT JSONL (`{messages:[user Q, assistant A]}`) from the same triples, **quality-filtered**: observations below `--grounding-min-score` (Phase 3 `groundingScore`) are dropped, so only grounded facts train.
 - **`graphiti`** — `add_triplet`-shaped `{nodes: EntityNode[], edges: EntityEdge[]}` (bi-temporal ingestion target). Entities→nodes (summary from observations), relations→edges with `created_at`; per-fact valid-time stays in `json`/`kblam` (fact-as-temporal-edge is a future refinement).
+
+**Directory-shaped exports (the `exportFiles` seam).** Most strategies are `export()→string` written to the single `--output` file. A format can instead emit a **folder** by implementing the optional `IExportStrategy.exportFiles(graph, opts): ExportFile[]` (`ExportFile = {path, content}`, path relative to the output dir); the two write sites (`DirectoryProcessor.writeOutput`, `cli/commands/export.command`) detect it via the `KnowledgeGraphExportService.exportFiles` facade and treat `--output` as a directory. **`openwebui`** is the first: one markdown doc per entity (type + facts-with-provenance + relations) + a `README.md`/`.oikb.yaml`/`.oikbignore`, to sync into an [OpenWebUI](https://openwebui.com) knowledge base via their **`oikb`** tool (OpenWebUI's "knowledge" is RAG documents, not a graph; oikb's per-file SHA-256 diffing means a re-run re-embeds only the entities that changed — which is why it's one doc *per entity*). wanshi does no network/auth; oikb owns the sync.
 
 ### 4. Hierarchical Merging (3 Levels)
 

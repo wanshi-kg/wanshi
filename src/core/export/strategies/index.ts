@@ -6,3 +6,4 @@ export * from "./GraphvizDotExportStrategy";
 export * from "./KblamExportStrategy";
 export * from "./LoraExportStrategy";
 export * from "./GraphitiExportStrategy";
+export * from "./OpenWebUIExportStrategy";

@@ -942,6 +942,7 @@ export class ContainerFactory {
         KblamExportStrategy,
         LoraExportStrategy,
         GraphitiExportStrategy,
+        OpenWebUIExportStrategy,
       } = await import("../export/strategies");
       const { KnowledgeGraphExportService } = await import(
         "../export/KnowledgeGraphExportService"
@@ -954,7 +955,8 @@ export class ContainerFactory {
         new GraphvizDotExportStrategy(),
         new KblamExportStrategy(),
         new LoraExportStrategy(),
-        new GraphitiExportStrategy()
+        new GraphitiExportStrategy(),
+        new OpenWebUIExportStrategy()
       );
     });
 

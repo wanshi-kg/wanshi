@@ -185,7 +185,7 @@ program
   )
 
   // Export Options
-  .option("--export-format <format>", "export format (json|jsonl|mcp-jsonl|dot|kblam|lora|graphiti)")
+  .option("--export-format <format>", "export format (json|jsonl|mcp-jsonl|dot|kblam|lora|graphiti|openwebui)")
 
   // Logging & Debug
   .option("-L, --log-level <level>", "log level")

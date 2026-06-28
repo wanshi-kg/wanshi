@@ -200,6 +200,7 @@ Pick with `--export-format`:
 | `kblam` | Microsoft [KBLaM](https://github.com/microsoft/KBLaM) `(entity, property, value)` triples for knowledge-token training |
 | `lora` | Chat SFT examples, **quality-filtered** (drops facts below `--grounding-min-score`) |
 | `graphiti` | `add_triplet`-shaped `{ nodes, edges }` for a [Graphiti](https://github.com/getzep/graphiti) temporal graph |
+| `openwebui` | A **folder** of one markdown doc per entity (facts + provenance + relations) to sync into an [OpenWebUI](https://openwebui.com) knowledge base via [oikb](https://github.com/open-webui/oikb) |
 
 The default `json` keeps observations as provenance-stamped **objects** — the LLM emits plain text; `wanshi` stamps `source`/`speaker` and the bi-temporal axis deterministically from what it knows about each chunk:
 

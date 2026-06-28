@@ -79,3 +79,20 @@ Chat-format instruction examples derived from the same triples, **quality-filter
 ## Graphiti (`graphiti`)
 
 `add_triplet`-shaped `{ nodes, edges }` for ingestion into a [Graphiti](https://github.com/getzep/graphiti) temporal graph — entities → nodes (summary from observations), relations → `UPPER_SNAKE` edges with stable uuids. Per-fact valid-time rides along in the `json`/`kblam` exports.
+
+## OpenWebUI (`openwebui`)
+
+Unlike the other formats, `openwebui` writes a **folder**, not a single file — `--output` is treated as a directory. [OpenWebUI](https://openwebui.com)'s knowledge feature is retrieval-augmented (it chunks + embeds *documents*; there's no native graph import), so wanshi renders **one markdown document per entity** (its type, facts with inline provenance, and relations) — the natural "one document per thing I know" shape for RAG.
+
+```bash
+wanshi -i ./my-project --export-format openwebui -o kg-openwebui
+# kg-openwebui/<entity>.md  +  README.md  +  .oikb.yaml  +  .oikbignore
+```
+
+Sync the folder into an OpenWebUI knowledge base with their official **[oikb](https://github.com/open-webui/oikb)** tool — it diffs per file (SHA-256), so re-running wanshi re-embeds only the entities that changed (a single bundled file would re-embed everything):
+
+```bash
+oikb sync ./kg-openwebui --kb-id <your-knowledge-base-id>   # or: oikb watch …
+```
+
+The generated `README.md` carries the sync command, `.oikb.yaml` is a starter daemon config, and `.oikbignore` keeps the README out of the knowledge base. wanshi does no network/auth — oikb owns the sync.
