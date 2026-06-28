@@ -51,11 +51,7 @@ self_terminate() {
   local pid="${RUNPOD_POD_ID:-}"
   if [ -z "${pid}" ]; then echo "[entrypoint] no \$RUNPOD_POD_ID (not a RunPod pod?) — skip self-terminate (rc=${rc})"; return 0; fi
   if ! command -v runpodctl >/dev/null 2>&1; then
-    echo "[entrypoint] runpodctl not found — installing (fallback)…"
-    curl -fsSL cli.runpod.net | bash >/dev/null 2>&1 || true
-  fi
-  if ! command -v runpodctl >/dev/null 2>&1; then
-    echo "[entrypoint] WARNING: runpodctl unavailable — STOP/REMOVE pod ${pid} MANUALLY to stop billing! (rc=${rc})" >&2
+    echo "[entrypoint] WARNING: runpodctl unavailable — cannot self-${mode} pod ${pid}; STOP/REMOVE MANUALLY to stop billing! (rc=${rc})" >&2
     return 0
   fi
   echo "[entrypoint] sweep finished (rc=${rc}); self-${mode} pod ${pid} to stop billing…"
