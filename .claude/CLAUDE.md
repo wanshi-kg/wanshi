@@ -27,11 +27,11 @@
 ```bash
 npm start                     # Run CLI via ts-node (development)
 npm run build                 # Compile TypeScript → dist/
-node ./dist/index.js          # Run compiled binary
+node ./dist/cli/index.js      # Run compiled binary
 npx nodemon                   # Auto-restart on file changes
 
 # Example run against a config
-npx ts-node ./src/index.ts --config config.yaml
+npx ts-node ./src/cli/index.ts --config config.yaml
 
 # Benchmark extraction quality against CrossRE dataset
 npm run benchmark -- --dataset crossre --data-path ./data/crossre/crossre_data/ai-test.json --limit 20
@@ -612,7 +612,7 @@ logging:
   level: debug
 EOF
 
-npx ts-node ./src/index.ts --config config.yaml
+npx ts-node ./src/cli/index.ts --config config.yaml
 ```
 
 ### Run against a cloud provider, resumably (OpenRouter + local embeddings)
@@ -641,6 +641,6 @@ resume:
   enabled: true   # writes <output>.checkpoint.jsonl; re-run the same command to continue
 EOF
 
-npx ts-node ./src/index.ts --config config.yaml
+npx ts-node ./src/cli/index.ts --config config.yaml
 # If credits run out mid-run, just re-run — already-processed chunks are skipped.
 ```

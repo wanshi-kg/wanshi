@@ -15,7 +15,7 @@ It's a working CLI and a research platform in equal measure — the long game is
 
 ---
 
-> **Command shorthand:** examples below write `wanshi` for the run command. Until the npm package ships, that's `npx ts-node ./src/index.ts` (dev) or `node ./dist/index.js` (built). Once published, it's literally `wanshi`.
+> **Command shorthand:** examples below write `wanshi` for the run command. Installed from npm (`@wanshi-kg/wanshi`) that's literally `wanshi`; from a source checkout it's `npm start --` (i.e. `npx ts-node ./src/cli/index.ts`) in dev, or `node ./dist/cli/index.js` after `npm run build`.
 
 ## What's distinctive
 
@@ -435,8 +435,8 @@ Tests use Jest (`npm test`); mock the LLM via `ILLMProvider` for network-free un
 
 ```bash
 git clone https://github.com/wanshi-kg/wanshi && cd wanshi && npm install
-npx ts-node ./src/index.ts --config config.yaml   # run directly
-npm run build && node ./dist/index.js --config config.yaml   # or build first
+npm start -- --config config.yaml                            # run directly (ts-node ./src/cli/index.ts)
+npm run build && node ./dist/cli/index.js --config config.yaml   # or build first
 ```
 
 See `examples/kg-mail-assistant/` for a full integration (Gmail OAuth + Telegram bot + continuous email→KG pipeline) and programmatic usage via `ContainerFactory`.
