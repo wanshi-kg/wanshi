@@ -1,0 +1,118 @@
+[37m2026-06-29 18:34:22.573[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptManager.ts:96[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Using prompt version: v5
+[37m2026-06-29 18:34:22.596[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:283[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	gold-compare dataset=code model=qwen2.5:7b-instruct mode=vocab vocab=2 predicates
+[37m2026-06-29 18:34:22.599[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:199[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	code: 20 samples loaded from data/code/flask
+[37m2026-06-29 18:34:22.600[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:299[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Dumped sample list -> data/code/compare/qwen2_5_7b-instruct/samples.jsonl
+[37m2026-06-29 18:34:22.602[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptManager.ts:84[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Prompt templates initialized
+[37m2026-06-29 18:34:22.603[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/shared/utils/directoryTree.ts:127[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Failed to read directory benchmark: Error: ENOENT: no such file or directory, scandir 'benchmark'
+[37m2026-06-29 18:34:22.603[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptTemplateEngine.ts:223[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Failed to get file list: Error: ENOENT: no such file or directory, scandir 'benchmark'
+[37m2026-06-29 18:34:22.611[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:315[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi[vocab]: 0/20 cached, extracting 20
+[37m2026-06-29 18:34:22.612[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/__init__.py.txt
+[37m2026-06-29 18:34:28.214[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":237,"prompt_eval_count":1738,"total_duration_ms":5570.302474,"eval_speed_tps":21.273530576321807}
+[37m2026-06-29 18:34:28.218[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/app.py.txt
+[37m2026-06-29 18:37:24.875[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":8192,"prompt_eval_count":4098,"total_duration_ms":176644.596601,"eval_speed_tps":4.174483761117353}
+[37m2026-06-29 18:37:24.876[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 18:37:24.883[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 18:37:24.885[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 1 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "array",
+    "received": "undefined",
+    "path": [
+      "relations"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 18:40:22.667[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":8192,"prompt_eval_count":4098,"total_duration_ms":176778.029319,"eval_speed_tps":4.171332845154331}
+[37m2026-06-29 18:40:22.668[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 18:40:22.676[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 18:40:22.677[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 2 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "array",
+    "received": "undefined",
+    "path": [
+      "relations"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 18:43:21.281[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":8192,"prompt_eval_count":4098,"total_duration_ms":176597.690158,"eval_speed_tps":4.1755925535620335}
+[37m2026-06-29 18:43:21.282[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 18:43:21.289[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 18:43:21.292[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 3 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "array",
+    "received": "undefined",
+    "path": [
+      "relations"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 18:43:21.293[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:442[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Extraction failed for chunk 1/1 of benchmark/app.py.txt — left uncheckpointed so --resume retries it: Failed to generate valid output after 3 attempts: [
+  {
+    "code": "invalid_type",
+    "expected": "array",
+    "received": "undefined",
+    "path": [
+      "relations"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 18:43:21.294[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:329[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi app.py extraction failed (rate-limit/transient) — excluded, will retry on re-run
+[37m2026-06-29 18:43:21.294[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/blueprints.py.txt
+[37m2026-06-29 18:43:27.745[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":282,"prompt_eval_count":2197,"total_duration_ms":6438.239513,"eval_speed_tps":23.102588789942708}
+[37m2026-06-29 18:43:27.747[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/cli.py.txt
+[37m2026-06-29 18:43:39.101[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":515,"prompt_eval_count":4098,"total_duration_ms":11338.357483,"eval_speed_tps":24.410943156007036}
+[37m2026-06-29 18:43:39.104[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/config.py.txt
+[37m2026-06-29 18:43:46.570[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":286,"prompt_eval_count":4058,"total_duration_ms":7454.823568,"eval_speed_tps":34.96259805782704}
+[37m2026-06-29 18:43:46.572[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/ctx.py.txt
+[37m2026-06-29 18:43:55.697[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":357,"prompt_eval_count":4537,"total_duration_ms":9111.215228,"eval_speed_tps":32.22841219880357}
+[37m2026-06-29 18:43:55.698[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/debughelpers.py.txt
+[37m2026-06-29 18:44:04.999[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":409,"prompt_eval_count":2584,"total_duration_ms":9286.928067,"eval_speed_tps":19.336856999906814}
+[37m2026-06-29 18:44:05.000[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/helpers.py.txt
+[37m2026-06-29 18:44:23.510[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":754,"prompt_eval_count":6490,"total_duration_ms":18496.446968,"eval_speed_tps":23.498567089774276}
+[37m2026-06-29 18:44:23.512[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/json/__init__.py.txt
+[37m2026-06-29 18:44:33.424[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":435,"prompt_eval_count":2593,"total_duration_ms":9900.806376,"eval_speed_tps":18.35002050342086}
+[37m2026-06-29 18:44:33.425[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/json/provider.py.txt
+[37m2026-06-29 18:44:42.285[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":379,"prompt_eval_count":3005,"total_duration_ms":8846.757489,"eval_speed_tps":22.950781713238843}
+[37m2026-06-29 18:44:42.287[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/json/tag.py.txt
+[37m2026-06-29 18:44:58.288[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":717,"prompt_eval_count":3419,"total_duration_ms":15989.38697,"eval_speed_tps":15.520294834668073}
+[37m2026-06-29 18:44:58.289[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/logging.py.txt
+[37m2026-06-29 18:45:05.865[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":347,"prompt_eval_count":1753,"total_duration_ms":7567.779101,"eval_speed_tps":16.64953460168393}
+[37m2026-06-29 18:45:05.866[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/sansio/app.py.txt
+[37m2026-06-29 18:45:47.918[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":1954,"prompt_eval_count":4098,"total_duration_ms":42041.110056,"eval_speed_tps":8.637260041809396}
+[37m2026-06-29 18:45:47.920[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/sansio/blueprints.py.txt
+[37m2026-06-29 18:45:54.893[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":209,"prompt_eval_count":6435,"total_duration_ms":6963.077305,"eval_speed_tps":57.250549223939714}
+[37m2026-06-29 18:45:54.894[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/sansio/scaffold.py.txt
+[37m2026-06-29 18:46:17.564[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":916,"prompt_eval_count":7850,"total_duration_ms":22657.650181,"eval_speed_tps":23.213351596409307}
+[37m2026-06-29 18:46:17.566[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/sessions.py.txt
+[37m2026-06-29 18:46:27.779[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":407,"prompt_eval_count":4479,"total_duration_ms":10203.133033,"eval_speed_tps":28.732351038826252}
+[37m2026-06-29 18:46:27.781[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/templating.py.txt
+[37m2026-06-29 18:46:50.224[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":1043,"prompt_eval_count":2899,"total_duration_ms":22429.180829,"eval_speed_tps":10.54519118657198}
+[37m2026-06-29 18:46:50.225[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/testing.py.txt
+[37m2026-06-29 18:46:58.104[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":324,"prompt_eval_count":3478,"total_duration_ms":7869.644077,"eval_speed_tps":28.987333832124463}
+[37m2026-06-29 18:46:58.104[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/views.py.txt
+[37m2026-06-29 18:47:04.052[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":247,"prompt_eval_count":2775,"total_duration_ms":5939.081761,"eval_speed_tps":30.52997202205043}
+[37m2026-06-29 18:47:04.053[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/wrappers.py.txt
+[37m2026-06-29 18:47:17.700[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":625,"prompt_eval_count":2493,"total_duration_ms":13635.312565,"eval_speed_tps":13.72025753778531}
+[37m2026-06-29 18:47:17.701[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 20/20 (new=19 excluded=1)
+[37m2026-06-29 18:47:17.702[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 19 samples (wanshi ok=19, kggen cached=0 — wanshi-only until python extractor runs)
+
+code two-way  model=qwen2.5:7b-instruct  mode=vocab  N=19  thr=0.8  prompt=v5
+HEADLINE = node entity-capture (semantic): did the tool recover the gold entities (any node).
+end-* = entity/relation/triple over relation ENDPOINTS; rel/tri understate (abstract gold predicates).
+
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+----------------------------------------------------------------------
+wanshi     0.152   0.500   0.090   0.092   0.141   0.000    4.6    7.6
+
+NOTE: KGGen cache empty — run scripts/kggen-crossre.py --samples data/code/compare/qwen2_5_7b-instruct/samples.jsonl --out data/code/compare/qwen2_5_7b-instruct/kggen.jsonl then re-run for the two-way table.
+
+wanshi related_to-share: 0.161 (14/87 relations)
+wanshi extraction: conformance 0.95 (19/20, 1 failed chunks)  13.5 tok/s [rental≠M4]
+
+[37m2026-06-29 18:47:23.134[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:477[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/code/qwen2_5_7b-instruct__vocab__wanshi-vs-kggen.json

@@ -1,0 +1,37 @@
+bash: /private/tmp/claude-501/-Volumes-2TB-wanshi-kg-wanshi/0c8d09de-f957-4428-9d57-c3a47839ab27/scratchpad/m4-run.sh: No such file or directory
+[m4-run] mem sampler pid=17404 -> results-m4/mem.log
+[bench-run] PHASE=none MODELS=[qwen3:8b] DATASETS=[biored drugprot finred redocred crossre] MODES=[closed vocab] LIMIT=40 (redocred=30) EMB=nomic-embed-text
+[bench-run] pulling embeddings model nomic-embed-text…
+success [K[?25h[?2026l
+[bench-run] pulling model qwen3:8b…
+success [K[?25h[?2026l
+[bench-run] === CELL model=qwen3:8b ds=biored mode=closed N=40 → data/biored/compare/qwen3_8b ===
+[37m2026-06-28 05:10:08.388[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptManager.ts:96[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Using prompt version: v5
+[37m2026-06-28 05:10:08.403[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:281[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	gold-compare dataset=biored model=qwen3:8b mode=closed
+[37m2026-06-28 05:10:08.417[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:199[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	biored: 40 samples loaded from data/biored/BioRED/Test.BioC.JSON
+[37m2026-06-28 05:10:08.419[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:297[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Dumped sample list -> data/biored/compare/qwen3_8b/samples.jsonl
+[37m2026-06-28 05:10:08.422[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptManager.ts:84[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Prompt templates initialized
+[37m2026-06-28 05:10:08.423[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/shared/utils/directoryTree.ts:127[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Failed to read directory benchmark: Error: ENOENT: no such file or directory, scandir 'benchmark'
+[37m2026-06-28 05:10:08.423[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptTemplateEngine.ts:223[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Failed to get file list: Error: ENOENT: no such file or directory, scandir 'benchmark'
+[37m2026-06-28 05:10:08.429[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:313[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi[closed]: 40/40 cached, extracting 0
+[37m2026-06-28 05:10:08.429[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:375[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 40 samples (wanshi ok=40, kggen cached=0 — wanshi-only until python extractor runs)
+
+biored two-way  model=qwen3:8b  mode=closed  N=40  thr=0.8  prompt=v5
+HEADLINE = node entity-capture (semantic): did the tool recover the gold entities (any node).
+end-* = entity/relation/triple over relation ENDPOINTS; rel/tri understate (abstract gold predicates).
+
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+----------------------------------------------------------------------
+wanshi     0.512   0.506   0.519   0.513   0.000   0.000    8.0    8.8
+
+NOTE: KGGen cache empty — run scripts/kggen-crossre.py --samples data/biored/compare/qwen3_8b/samples.jsonl --out data/biored/compare/qwen3_8b/kggen.jsonl then re-run for the two-way table.
+
+wanshi related_to-share: 0.534 (171/320 relations)
+wanshi extraction: conformance 1 (40/40, 0 failed chunks)  14.6 tok/s [rental≠M4]
+
+[37m2026-06-28 05:10:14.949[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:475[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/biored/qwen3_8b__closed__wanshi-vs-kggen.json
+[bench-run] KGGen (ollama_chat/qwen3:8b) → data/biored/compare/qwen3_8b/kggen.jsonl
+[kggen-crossre] 40 samples, 0 already cached -> data/biored/compare/qwen3_8b/kggen.jsonl
+[kggen-crossre] model=ollama_chat/qwen3:8b temp=0.0
+[kggen-crossre] 10/40 (ok=10 fail=0)
+[kggen-crossre] 20/40 (ok=20 fail=0)

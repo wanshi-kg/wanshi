@@ -1,0 +1,289 @@
+[37m2026-06-29 06:09:40.486[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptManager.ts:96[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Using prompt version: v5
+[37m2026-06-29 06:09:40.499[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:281[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	gold-compare dataset=biored model=mollysama/rwkv-7-g1g:1.5b mode=closed
+[37m2026-06-29 06:09:40.513[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:199[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	biored: 5 samples loaded from data/biored/BioRED/Test.BioC.JSON
+[37m2026-06-29 06:09:40.514[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:297[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Dumped sample list -> /Volumes/2TB/wanshi-kg/wanshi/data/biored/compare/_rwkv_smoke/samples.jsonl
+[37m2026-06-29 06:09:40.516[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptManager.ts:84[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Prompt templates initialized
+[37m2026-06-29 06:09:40.516[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/shared/utils/directoryTree.ts:127[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Failed to read directory benchmark: Error: ENOENT: no such file or directory, scandir 'benchmark'
+[37m2026-06-29 06:09:40.516[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptTemplateEngine.ts:223[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Failed to get file list: Error: ENOENT: no such file or directory, scandir 'benchmark'
+[37m2026-06-29 06:09:40.523[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:313[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi[closed]: 0/5 cached, extracting 5
+[37m2026-06-29 06:09:40.523[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/15485686.txt
+[37m2026-06-29 06:09:56.690[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":527,"prompt_eval_count":1661,"total_duration_ms":16036.248916,"eval_speed_tps":8.18645312177817}
+[37m2026-06-29 06:09:56.699[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/16046395.txt
+[37m2026-06-29 06:12:19.265[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":8192,"prompt_eval_count":1595,"total_duration_ms":142551.058542,"eval_speed_tps":4.119366113489692}
+[37m2026-06-29 06:12:19.266[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 06:12:19.282[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 06:12:19.285[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 1 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "array",
+    "received": "undefined",
+    "path": [
+      "relations"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 06:15:10.021[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":8192,"prompt_eval_count":1595,"total_duration_ms":169744.448333,"eval_speed_tps":3.459435673843117}
+[37m2026-06-29 06:15:10.022[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 06:15:10.031[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 06:15:10.032[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 2 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "array",
+    "received": "undefined",
+    "path": [
+      "relations"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 06:17:36.683[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":8192,"prompt_eval_count":1595,"total_duration_ms":144649.044834,"eval_speed_tps":4.0596189257516135}
+[37m2026-06-29 06:17:36.683[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 06:17:36.685[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 06:17:36.685[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 3 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "array",
+    "received": "undefined",
+    "path": [
+      "relations"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 06:17:36.686[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:442[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Extraction failed for chunk 1/1 of benchmark/16046395.txt — left uncheckpointed so --resume retries it: Failed to generate valid output after 3 attempts: [
+  {
+    "code": "invalid_type",
+    "expected": "array",
+    "received": "undefined",
+    "path": [
+      "relations"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 06:17:36.686[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:327[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi 16046395 extraction failed (rate-limit/transient) — excluded, will retry on re-run
+[37m2026-06-29 06:17:36.686[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/18457324.txt
+[37m2026-06-29 06:17:47.279[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":481,"prompt_eval_count":1905,"total_duration_ms":10586.544125,"eval_speed_tps":13.522826553183615}
+[37m2026-06-29 06:17:47.287[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/1848636.txt
+[37m2026-06-29 06:20:11.886[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":8192,"prompt_eval_count":1718,"total_duration_ms":144588.423209,"eval_speed_tps":4.112362434027766}
+[37m2026-06-29 06:20:11.886[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 06:20:11.894[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 06:20:11.901[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 1 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "null",
+    "path": [
+      "relations",
+      278,
+      "from"
+    ],
+    "message": "Expected string, received null"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "relations",
+      278,
+      "to"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 06:23:08.799[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":8192,"prompt_eval_count":1718,"total_duration_ms":175891.904875,"eval_speed_tps":3.380485306714716}
+[37m2026-06-29 06:23:08.799[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 06:23:08.803[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 06:23:08.807[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 2 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "null",
+    "path": [
+      "relations",
+      278,
+      "from"
+    ],
+    "message": "Expected string, received null"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "relations",
+      278,
+      "to"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 06:26:08.404[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":8192,"prompt_eval_count":1718,"total_duration_ms":177592.152542,"eval_speed_tps":3.3481209135036467}
+[37m2026-06-29 06:26:08.405[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 06:26:08.407[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 06:26:08.408[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 3 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "null",
+    "path": [
+      "relations",
+      278,
+      "from"
+    ],
+    "message": "Expected string, received null"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "relations",
+      278,
+      "to"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 06:26:08.409[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:442[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Extraction failed for chunk 1/1 of benchmark/1848636.txt — left uncheckpointed so --resume retries it: Failed to generate valid output after 3 attempts: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "null",
+    "path": [
+      "relations",
+      278,
+      "from"
+    ],
+    "message": "Expected string, received null"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "relations",
+      278,
+      "to"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 06:26:08.409[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:327[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi 1848636 extraction failed (rate-limit/transient) — excluded, will retry on re-run
+[37m2026-06-29 06:26:08.409[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/19394258.txt
+[37m2026-06-29 06:28:33.030[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":8192,"prompt_eval_count":1597,"total_duration_ms":144611.322875,"eval_speed_tps":4.061507690567829}
+[37m2026-06-29 06:28:33.031[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 06:28:33.035[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 06:28:33.036[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 1 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "entities",
+      94,
+      "name"
+    ],
+    "message": "Required"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "array",
+    "received": "undefined",
+    "path": [
+      "relations"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 06:30:58.970[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":8192,"prompt_eval_count":1597,"total_duration_ms":144931.465625,"eval_speed_tps":4.052536124347911}
+[37m2026-06-29 06:30:58.971[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 06:30:58.976[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 06:30:58.978[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 2 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "entities",
+      94,
+      "name"
+    ],
+    "message": "Required"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "array",
+    "received": "undefined",
+    "path": [
+      "relations"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 06:33:57.836[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":8192,"prompt_eval_count":1597,"total_duration_ms":176852.32675,"eval_speed_tps":3.321075898708808}
+[37m2026-06-29 06:33:57.836[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 06:33:57.840[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 06:33:57.842[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 3 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "entities",
+      94,
+      "name"
+    ],
+    "message": "Required"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "array",
+    "received": "undefined",
+    "path": [
+      "relations"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 06:33:57.842[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:442[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Extraction failed for chunk 1/1 of benchmark/19394258.txt — left uncheckpointed so --resume retries it: Failed to generate valid output after 3 attempts: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "entities",
+      94,
+      "name"
+    ],
+    "message": "Required"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "array",
+    "received": "undefined",
+    "path": [
+      "relations"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 06:33:57.842[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:327[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi 19394258 extraction failed (rate-limit/transient) — excluded, will retry on re-run
+[37m2026-06-29 06:33:57.843[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:375[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 2 samples (wanshi ok=2, kggen cached=0 — wanshi-only until python extractor runs)
+
+biored two-way  model=mollysama/rwkv-7-g1g:1.5b  mode=closed  N=2  thr=0.8  prompt=v5
+HEADLINE = node entity-capture (semantic): did the tool recover the gold entities (any node).
+end-* = entity/relation/triple over relation ENDPOINTS; rel/tri understate (abstract gold predicates).
+
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+----------------------------------------------------------------------
+wanshi     0.207   0.300   0.158   0.148   0.000   0.000    4.0    5.0
+
+NOTE: KGGen cache empty — run scripts/kggen-crossre.py --samples /Volumes/2TB/wanshi-kg/wanshi/data/biored/compare/_rwkv_smoke/samples.jsonl --out /Volumes/2TB/wanshi-kg/wanshi/data/biored/compare/_rwkv_smoke/kggen.jsonl then re-run for the two-way table.
+
+wanshi related_to-share: 0.667 (4/6 relations)
+wanshi extraction: conformance 0.4 (2/5, 3 failed chunks)  0.7 tok/s [rental≠M4]
+
+[37m2026-06-29 06:33:59.804[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:475[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/biored/mollysama_rwkv-7-g1g_1_5b__closed__wanshi-vs-kggen.json

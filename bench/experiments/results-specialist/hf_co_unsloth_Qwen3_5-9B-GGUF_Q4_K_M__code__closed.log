@@ -1,0 +1,186 @@
+[37m2026-06-29 17:45:12.399[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptManager.ts:96[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Using prompt version: v5
+[37m2026-06-29 17:45:12.420[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:283[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	gold-compare dataset=code model=hf.co/unsloth/Qwen3.5-9B-GGUF:Q4_K_M mode=closed
+[37m2026-06-29 17:45:12.422[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:199[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	code: 20 samples loaded from data/code/flask
+[37m2026-06-29 17:45:12.424[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:299[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Dumped sample list -> data/code/compare/hf_co_unsloth_Qwen3_5-9B-GGUF_Q4_K_M/samples.jsonl
+[37m2026-06-29 17:45:12.426[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptManager.ts:84[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Prompt templates initialized
+[37m2026-06-29 17:45:12.427[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/shared/utils/directoryTree.ts:127[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Failed to read directory benchmark: Error: ENOENT: no such file or directory, scandir 'benchmark'
+[37m2026-06-29 17:45:12.427[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptTemplateEngine.ts:223[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Failed to get file list: Error: ENOENT: no such file or directory, scandir 'benchmark'
+[37m2026-06-29 17:45:12.435[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:315[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi[closed]: 0/20 cached, extracting 20
+[37m2026-06-29 17:45:12.436[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/__init__.py.txt
+[37m2026-06-29 17:45:49.798[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":1158,"prompt_eval_count":1769,"total_duration_ms":37336.021258,"eval_speed_tps":4.7037684810180425}
+[37m2026-06-29 17:45:49.805[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/app.py.txt
+[37m2026-06-29 17:45:50.635[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 1 failed: ResponseError: {"error":{"code":400,"message":"request (14603 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":14603,"n_ctx":8192}}
+[37m2026-06-29 17:45:52.230[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 2 failed: ResponseError: {"error":{"code":400,"message":"request (14603 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":14603,"n_ctx":8192}}
+[37m2026-06-29 17:45:54.983[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 3 failed: ResponseError: {"error":{"code":400,"message":"request (14603 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":14603,"n_ctx":8192}}
+[37m2026-06-29 17:45:54.984[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:442[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Extraction failed for chunk 1/1 of benchmark/app.py.txt — left uncheckpointed so --resume retries it: Failed to generate valid output after 3 attempts: ResponseError: {"error":{"code":400,"message":"request (14603 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":14603,"n_ctx":8192}}
+[37m2026-06-29 17:45:54.984[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:329[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi app.py extraction failed (rate-limit/transient) — excluded, will retry on re-run
+[37m2026-06-29 17:45:54.986[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/blueprints.py.txt
+[37m2026-06-29 17:46:07.187[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":450,"prompt_eval_count":2278,"total_duration_ms":12189.17427,"eval_speed_tps":13.428309118760348}
+[37m2026-06-29 17:46:07.189[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/cli.py.txt
+[37m2026-06-29 17:46:08.051[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 1 failed: ResponseError: {"error":{"code":400,"message":"request (10096 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":10096,"n_ctx":8192}}
+[37m2026-06-29 17:46:09.747[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 2 failed: ResponseError: {"error":{"code":400,"message":"request (10096 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":10096,"n_ctx":8192}}
+[37m2026-06-29 17:46:12.450[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 3 failed: ResponseError: {"error":{"code":400,"message":"request (10096 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":10096,"n_ctx":8192}}
+[37m2026-06-29 17:46:12.450[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:442[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Extraction failed for chunk 1/1 of benchmark/cli.py.txt — left uncheckpointed so --resume retries it: Failed to generate valid output after 3 attempts: ResponseError: {"error":{"code":400,"message":"request (10096 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":10096,"n_ctx":8192}}
+[37m2026-06-29 17:46:12.451[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:329[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi cli.py extraction failed (rate-limit/transient) — excluded, will retry on re-run
+[37m2026-06-29 17:46:12.452[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/config.py.txt
+[37m2026-06-29 17:46:25.578[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":445,"prompt_eval_count":4259,"total_duration_ms":13113.811808,"eval_speed_tps":21.522346372838843}
+[37m2026-06-29 17:46:25.580[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/ctx.py.txt
+[37m2026-06-29 17:46:44.532[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":666,"prompt_eval_count":4790,"total_duration_ms":18940.880109,"eval_speed_tps":17.28325178746318}
+[37m2026-06-29 17:46:44.534[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/debughelpers.py.txt
+[37m2026-06-29 17:47:07.603[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":873,"prompt_eval_count":2718,"total_duration_ms":23058.361169,"eval_speed_tps":9.344115933515154}
+[37m2026-06-29 17:47:07.604[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/helpers.py.txt
+[37m2026-06-29 17:47:45.864[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":1375,"prompt_eval_count":6817,"total_duration_ms":38248.501518,"eval_speed_tps":12.850699517435668}
+[37m2026-06-29 17:47:45.865[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 17:47:45.871[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 17:47:45.873[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 1 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "null",
+    "path": [
+      "relations",
+      5,
+      "from"
+    ],
+    "message": "Expected string, received null"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "relations",
+      5,
+      "to"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 17:48:24.760[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":1375,"prompt_eval_count":6817,"total_duration_ms":37882.81067,"eval_speed_tps":12.974750059642288}
+[37m2026-06-29 17:48:24.761[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 17:48:24.764[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 17:48:24.766[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 2 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "null",
+    "path": [
+      "relations",
+      5,
+      "from"
+    ],
+    "message": "Expected string, received null"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "relations",
+      5,
+      "to"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 17:49:04.779[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":1375,"prompt_eval_count":6817,"total_duration_ms":38007.239272,"eval_speed_tps":12.932273151502052}
+[37m2026-06-29 17:49:04.779[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 17:49:04.781[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:100[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Response JSON was malformed; recovered with jsonrepair
+[37m2026-06-29 17:49:04.784[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 3 failed: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "null",
+    "path": [
+      "relations",
+      5,
+      "from"
+    ],
+    "message": "Expected string, received null"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "relations",
+      5,
+      "to"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 17:49:04.784[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:442[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Extraction failed for chunk 1/1 of benchmark/helpers.py.txt — left uncheckpointed so --resume retries it: Failed to generate valid output after 3 attempts: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "null",
+    "path": [
+      "relations",
+      5,
+      "from"
+    ],
+    "message": "Expected string, received null"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "relations",
+      5,
+      "to"
+    ],
+    "message": "Required"
+  }
+]
+[37m2026-06-29 17:49:04.785[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:329[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi helpers.py extraction failed (rate-limit/transient) — excluded, will retry on re-run
+[37m2026-06-29 17:49:04.786[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/json/__init__.py.txt
+[37m2026-06-29 17:49:24.991[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":751,"prompt_eval_count":2686,"total_duration_ms":20193.445848,"eval_speed_tps":10.2122243797447}
+[37m2026-06-29 17:49:24.992[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/json/provider.py.txt
+[37m2026-06-29 17:49:41.394[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":592,"prompt_eval_count":3139,"total_duration_ms":16389.81361,"eval_speed_tps":13.658483575640858}
+[37m2026-06-29 17:49:41.395[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/json/tag.py.txt
+[37m2026-06-29 17:50:07.459[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":974,"prompt_eval_count":3616,"total_duration_ms":26053.127513,"eval_speed_tps":10.570707868473018}
+[37m2026-06-29 17:50:07.461[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/logging.py.txt
+[37m2026-06-29 17:50:21.676[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":526,"prompt_eval_count":1800,"total_duration_ms":14203.433264,"eval_speed_tps":9.825793342073748}
+[37m2026-06-29 17:50:21.678[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/sansio/app.py.txt
+[37m2026-06-29 17:50:22.273[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 1 failed: ResponseError: {"error":{"code":400,"message":"request (9982 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":9982,"n_ctx":8192}}
+[37m2026-06-29 17:50:23.936[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 2 failed: ResponseError: {"error":{"code":400,"message":"request (9982 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":9982,"n_ctx":8192}}
+[37m2026-06-29 17:50:26.551[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 3 failed: ResponseError: {"error":{"code":400,"message":"request (9982 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":9982,"n_ctx":8192}}
+[37m2026-06-29 17:50:26.552[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:442[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Extraction failed for chunk 1/1 of benchmark/sansio/app.py.txt — left uncheckpointed so --resume retries it: Failed to generate valid output after 3 attempts: ResponseError: {"error":{"code":400,"message":"request (9982 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":9982,"n_ctx":8192}}
+[37m2026-06-29 17:50:26.552[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:329[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi sansio/app.py extraction failed (rate-limit/transient) — excluded, will retry on re-run
+[37m2026-06-29 17:50:26.553[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/sansio/blueprints.py.txt
+[37m2026-06-29 17:50:42.164[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":494,"prompt_eval_count":6799,"total_duration_ms":15600.839155,"eval_speed_tps":28.04849121592011}
+[37m2026-06-29 17:50:42.165[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/sansio/scaffold.py.txt
+[37m2026-06-29 17:50:43.347[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 1 failed: ResponseError: {"error":{"code":400,"message":"request (8238 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":8238,"n_ctx":8192}}
+[37m2026-06-29 17:50:45.051[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 2 failed: ResponseError: {"error":{"code":400,"message":"request (8238 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":8238,"n_ctx":8192}}
+[37m2026-06-29 17:50:47.710[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 3 failed: ResponseError: {"error":{"code":400,"message":"request (8238 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":8238,"n_ctx":8192}}
+[37m2026-06-29 17:50:47.710[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:442[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Extraction failed for chunk 1/1 of benchmark/sansio/scaffold.py.txt — left uncheckpointed so --resume retries it: Failed to generate valid output after 3 attempts: ResponseError: {"error":{"code":400,"message":"request (8238 tokens) exceeds the available context size (8192 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":8238,"n_ctx":8192}}
+[37m2026-06-29 17:50:47.711[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:329[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi sansio/scaffold.py extraction failed (rate-limit/transient) — excluded, will retry on re-run
+[37m2026-06-29 17:50:47.711[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/sessions.py.txt
+[37m2026-06-29 17:51:12.110[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":889,"prompt_eval_count":4682,"total_duration_ms":24389.186147,"eval_speed_tps":13.705254369101437}
+[37m2026-06-29 17:51:12.111[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/templating.py.txt
+[37m2026-06-29 17:51:39.964[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":1050,"prompt_eval_count":3036,"total_duration_ms":27842.930756,"eval_speed_tps":8.805107556688132}
+[37m2026-06-29 17:51:39.966[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/testing.py.txt
+[37m2026-06-29 17:51:57.484[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":617,"prompt_eval_count":3647,"total_duration_ms":17508.204941,"eval_speed_tps":14.612577409399883}
+[37m2026-06-29 17:51:57.485[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/views.py.txt
+[37m2026-06-29 17:52:14.663[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":618,"prompt_eval_count":2877,"total_duration_ms":17168.865484,"eval_speed_tps":12.213969536625674}
+[37m2026-06-29 17:52:14.664[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/wrappers.py.txt
+[37m2026-06-29 17:52:48.280[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":1287,"prompt_eval_count":2568,"total_duration_ms":33605.744872,"eval_speed_tps":6.882751770002189}
+[37m2026-06-29 17:52:48.282[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 20/20 (new=15 excluded=5)
+[37m2026-06-29 17:52:48.283[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 15 samples (wanshi ok=15, kggen cached=0 — wanshi-only until python extractor runs)
+
+code two-way  model=hf.co/unsloth/Qwen3.5-9B-GGUF:Q4_K_M  mode=closed  N=15  thr=0.8  prompt=v5
+HEADLINE = node entity-capture (semantic): did the tool recover the gold entities (any node).
+end-* = entity/relation/triple over relation ENDPOINTS; rel/tri understate (abstract gold predicates).
+
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+----------------------------------------------------------------------
+wanshi     0.177   0.364   0.117   0.162   0.004   0.004    6.4    9.5
+
+NOTE: KGGen cache empty — run scripts/kggen-crossre.py --samples data/code/compare/hf_co_unsloth_Qwen3_5-9B-GGUF_Q4_K_M/samples.jsonl --out data/code/compare/hf_co_unsloth_Qwen3_5-9B-GGUF_Q4_K_M/kggen.jsonl then re-run for the two-way table.
+
+wanshi related_to-share: 0.052 (5/96 relations)
+wanshi extraction: conformance 0.75 (15/20, 5 failed chunks)  25 tok/s [rental≠M4]
+
+[37m2026-06-29 17:52:58.100[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:477[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/code/hf_co_unsloth_Qwen3_5-9B-GGUF_Q4_K_M__closed__wanshi-vs-kggen.json

@@ -1,0 +1,14 @@
+[rwkv-smoke] START Mon Jun 29 09:41:36 EEST 2026 ctx=32768 max-tokens=32768 N=3
+
+==================== mollysama/rwkv-7-g1g:1.5b ====================
+[37m2026-06-29 06:56:57.931[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:329[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi 16046395 extraction failed (rate-limit/transient) — excluded, will retry on re-run
+[37m2026-06-29 06:57:07.817[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 3/3 (new=2 excluded=1)
+[37m2026-06-29 06:57:07.818[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 2 samples (wanshi ok=2, kggen cached=0 — wanshi-only until python extractor runs)
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.207   0.300   0.158   0.148   0.000   0.000    4.0    5.0
+wanshi related_to-share: 0.667 (4/6 relations)
+wanshi extraction: conformance 0.667 (2/3, 1 failed chunks)  1.1 tok/s [rental≠M4]
+[rwkv-smoke] 1.5b took 932s for 3 samples = s/sample [rwkv-smoke] 1.5b took 932s for 3 samples = s/sample
+
+==================== mollysama/rwkv-7-g1g:2.9b ====================
+[37m2026-06-29 07:12:15.771[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:329[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi 15485686 extraction failed (rate-limit/transient) — excluded, will retry on re-run

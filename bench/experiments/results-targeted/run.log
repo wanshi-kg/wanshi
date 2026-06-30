@@ -1,0 +1,105 @@
+[targeted] START Mon Jun 29 10:29:15 EEST 2026 N=40
+[targeted] === CELL hf.co/mradermacher/ODA-Fin-SFT-8B-GGUF:Q4_K_M @ finred (closed) N=40 ===
+[37m2026-06-29 07:31:34.239[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 20/40 (new=20 excluded=0)
+[37m2026-06-29 07:33:42.323[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 40/40 (new=40 excluded=0)
+[37m2026-06-29 07:33:42.325[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 40 samples (wanshi ok=40, kggen cached=0 — wanshi-only until python extractor runs)
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.508   0.456   0.573   0.519   0.000   0.000    1.6    2.6
+wanshi related_to-share: 0.215 (14/65 relations)
+wanshi extraction: conformance 1 (40/40, 0 failed chunks)  18 tok/s [rental≠M4]
+[targeted] hf.co/mradermacher/ODA-Fin-SFT-8B-GGUF:Q4_K_M@finred/closed took 269s
+[targeted] === CELL hf.co/mradermacher/ODA-Fin-SFT-8B-GGUF:Q4_K_M @ finred (vocab) N=40 ===
+[37m2026-06-29 07:36:10.793[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 20/40 (new=20 excluded=0)
+[37m2026-06-29 07:38:19.132[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 40/40 (new=40 excluded=0)
+[37m2026-06-29 07:38:19.133[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 40 samples (wanshi ok=40, kggen cached=0 — wanshi-only until python extractor runs)
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.506   0.500   0.512   0.458   0.168   0.037    1.4    2.1
+wanshi related_to-share: 0.000 (0/58 relations)
+wanshi extraction: conformance 1 (40/40, 0 failed chunks)  15.8 tok/s [rental≠M4]
+[targeted] hf.co/mradermacher/ODA-Fin-SFT-8B-GGUF:Q4_K_M@finred/vocab took 276s
+[targeted] DONE Mon Jun 29 10:38:20 EEST 2026
+[targeted] START Mon Jun 29 10:39:55 EEST 2026 N=40
+[targeted] === CELL medgemma1.5:4b @ biored (closed) N=40 ===
+[chain] Mon Jun 29 10:42:44 EEST 2026 waiting for pid 73452 (current targeted run) to finish…
+[37m2026-06-29 07:51:45.770[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 07:55:05.589[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[targeted] START Mon Jun 29 10:57:40 EEST 2026 N=40
+[targeted] === CELL gemma3:4b @ code (closed) N=40 ===
+[37m2026-06-29 08:01:42.080[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 08:02:10.530[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 08:02:39.939[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 08:08:12.012[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 20/20 (new=19 excluded=1)
+[37m2026-06-29 08:08:12.021[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 19 samples (wanshi ok=19, kggen cached=0 — wanshi-only until python extractor runs)
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.124   0.470   0.071   0.130   0.104   0.002    5.7    7.0
+wanshi related_to-share: 0.000 (0/109 relations)
+wanshi extraction: conformance 0.95 (19/20, 1 failed chunks)  19.7 tok/s [rental≠M4]
+[targeted] gemma3:4b@code/closed took 639s
+[targeted] === CELL gemma3:4b @ code (vocab) N=40 ===
+[37m2026-06-29 08:12:10.917[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 08:12:39.038[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 08:13:08.112[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:87[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM output was truncated at the output-token limit — the JSON is incomplete. Increase --max-tokens or reduce --chunk-size.
+[37m2026-06-29 08:18:24.628[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 20/20 (new=19 excluded=1)
+[37m2026-06-29 08:18:24.635[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 19 samples (wanshi ok=19, kggen cached=0 — wanshi-only until python extractor runs)
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.119   0.396   0.070   0.121   0.180   0.002    5.3    8.2
+wanshi related_to-share: 0.010 (1/100 relations)
+wanshi extraction: conformance 0.95 (19/20, 1 failed chunks)  21.5 tok/s [rental≠M4]
+[targeted] gemma3:4b@code/vocab took 612s
+[targeted] === CELL hf.co/Tesslate/OmniCoder-9B-GGUF:Q4_K_M @ code (closed) N=40 ===
+[37m2026-06-29 08:33:29.008[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 20/20 (new=16 excluded=4)
+[37m2026-06-29 08:33:29.015[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 16 samples (wanshi ok=16, kggen cached=0 — wanshi-only until python extractor runs)
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.195   0.399   0.129   0.176   0.035   0.013    7.9   10.2
+wanshi related_to-share: 0.032 (4/126 relations)
+wanshi extraction: conformance 0.8 (16/20, 4 failed chunks)  11.8 tok/s [rental≠M4]
+[targeted] hf.co/Tesslate/OmniCoder-9B-GGUF:Q4_K_M@code/closed took 902s
+[targeted] === CELL hf.co/Tesslate/OmniCoder-9B-GGUF:Q4_K_M @ code (vocab) N=40 ===
+[37m2026-06-29 08:47:22.526[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 20/20 (new=16 excluded=4)
+[37m2026-06-29 08:47:22.538[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 16 samples (wanshi ok=16, kggen cached=0 — wanshi-only until python extractor runs)
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.188   0.360   0.127   0.173   0.192   0.033    6.4   11.1
+wanshi related_to-share: 0.049 (5/102 relations)
+wanshi extraction: conformance 0.8 (16/20, 4 failed chunks)  11.8 tok/s [rental≠M4]
+[targeted] hf.co/Tesslate/OmniCoder-9B-GGUF:Q4_K_M@code/vocab took 843s
+[targeted] === CELL hf.co/mradermacher/WhiteRabbitNeo-V3-7B-GGUF:Q4_K_M @ code (closed) N=40 ===
+[remaining] Mon Jun 29 12:16:34 EEST 2026 START — cybersec@code then medgemma@biored
+[targeted] START Mon Jun 29 12:16:34 EEST 2026 N=40
+[targeted] === CELL hf.co/mradermacher/WhiteRabbitNeo-V3-7B-GGUF:Q4_K_M @ code (closed) N=40 ===
+[37m2026-06-29 09:45:23.873[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 20/20 (new=19 excluded=1)
+[37m2026-06-29 09:45:23.874[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 19 samples (wanshi ok=19, kggen cached=0 — wanshi-only until python extractor runs)
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.144   0.421   0.087   0.118   0.023   0.002    5.8    9.7
+wanshi related_to-share: 0.019 (2/107 relations)
+wanshi extraction: conformance 0.95 (19/20, 1 failed chunks)  5.5 tok/s [rental≠M4]
+[targeted] hf.co/mradermacher/WhiteRabbitNeo-V3-7B-GGUF:Q4_K_M@code/closed took 1736s
+[targeted] === CELL hf.co/mradermacher/WhiteRabbitNeo-V3-7B-GGUF:Q4_K_M @ code (vocab) N=40 ===
+[37m2026-06-29 09:59:41.213[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 20/20 (new=20 excluded=0)
+[37m2026-06-29 09:59:41.215[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 20 samples (wanshi ok=20, kggen cached=0 — wanshi-only until python extractor runs)
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.138   0.352   0.086   0.111   0.128   0.000    8.0   13.6
+wanshi related_to-share: 0.276 (43/156 relations)
+wanshi extraction: conformance 1 (20/20, 0 failed chunks)  15.4 tok/s [rental≠M4]
+[targeted] hf.co/mradermacher/WhiteRabbitNeo-V3-7B-GGUF:Q4_K_M@code/vocab took 857s
+[targeted] === CELL hf.co/mradermacher/RedTeamer-v1-GGUF:Q8_0 @ code (closed) N=40 ===
+[37m2026-06-29 10:22:00.612[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 20/20 (new=16 excluded=4)
+[37m2026-06-29 10:22:00.613[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 16 samples (wanshi ok=16, kggen cached=0 — wanshi-only until python extractor runs)
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.152   0.335   0.098   0.177   0.000   0.000   11.1    9.9
+wanshi related_to-share: 0.073 (13/177 relations)
+wanshi extraction: conformance 0.8 (16/20, 4 failed chunks)  6.5 tok/s [rental≠M4]
+[targeted] hf.co/mradermacher/RedTeamer-v1-GGUF:Q8_0@code/closed took 1337s
+[targeted] === CELL hf.co/mradermacher/RedTeamer-v1-GGUF:Q8_0 @ code (vocab) N=40 ===
+[37m2026-06-29 10:28:47.096[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 20/20 (new=17 excluded=3)
+[37m2026-06-29 10:28:47.097[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 17 samples (wanshi ok=17, kggen cached=0 — wanshi-only until python extractor runs)
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.130   0.274   0.086   0.125   0.175   0.006    8.9   10.5
+wanshi related_to-share: 0.099 (15/151 relations)
+wanshi extraction: conformance 0.85 (17/20, 3 failed chunks)  20.5 tok/s [rental≠M4]
+[targeted] hf.co/mradermacher/RedTeamer-v1-GGUF:Q8_0@code/vocab took 407s
+[targeted] DONE Mon Jun 29 13:28:52 EEST 2026
+[targeted] START Mon Jun 29 13:28:52 EEST 2026 N=40
+[targeted] === CELL medgemma1.5:4b @ biored (closed) N=40 ===
+[37m2026-06-29 10:52:38.753[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:329[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi 2491010 extraction failed (rate-limit/transient) — excluded, will retry on re-run
+[37m2026-06-29 11:08:12.678[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:329[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi 27464336 extraction failed (rate-limit/transient) — excluded, will retry on re-run
+[37m2026-06-29 11:24:10.030[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:329[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi 26991973 extraction failed (rate-limit/transient) — excluded, will retry on re-run

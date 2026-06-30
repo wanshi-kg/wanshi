@@ -1,0 +1,31 @@
+[37m2026-06-29 07:26:13.371[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptManager.ts:96[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Using prompt version: v5
+[37m2026-06-29 07:26:13.383[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:283[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	gold-compare dataset=finred model=hf.co/mradermacher/ODA-Fin-SFT-8B-GGUF:Q4_K_M mode=closed
+[37m2026-06-29 07:26:13.389[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:199[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	finred: 3 samples loaded from data/finred/test.jsonl
+[37m2026-06-29 07:26:13.389[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:299[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Dumped sample list -> /Volumes/2TB/wanshi-kg/wanshi/data/finred/compare/_oda_smoke/samples.jsonl
+[37m2026-06-29 07:26:13.390[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptManager.ts:84[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Prompt templates initialized
+[37m2026-06-29 07:26:13.390[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/shared/utils/directoryTree.ts:127[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Failed to read directory benchmark: Error: ENOENT: no such file or directory, scandir 'benchmark'
+[37m2026-06-29 07:26:13.391[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptTemplateEngine.ts:223[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Failed to get file list: Error: ENOENT: no such file or directory, scandir 'benchmark'
+[37m2026-06-29 07:26:13.396[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:315[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi[closed]: 0/3 cached, extracting 3
+[37m2026-06-29 07:26:13.396[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/finred_0.txt
+[37m2026-06-29 07:27:47.325[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":127,"prompt_eval_count":1298,"total_duration_ms":93620.207,"eval_speed_tps":0.9132643767813929}
+[37m2026-06-29 07:27:47.329[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/finred_1.txt
+[37m2026-06-29 07:28:00.681[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":253,"prompt_eval_count":1227,"total_duration_ms":13330.089958,"eval_speed_tps":6.661620460161038}
+[37m2026-06-29 07:28:00.683[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/finred_2.txt
+[37m2026-06-29 07:28:05.466[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":86,"prompt_eval_count":1212,"total_duration_ms":4773.98175,"eval_speed_tps":16.31342641810476}
+[37m2026-06-29 07:28:05.467[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 3/3 (new=3 excluded=0)
+[37m2026-06-29 07:28:05.468[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 3 samples (wanshi ok=3, kggen cached=0 — wanshi-only until python extractor runs)
+
+finred two-way  model=hf.co/mradermacher/ODA-Fin-SFT-8B-GGUF:Q4_K_M  mode=closed  N=3  thr=0.8  prompt=v5
+HEADLINE = node entity-capture (semantic): did the tool recover the gold entities (any node).
+end-* = entity/relation/triple over relation ENDPOINTS; rel/tri understate (abstract gold predicates).
+
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+----------------------------------------------------------------------
+wanshi     0.500   0.400   0.667   0.500   0.000   0.000    2.3    3.3
+
+NOTE: KGGen cache empty — run scripts/kggen-crossre.py --samples /Volumes/2TB/wanshi-kg/wanshi/data/finred/compare/_oda_smoke/samples.jsonl --out /Volumes/2TB/wanshi-kg/wanshi/data/finred/compare/_oda_smoke/kggen.jsonl then re-run for the two-way table.
+
+wanshi related_to-share: 0.000 (0/7 relations)
+wanshi extraction: conformance 1 (3/3, 0 failed chunks)  4.2 tok/s [rental≠M4]
+
+[37m2026-06-29 07:28:06.960[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:477[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/finred/hf_co_mradermacher_ODA-Fin-SFT-8B-GGUF_Q4_K_M__closed__wanshi-vs-kggen.json

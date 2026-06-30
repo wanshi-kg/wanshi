@@ -1,0 +1,35 @@
+[37m2026-06-29 06:41:38.047[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptManager.ts:96[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Using prompt version: v5
+[37m2026-06-29 06:41:38.061[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:283[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	gold-compare dataset=biored model=mollysama/rwkv-7-g1g:1.5b mode=closed
+[37m2026-06-29 06:41:38.074[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:199[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	biored: 3 samples loaded from data/biored/BioRED/Test.BioC.JSON
+[37m2026-06-29 06:41:38.075[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:299[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Dumped sample list -> /Volumes/2TB/wanshi-kg/wanshi/data/biored/compare/_rwkv_smoke_rwkv_1_5b/samples.jsonl
+[37m2026-06-29 06:41:38.076[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptManager.ts:84[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Prompt templates initialized
+[37m2026-06-29 06:41:38.077[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/shared/utils/directoryTree.ts:127[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Failed to read directory benchmark: Error: ENOENT: no such file or directory, scandir 'benchmark'
+[37m2026-06-29 06:41:38.077[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/prompts/PromptTemplateEngine.ts:223[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Failed to get file list: Error: ENOENT: no such file or directory, scandir 'benchmark'
+[37m2026-06-29 06:41:38.082[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:315[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi[closed]: 0/3 cached, extracting 3
+[37m2026-06-29 06:41:38.082[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/15485686.txt
+[37m2026-06-29 06:41:51.873[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":527,"prompt_eval_count":1661,"total_duration_ms":13743.07975,"eval_speed_tps":9.552444021872171}
+[37m2026-06-29 06:41:51.883[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/16046395.txt
+[37m2026-06-29 06:46:52.852[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 1 failed: TypeError: fetch failed
+[37m2026-06-29 06:51:54.943[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 2 failed: TypeError: fetch failed
+[37m2026-06-29 06:56:57.929[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:105[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM generation attempt 3 failed: TypeError: fetch failed
+[37m2026-06-29 06:56:57.931[39m[0m[0m	[31m[1mERROR[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:442[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Extraction failed for chunk 1/1 of benchmark/16046395.txt — left uncheckpointed so --resume retries it: Failed to generate valid output after 3 attempts: TypeError: fetch failed
+[37m2026-06-29 06:56:57.931[39m[0m[0m	[33m[1mWARN[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:329[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	wanshi 16046395 extraction failed (rate-limit/transient) — excluded, will retry on re-run
+[37m2026-06-29 06:56:57.931[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/knowledge/KnowledgeGraphBuilder.ts:257[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Building knowledge graph for: benchmark/18457324.txt
+[37m2026-06-29 06:57:07.814[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/src/core/llm/OllamaService.ts:180[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	LLM stats: {"eval_count":481,"prompt_eval_count":1905,"total_duration_ms":9872.057208,"eval_speed_tps":14.501536709490267}
+[37m2026-06-29 06:57:07.817[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:338[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	  wanshi 3/3 (new=2 excluded=1)
+[37m2026-06-29 06:57:07.818[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:377[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 2 samples (wanshi ok=2, kggen cached=0 — wanshi-only until python extractor runs)
+
+biored two-way  model=mollysama/rwkv-7-g1g:1.5b  mode=closed  N=2  thr=0.8  prompt=v5
+HEADLINE = node entity-capture (semantic): did the tool recover the gold entities (any node).
+end-* = entity/relation/triple over relation ENDPOINTS; rel/tri understate (abstract gold predicates).
+
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+----------------------------------------------------------------------
+wanshi     0.207   0.300   0.158   0.148   0.000   0.000    4.0    5.0
+
+NOTE: KGGen cache empty — run scripts/kggen-crossre.py --samples /Volumes/2TB/wanshi-kg/wanshi/data/biored/compare/_rwkv_smoke_rwkv_1_5b/samples.jsonl --out /Volumes/2TB/wanshi-kg/wanshi/data/biored/compare/_rwkv_smoke_rwkv_1_5b/kggen.jsonl then re-run for the two-way table.
+
+wanshi related_to-share: 0.667 (4/6 relations)
+wanshi extraction: conformance 0.667 (2/3, 1 failed chunks)  1.1 tok/s [rental≠M4]
+
+[37m2026-06-29 06:57:08.460[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:477[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/biored/mollysama_rwkv-7-g1g_1_5b__closed__wanshi-vs-kggen.json
