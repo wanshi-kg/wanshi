@@ -1,0 +1,106 @@
+{
+  "dataset": "biored",
+  "mode": "closed",
+  "model": "qwen3:8b",
+  "promptVersion": "v5",
+  "matchThreshold": 0.8,
+  "scoredCount": 40,
+  "wanshiOk": 40,
+  "wanshiExcluded": 0,
+  "kggenCached": 0,
+  "extraction": {
+    "attempted": 40,
+    "extracted": 40,
+    "excluded": 0,
+    "failedChunks": 0,
+    "conformanceRate": 1,
+    "seconds": 2137.4,
+    "completionTokens": 31227,
+    "promptTokens": 64692,
+    "completionTokensPerSec": 14.6,
+    "note": "tokens = last chunk per sample (exact for single-chunk corpora; undercounts multi-chunk docs); throughput is rental != M4"
+  },
+  "tools": {
+    "wanshi": {
+      "nodeEntityCapture": {
+        "semantic": {
+          "precision": 0.5056818181818182,
+          "recall": 0.5189504373177842,
+          "f1": 0.5122302158273382,
+          "tp": 178,
+          "fp": 174,
+          "fn": 165
+        },
+        "exact": {
+          "precision": 0.3465909090909091,
+          "recall": 0.3556851311953353,
+          "f1": 0.3510791366906475,
+          "tp": 122,
+          "fp": 230,
+          "fn": 221
+        }
+      },
+      "tripletEndpoint": {
+        "semantic": {
+          "entity": {
+            "precision": 0.5013927576601671,
+            "recall": 0.5247813411078717,
+            "f1": 0.5128205128205129,
+            "tp": 180,
+            "fp": 179,
+            "fn": 163
+          },
+          "relation": {
+            "precision": 0,
+            "recall": 0,
+            "f1": 0,
+            "tp": 0,
+            "fp": 320,
+            "fn": 551
+          },
+          "triple": {
+            "precision": 0,
+            "recall": 0,
+            "f1": 0,
+            "tp": 0,
+            "fp": 320,
+            "fn": 551
+          }
+        },
+        "exact": {
+          "entity": {
+            "precision": 0.34818941504178275,
+            "recall": 0.36443148688046645,
+            "f1": 0.3561253561253562,
+            "tp": 125,
+            "fp": 234,
+            "fn": 218
+          },
+          "relation": {
+            "precision": 0,
+            "recall": 0,
+            "f1": 0,
+            "tp": 0,
+            "fp": 320,
+            "fn": 551
+          },
+          "triple": {
+            "precision": 0,
+            "recall": 0,
+            "f1": 0,
+            "tp": 0,
+            "fp": 320,
+            "fn": 551
+          }
+        }
+      },
+      "triplesPerSample": 8,
+      "entitiesPerSample": 8.8,
+      "relatedToShare": {
+        "relations": 320,
+        "relatedTo": 171,
+        "share": 0.534
+      }
+    }
+  }
+}

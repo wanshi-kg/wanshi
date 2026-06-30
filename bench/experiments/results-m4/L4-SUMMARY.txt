@@ -1,0 +1,16 @@
+# RunPod L4 SUMMARY (captured 2026-06-28 ~05:1x; sweep completed ~05:01, drugprot missing = loader crash, recovered on M4)
+# wNode/kNode = node entity-capture semantic F1 (wanshi vs kggen); conf = JSON-conformance; rel = related_to-share; tok/s = wanshi throughput (L4)
+dataset    model       mode      wNode   kNode    wTri   conf    rel   tok/s
+biored     gemma3:4b   closed    0.494   0.392    0       1     0.246   62.8
+biored     gemma3:4b   vocab     0.453   0.392    0.022   1     0.008   62.6
+biored     qwen3:8b    closed    0.453   0.408    0       1     0.43    40.9
+biored     qwen3:8b    vocab     0.531   0.408    0.068   1     0      40.6
+crossre    gemma3:4b   closed    0.738   0.698    0.016   1     0.302   56.7
+crossre    qwen3:8b    closed    0.727   0.717    0.040   1     0.465   38.6
+finred     gemma3:4b   closed    0.436   0.392    0       1     0.333   57
+finred     gemma3:4b   vocab     0.438   0.392    0       1     0.211   56
+finred     qwen3:8b    closed    0.465   0.374    0       1     0.447   40.6
+finred     qwen3:8b    vocab     0.464   0.374    0.045   1     0.107   37.8
+redocred   gemma3:4b   closed    0.666   0.639    0.030   1     0.081   63.7
+redocred   qwen3:8b    closed    0.623   0.697    0.016   1     0.203   40.2
+# wanshi wins node-F1 in 11/12 cells (only loss: redocred/qwen3:8b, -7.4). conformance=1.0 everywhere (both dense models). drugprot (3rd win corpus) missing here — covered by the M4 run + the cloud verification lane.
