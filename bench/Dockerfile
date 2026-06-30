@@ -35,7 +35,7 @@ COPY src ./src
 COPY scripts ./scripts
 COPY bench ./bench
 COPY data ./data
-RUN chmod +x bench/entrypoint.sh scripts/bench-run.sh scripts/targeted-run.sh
+RUN chmod +x bench/entrypoint.sh scripts/bench-run.sh scripts/targeted-run.sh scripts/vanilla-run.sh
 
 ENV VENV_KGGEN=/opt/venv-kggen \
     TS_NODE_TRANSPILE_ONLY=1 \

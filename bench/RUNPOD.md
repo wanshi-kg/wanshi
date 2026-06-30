@@ -126,3 +126,33 @@ re-runs should reproduce the M4 numbers within noise (ODA-Fin-SFT ≈ 0.508/0.50
 `bench-run.sh`: `MODELS="gemma3:12b qwen3:8b" DATASETS="biored finred" MODES="closed vocab" LIMIT=40`.
 Calibrate one cell first (`MODELS=gemma3:12b DATASETS=biored LIMIT=5 CALIBRATE=1`); qwen3 thinking-mode
 KGGen ran ~10 min/sample locally → if brutal, run the qwen3:8b top wanshi-only via the pairs path.
+
+## Vanilla-baseline round — the third axis (Dove `2026-06-30`) 🎚️
+
+Breaks the "KGGen-is-a-strawman" objection: each cell runs **three wanshi-side arms** in one
+`gold-compare` invocation, plus KGGen as the (cache-reused) reference column —
+
+| column | what | the delta it feeds |
+|---|---|---|
+| `vanilla` | plain prompt, **same** closed vocab + schema, no pipeline | `wanshi − vanilla` = the v5 **prompt's** value |
+| `wanshi` | the v5 prompt, no pipeline (the established lean arm) | (the pivot) |
+| `wanshi-full` | v5 + **grounding(drop) + merge** | `wanshi-full − wanshi` = the **pipeline's** value |
+| `kggen` | external tool, **reused from cache** (no re-burn) | context, not the story |
+
+> **Why no AST seed in `wanshi-full`:** the code corpus gold *is* the outlion AST, so seeding it is
+> circular (the bench scores seed-off by design); retrieval / cross-file merge / corpus glossary are
+> structurally inert on independently-scored single docs. So the measurable, non-circular "pipeline"
+> here = the grounding gate + merge dedup. That inertness is itself a finding.
+
+Dispatched by `RUN_MODE=vanilla` → `scripts/vanilla-run.sh` (grid `MODELS × DATASETS × MODES`,
+wanshi-only — no fresh KGGen). The run sheet (5 corpora × 2 models × 2 modes = 20 cells):
+```
+RUN_MODE=vanilla
+MODELS="gemma3:4b qwen3:8b"
+DATASETS="biored drugprot finred scier code"      # 3 win + 2 loss domains
+MODES="closed vocab"   N=40   CTX=8192
+SELF_TERMINATE=remove                              # /app/results MUST be on a network volume
+```
+Cheap round — the only new LLM cost is the `vanilla` + `wanshi-full` extractions (1 call/sample each,
+local model); KGGen is reused. Reports land in `results/<ds>/<model>__<mode>__wanshi-vs-kggen.json`
+(now 4 columns) + per-cell `.log`. **Stop the pod.** Build the image with `tag: vanilla`.

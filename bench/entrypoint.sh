@@ -66,10 +66,14 @@ for i in $(seq 1 60); do
 done
 echo "[entrypoint] ollama up: $(curl -fsS "${base}/api/version")"
 
-# Dispatch: the wanshi-only PAIRS runner (Phase-1 specialist arc) when PAIRS or
-# RUN_MODE=targeted is set; else the KGGen cross-product sweep (Phase 2, default).
-# Both run under the self_terminate EXIT trap armed above.
-if [ -n "${PAIRS:-}" ] || [ "${RUN_MODE:-}" = "targeted" ]; then
+# Dispatch (all under the self_terminate EXIT trap armed above):
+#   RUN_MODE=vanilla          → the vanilla-baseline round (wanshi vs vanilla vs full; KGGen reused from cache)
+#   PAIRS / RUN_MODE=targeted → the wanshi-only PAIRS runner (specialist arc)
+#   else                      → the KGGen cross-product sweep (default)
+if [ "${RUN_MODE:-}" = "vanilla" ]; then
+  echo "[entrypoint] vanilla-baseline round → scripts/vanilla-run.sh (SELF_TERMINATE=${SELF_TERMINATE:-stop})"
+  "${APP}/scripts/vanilla-run.sh"
+elif [ -n "${PAIRS:-}" ] || [ "${RUN_MODE:-}" = "targeted" ]; then
   echo "[entrypoint] targeted (wanshi-only pairs) → scripts/targeted-run.sh (SELF_TERMINATE=${SELF_TERMINATE:-stop})"
   "${APP}/scripts/targeted-run.sh"
 else

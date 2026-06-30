@@ -96,6 +96,8 @@ function buildProcessingOptions(opts: {
   embeddingsProvider: string; embeddingsModel: string; embeddingsHost: string;
   promptVersion: string; openPredicate: boolean; strictVocabulary: boolean;
   maxTokens?: number; contextLength?: number;
+  /** wanshi-full arm: enable the post-extraction grounding gate (the precision lever). */
+  grounding?: 'disabled' | 'flag' | 'drop';
 }): ProcessingOptions {
   return parseConfig({
     input: 'benchmark',
@@ -119,7 +121,7 @@ function buildProcessingOptions(opts: {
     chunking: { mode: 'disabled' },
     retrieval: { mode: 'disabled' },
     corpus: { profiling: 'disabled' },
-    grounding: { mode: 'disabled' },
+    grounding: { mode: opts.grounding ?? 'disabled' },
     classifier: { mode: 'disabled' },
     readers: { asr: { mode: 'disabled' }, images: 'disabled', outline: { enabled: false } },
     pipeline: { extraction: { openPredicate: opts.openPredicate, strictVocabulary: opts.strictVocabulary } },
@@ -145,6 +147,68 @@ function parseRelationVocab(raw: string): string[] {
 
 const f3 = (n: number) => n.toFixed(3);
 const round = (n: number, d = 1) => { const p = 10 ** d; return Math.round(n * p) / p; };
+const signed = (n: number) => (n >= 0 ? '+' : '') + n.toFixed(3);
+
+/**
+ * Run one extraction arm (plain `build()` → graphs[0]), cached/resumable. Mirrors the inline
+ * lean-wanshi loop; used by the vanilla baseline (and any same-shape arm). The pipeline-less
+ * config + the shared `toGraph` output guarantee the vanilla graph is scored through the
+ * identical path as wanshi (Dove's fairness gate #2).
+ */
+async function extractArm(params: {
+  samples: BenchmarkSample[]; cachePath: string; kgBuilder: KnowledgeGraphBuilder;
+  systemPrompt: string; glossary: CorpusGlossary | undefined; llmService: ILLMProvider;
+  logger: Logger; label: string;
+}): Promise<{ graphs: Map<string, KnowledgeGraph>; extracted: number; excluded: number; seconds: number; promptTok: number; completionTok: number; failedChunks: number }> {
+  const { samples, cachePath, kgBuilder, systemPrompt, glossary, llmService, logger, label } = params;
+  const graphs = new Map<string, KnowledgeGraph>();
+  for (const [id, rec] of loadJsonl<{ id: string; graph: KnowledgeGraph }>(cachePath, fs)) graphs.set(id, rec.graph);
+  let extracted = 0, excluded = 0, promptTok = 0, completionTok = 0;
+  const start = Date.now();
+  const todo = samples.filter((s) => !graphs.has(s.id));
+  logger.info(`${label}: ${graphs.size}/${samples.length} cached, extracting ${todo.length}`);
+  for (let i = 0; i < todo.length; i++) {
+    const s = todo[i];
+    const failedBefore = kgBuilder.getFailedChunks().length;
+    let kg: KnowledgeGraph = { entities: [], relations: [] };
+    try {
+      const gs = await kgBuilder.build(textToProcessedFile(s.text, s.id), systemPrompt, undefined, glossary);
+      if (gs.length > 0) kg = gs[0];
+    } catch (err) {
+      logger.warn(`${label} ${s.id} threw: ${err}`);
+    }
+    if (kgBuilder.getFailedChunks().length > failedBefore) {
+      excluded++;
+      logger.warn(`${label} ${s.id} extraction failed (transient) — excluded, will retry`);
+      continue;
+    }
+    appendJsonl(cachePath, { id: s.id, graph: kg }, fs);
+    graphs.set(s.id, kg);
+    const u = llmService.getLastUsage?.();
+    if (u) { promptTok += u.promptTokens ?? 0; completionTok += u.completionTokens ?? 0; }
+    extracted++;
+    if ((i + 1) % 20 === 0 || i === todo.length - 1) logger.info(`  ${label} ${i + 1}/${todo.length} (new=${extracted} excluded=${excluded})`);
+  }
+  return { graphs, extracted, excluded, seconds: (Date.now() - start) / 1000, promptTok, completionTok, failedChunks: kgBuilder.getFailedChunks().length };
+}
+
+/** Build the extraction-stats sidecar for an arm (conformance + throughput); reuse on re-score. */
+function assembleArmStats(
+  r: { extracted: number; excluded: number; seconds: number; promptTok: number; completionTok: number; failedChunks: number },
+  statsPath: string,
+): any {
+  if (r.extracted <= 0) return fs.existsSync(statsPath) ? JSON.parse(fs.readFileSync(statsPath, 'utf-8')) : null;
+  const attempted = r.extracted + r.excluded;
+  const stats = {
+    attempted, extracted: r.extracted, excluded: r.excluded, failedChunks: r.failedChunks,
+    conformanceRate: attempted > 0 ? round(r.extracted / attempted, 3) : null,
+    seconds: round(r.seconds, 1), completionTokens: r.completionTok, promptTokens: r.promptTok,
+    completionTokensPerSec: r.seconds > 0 && r.completionTok > 0 ? round(r.completionTok / r.seconds, 1) : null,
+    note: 'tokens = last chunk per sample (exact for single-chunk corpora); throughput is rental != M4',
+  };
+  fs.writeFileSync(statsPath, JSON.stringify(stats), 'utf-8');
+  return stats;
+}
 
 /**
  * related_to-share (H5 collapse signal): fraction of a tool's relations typed as the
@@ -232,6 +296,8 @@ program
   .option('--ctx <n>', 'Model context length (Ollama num_ctx) — raise for verbose/reasoning models', '8192')
   .option('--cache-dir <dir>', 'Cache dir (defaults data/<dataset>/compare)')
   .option('--output <path>', 'Two-way JSON report path')
+  .option('--vanilla', 'Add a vanilla-baseline arm: plain prompt, SAME closed vocab + schema, no pipeline (the prompt-engineering ablation)', false)
+  .option('--full', 'Add a full-pipeline arm: same v5 extraction + grounding(drop) + merge (the pipeline ablation; AST seed excluded — it IS the code gold)', false)
   .action(async (opts) => {
     loadDotEnv();
     const dataset = opts.dataset as string;
@@ -263,7 +329,7 @@ program
       ? { entityNames: [], entityTypes: [], relationTypes: relationVocab }
       : undefined;
 
-    const processingOptions = buildProcessingOptions({
+    const optArgs = {
       provider: opts.provider, model: opts.model, host: opts.host,
       apiKey: opts.apiKey || process.env.OPENAI_API_KEY || process.env.WANSHI_API_KEY || process.env.KG_API_KEY,
       embeddingsProvider: opts.embeddingsProvider, embeddingsModel: opts.embeddingsModel,
@@ -272,7 +338,8 @@ program
       strictVocabulary: !!relationVocab,
       maxTokens: parseInt(opts.maxTokens, 10) || undefined,
       contextLength: parseInt(opts.ctx, 10) || undefined,
-    });
+    };
+    const processingOptions = buildProcessingOptions(optArgs);
     const container = ContainerFactory.createContainer({ processingOptions });
     const logger = await container.resolve<Logger>(TYPES.Logger);
     const kgBuilder = await container.resolve<KnowledgeGraphBuilder>(TYPES.KnowledgeGraphBuilder);
@@ -364,6 +431,67 @@ program
       extractionStats = null;
     }
 
+    // ── vanilla baseline arm (opt-in): plain prompt, SAME closed vocab + schema, no pipeline.
+    //    `wanshi − vanilla` = the v5 prompt's marginal value (the prompt-engineering ablation).
+    //    Same `build()`/`toGraph` path + same `glossary` (→ same Zod enum) ⇒ Dove's fairness
+    //    gates: vanilla HAS the vocab (gate #1) and is scored identically (gate #2). ──
+    let vanillaGraphs: Map<string, KnowledgeGraph> | null = null;
+    let vanillaStats: any = null;
+    if (opts.vanilla) {
+      const vContainer = ContainerFactory.createContainer({
+        processingOptions: buildProcessingOptions({ ...optArgs, promptVersion: 'vanilla' }),
+      });
+      const vBuilder = await vContainer.resolve<KnowledgeGraphBuilder>(TYPES.KnowledgeGraphBuilder);
+      const vPM = await vContainer.resolve<PromptManager>(TYPES.PromptManager);
+      const vLlm = await vContainer.resolve<ILLMProvider>(TYPES.LLMService);
+      const vSystemPrompt = await vPM.getSystemPrompt('benchmark', '**/*.txt', 'Benchmark evaluation', undefined, glossary, openPredicate);
+      const r = await extractArm({
+        samples, cachePath: path.join(cacheDir, `vanilla.${modelSlug}${modeSuffix}.jsonl`),
+        kgBuilder: vBuilder, systemPrompt: vSystemPrompt, glossary, llmService: vLlm, logger, label: `vanilla[${mode}]`,
+      });
+      vanillaGraphs = r.graphs;
+      vanillaStats = assembleArmStats(r, path.join(cacheDir, `vanilla.${modelSlug}${modeSuffix}.stats.json`));
+    }
+
+    // ── wanshi-full arm (opt-in): the v5 extraction + grounding(drop) + merge.
+    //    `wanshi-full − wanshi` = the pipeline's marginal value (the pipeline ablation).
+    //    The AST seed is DELIBERATELY excluded: the code gold IS the outlion AST, so seeding it
+    //    is circular (the bench scores seed-off by design); retrieval / cross-file merge /
+    //    corpus glossary are structurally inert on independently-scored single docs. So the
+    //    measurable, non-circular "pipeline" here = the grounding gate (precision lever) +
+    //    within-graph merge dedup. Deterministic (seed 42, temp 0) ⇒ the extraction matches the
+    //    lean arm; grounding+merge are what differ. ──
+    let fullGraphs: Map<string, KnowledgeGraph> | null = null;
+    if (opts.full) {
+      const fContainer = ContainerFactory.createContainer({
+        processingOptions: buildProcessingOptions({ ...optArgs, grounding: 'drop' }),
+      });
+      const fBuilder = await fContainer.resolve<KnowledgeGraphBuilder>(TYPES.KnowledgeGraphBuilder);
+      const fPM = await fContainer.resolve<PromptManager>(TYPES.PromptManager);
+      const merger = await fContainer.resolve<{ merge(g: KnowledgeGraph[], ext?: Set<string>): Promise<KnowledgeGraph> }>(TYPES.KnowledgeGraphMerger);
+      const fSystemPrompt = await fPM.getSystemPrompt('benchmark', '**/*.txt', 'Benchmark evaluation', undefined, glossary, openPredicate);
+      const fullPath = path.join(cacheDir, `wanshi-full.${modelSlug}${modeSuffix}.jsonl`);
+      fullGraphs = new Map<string, KnowledgeGraph>();
+      for (const [id, rec] of loadJsonl<{ id: string; graph: KnowledgeGraph }>(fullPath, fs)) fullGraphs.set(id, rec.graph);
+      const fTodo = samples.filter((s) => !fullGraphs!.has(s.id));
+      logger.info(`wanshi-full[${mode}]: ${fullGraphs.size}/${samples.length} cached, extracting ${fTodo.length} (grounding=drop + merge)`);
+      for (let i = 0; i < fTodo.length; i++) {
+        const s = fTodo[i];
+        const failedBefore = fBuilder.getFailedChunks().length;
+        let kg: KnowledgeGraph = { entities: [], relations: [] };
+        try {
+          const gs = await fBuilder.build(textToProcessedFile(s.text, s.id), fSystemPrompt, undefined, glossary);
+          if (gs.length > 0) kg = await merger.merge(gs, new Set<string>());
+        } catch (err) {
+          logger.warn(`wanshi-full ${s.id} threw: ${err}`);
+        }
+        if (fBuilder.getFailedChunks().length > failedBefore) { logger.warn(`wanshi-full ${s.id} excluded`); continue; }
+        appendJsonl(fullPath, { id: s.id, graph: kg }, fs);
+        fullGraphs.set(s.id, kg);
+        if ((i + 1) % 20 === 0 || i === fTodo.length - 1) logger.info(`  wanshi-full ${i + 1}/${fTodo.length}`);
+      }
+    }
+
     // ── KGGen graphs (from the Python cache, if present) ──
     const kggenPath = path.join(cacheDir, 'kggen.jsonl');
     const kggenRaw = loadJsonl<{ id: string; graph: any }>(kggenPath, fs);
@@ -371,12 +499,16 @@ program
     for (const [id, rec] of kggenRaw) kggenGraphs.set(id, MineDataset.toGraph(rec.graph));
     const haveKggen = kggenGraphs.size > 0;
 
-    // ── Scored set: samples both tools successfully processed (apples-to-apples) ──
+    // ── Scored set: samples EVERY active arm produced (apples-to-apples across all columns) ──
     const wanshiIds = samples.filter((s) => wanshiGraphs.has(s.id)).map((s) => s.id);
-    const scoredIds = haveKggen ? wanshiIds.filter((id) => kggenGraphs.has(id)) : wanshiIds;
+    let scoredIds = haveKggen ? wanshiIds.filter((id) => kggenGraphs.has(id)) : wanshiIds;
+    if (vanillaGraphs) scoredIds = scoredIds.filter((id) => vanillaGraphs!.has(id));
+    if (fullGraphs) scoredIds = scoredIds.filter((id) => fullGraphs!.has(id));
     logger.info(
-      `Scoring ${scoredIds.length} samples ` +
-      `(wanshi ok=${wanshiIds.length}, kggen cached=${kggenGraphs.size}${haveKggen ? '' : ' — wanshi-only until python extractor runs'})`,
+      `Scoring ${scoredIds.length} samples (wanshi ok=${wanshiIds.length}` +
+      (vanillaGraphs ? `, vanilla=${vanillaGraphs.size}` : '') +
+      (fullGraphs ? `, full=${fullGraphs.size}` : '') +
+      `, kggen cached=${kggenGraphs.size}${haveKggen ? '' : ' — kggen column absent until the python extractor runs'})`,
     );
 
     const exactMatcher = new ExactMatcher();
@@ -384,12 +516,21 @@ program
 
     const scoreOpts = { domainById, ignoreKeys };
     const wanshiScore = await scoreGraph(scoredIds, wanshiGraphs, goldById, exactMatcher, semanticMatcher, scoreOpts);
+    const vanillaScore = vanillaGraphs
+      ? await scoreGraph(scoredIds, vanillaGraphs, goldById, exactMatcher, semanticMatcher, scoreOpts)
+      : null;
+    const fullScore = fullGraphs
+      ? await scoreGraph(scoredIds, fullGraphs, goldById, exactMatcher, semanticMatcher, scoreOpts)
+      : null;
     const kggenScore = haveKggen
       ? await scoreGraph(scoredIds, kggenGraphs, goldById, exactMatcher, semanticMatcher, scoreOpts)
       : null;
 
-    // ── Report ──
-    const tools: [string, ToolScore][] = [['wanshi', wanshiScore]];
+    // ── Report ── columns ordered for the decomposition: vanilla → wanshi → wanshi-full → kggen
+    const tools: [string, ToolScore][] = [];
+    if (vanillaScore) tools.push(['vanilla', vanillaScore]);
+    tools.push(['wanshi', wanshiScore]);
+    if (fullScore) tools.push(['wanshi-full', fullScore]);
     if (kggenScore) tools.push(['kggen', kggenScore]);
 
     const lines: string[] = [];
@@ -400,7 +541,7 @@ program
     if (ignoreKeys) lines.push('ignTri = triple F1 with train-seen triples excluded (Re-DocRED Ign-F1).');
     lines.push('');
     const header =
-      `${'tool'.padEnd(8)}${'nodeF1'.padStart(8)}${'nodeP'.padStart(8)}${'nodeR'.padStart(8)}` +
+      `${'tool'.padEnd(12)}${'nodeF1'.padStart(8)}${'nodeP'.padStart(8)}${'nodeR'.padStart(8)}` +
       `${'endEnt'.padStart(8)}${'endRel'.padStart(8)}${'endTri'.padStart(8)}` +
       (ignoreKeys ? `${'ignTri'.padStart(8)}` : '') +
       `${'tri/s'.padStart(7)}${'ent/s'.padStart(7)}`;
@@ -408,7 +549,7 @@ program
     lines.push('-'.repeat(header.length));
     for (const [name, sc] of tools) {
       lines.push(
-        `${name.padEnd(8)}` +
+        `${name.padEnd(12)}` +
         `${f3(sc.nodeEntitySem.f1).padStart(8)}` +
         `${f3(sc.nodeEntitySem.precision).padStart(8)}` +
         `${f3(sc.nodeEntitySem.recall).padStart(8)}` +
@@ -418,6 +559,22 @@ program
         (ignoreKeys ? `${f3(sc.ignTripletSem?.triple.f1 ?? 0).padStart(8)}` : '') +
         `${sc.triplesPer.toFixed(1).padStart(7)}` +
         `${sc.entsPer.toFixed(1).padStart(7)}`,
+      );
+    }
+    // Headline deltas — the two questions this round answers.
+    if (vanillaScore) {
+      lines.push('');
+      lines.push(
+        `Δ prompt   (wanshi − vanilla):     nodeF1 ${signed(wanshiScore.nodeEntitySem.f1 - vanillaScore.nodeEntitySem.f1)}` +
+        `   endTri ${signed(wanshiScore.tripletSem.triple.f1 - vanillaScore.tripletSem.triple.f1)}` +
+        `   = the v5 prompt's lift over a competent plain prompt (same model + vocab)`,
+      );
+    }
+    if (fullScore) {
+      lines.push(
+        `Δ pipeline (wanshi-full − wanshi): nodeF1 ${signed(fullScore.nodeEntitySem.f1 - wanshiScore.nodeEntitySem.f1)}` +
+        `   endTri ${signed(fullScore.tripletSem.triple.f1 - wanshiScore.tripletSem.triple.f1)}` +
+        `   = grounding-drop + merge (AST seed excluded: circular on the code gold)`,
       );
     }
     if (domainById) {
@@ -449,7 +606,11 @@ program
     lines.push('');
     console.log(lines.join('\n'));
 
-    const graphsByTool: Record<string, Map<string, KnowledgeGraph>> = { wanshi: wanshiGraphs, kggen: kggenGraphs };
+    const graphsByTool: Record<string, Map<string, KnowledgeGraph>> = {
+      wanshi: wanshiGraphs, kggen: kggenGraphs,
+      ...(vanillaGraphs ? { vanilla: vanillaGraphs } : {}),
+      ...(fullGraphs ? { 'wanshi-full': fullGraphs } : {}),
+    };
     const report = {
       dataset,
       mode,
@@ -462,7 +623,10 @@ program
       wanshiOk: wanshiIds.length,
       wanshiExcluded: excluded,
       kggenCached: kggenGraphs.size,
+      ...(vanillaGraphs ? { vanillaCached: vanillaGraphs.size } : {}),
+      ...(fullGraphs ? { fullCached: fullGraphs.size } : {}),
       extraction: extractionStats, // wanshi-side conformance + throughput (H-L3/H-L4 architecture column)
+      ...(vanillaStats ? { vanillaExtraction: vanillaStats } : {}),
       tools: Object.fromEntries(tools.map(([name, sc]) => [name, {
         nodeEntityCapture: { semantic: sc.nodeEntitySem, exact: sc.nodeEntityExact },
         tripletEndpoint: { semantic: sc.tripletSem, exact: sc.tripletExact },

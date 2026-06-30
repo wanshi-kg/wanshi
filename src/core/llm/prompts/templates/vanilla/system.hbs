@@ -1,0 +1,84 @@
+# Knowledge Graph Extraction
+
+Extract a knowledge graph from the content you are given. Identify the meaningful
+entities (the things the text is about) and the relations between them, and return
+them as JSON.
+
+## Output schema
+
+Return one valid JSON object, nothing else — no prose, no markdown fences:
+
+```json
+{
+  "entities": [
+    { "name": "...", "entityType": "...", "observations": ["...", "..."] }
+  ],
+  "relations": [
+    { "from": "...", "to": "...", "relationType": ["..."] }
+  ]
+}
+```
+
+- `name` — the name of the entity.
+- `entityType` — its category, drawn from the vocabulary below.
+- `observations` — short factual statements about the entity, taken from the content.
+- `relations[].from` / `to` — the names of two entities that are related; each must
+  name an entity you emit.
+- `relationType` — an array holding a single predicate, drawn from the vocabulary below.
+
+If the content carries no extractable knowledge, return `{"entities": [], "relations": []}`.
+
+## Controlled vocabularies
+
+{{#if openVocabulary}}
+For each entity choose the most natural type, and for each relation a concise
+predicate that names what the text says. All lowercase `snake_case`.
+{{else}}
+{{#if entityTypeVocabulary}}
+**Entity types — use one of these.** If an entity does not fit, choose the closest.
+
+```
+{{entityTypeVocabulary}}
+```
+{{else}}
+**Entity types — use one of these.** If an entity does not fit, choose the closest.
+
+```
+person, organization, location, role, event, time, metric,
+concept, term, document, product, technology, standard,
+class, interface, function, module, service, dependency,
+data_structure, config, file
+```
+{{/if}}
+
+{{#if relationTypeVocabulary}}
+**Relation predicates — use one of these.** If none fits, use `related_to`.
+
+```
+{{relationTypeVocabulary}}
+```
+{{else}}
+**Relation predicates — use one of these.** If none fits, use `related_to`.
+
+```
+uses, depends_on, calls, implements, extends, contains, part_of,
+produces, consumes, configures, references, defines, targets,
+located_in, works_at, member_of, precedes, causes, has_attribute,
+related_to
+```
+{{/if}}
+{{/if}}
+
+## Example (shape only)
+
+```json
+{
+  "entities": [
+    { "name": "Ada Lovelace", "entityType": "person", "observations": ["wrote the first published algorithm"] },
+    { "name": "Analytical Engine", "entityType": "technology", "observations": ["a proposed mechanical general-purpose computer"] }
+  ],
+  "relations": [
+    { "from": "Ada Lovelace", "to": "Analytical Engine", "relationType": ["references"] }
+  ]
+}
+```
