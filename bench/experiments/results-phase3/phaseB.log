@@ -1,0 +1,86 @@
+########## scier [results/scier/meta-llama_llama-3_3-70b-instruct__vocab__train__wanshi-vs-kggen.json] 09:30:19 ##########
+
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+----------------------------------------------------------------------
+wanshi     0.260   0.754   0.157   0.273   0.224   0.037   13.7   15.3
+
+NOTE: KGGen cache empty — run scripts/kggen-crossre.py --samples data/scier/compare-train/samples.jsonl --out data/scier/compare-train/kggen.jsonl then re-run for the two-way table.
+
+[37m2026-06-26 07:20:19.465[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/scier/meta-llama_llama-3_3-70b-instruct__vocab__train__wanshi-vs-kggen.json
+[kggen-crossre] 70/80 (ok=70 fail=0)
+[kggen-crossre] 80/80 (ok=80 fail=0)
+[kggen-crossre] DONE ok=80 fail=0 total_cached=80
+[37m2026-06-26 08:43:46.832[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:323[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 80 samples (wanshi ok=80, kggen cached=80)
+scier two-way  model=meta-llama/llama-3.3-70b-instruct  mode=vocab  N=80  thr=0.8  prompt=v5
+HEADLINE = node entity-capture (semantic): did the tool recover the gold entities (any node).
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.260   0.754   0.157   0.273   0.224   0.037   13.7   15.3
+kggen      0.453   0.545   0.387   0.405   0.093   0.015   36.0   52.1
+[37m2026-06-26 08:44:49.706[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/scier/meta-llama_llama-3_3-70b-instruct__vocab__train__wanshi-vs-kggen.json
+########## code [results/code/meta-llama_llama-3_3-70b-instruct__vocab__requests__wanshi-vs-kggen.json] 11:44:49 ##########
+
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+----------------------------------------------------------------------
+wanshi     0.307   0.505   0.220   0.309   0.260   0.015   18.7   19.9
+
+NOTE: KGGen cache empty — run scripts/kggen-crossre.py --samples data/code/requests/compare/samples.jsonl --out data/code/requests/compare/kggen.jsonl then re-run for the two-way table.
+
+[37m2026-06-26 08:50:35.402[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/code/meta-llama_llama-3_3-70b-instruct__vocab__requests__wanshi-vs-kggen.json
+########## scier [results/scier/meta-llama_llama-3_3-70b-instruct__vocab__train__wanshi-vs-kggen.json] 12:11:32 ##########
+end-* = entity/relation/triple over relation ENDPOINTS; rel/tri understate (abstract gold predicates).
+
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+----------------------------------------------------------------------
+wanshi     0.260   0.754   0.157   0.273   0.224   0.037   13.7   15.3
+kggen      0.453   0.545   0.387   0.405   0.093   0.015   36.0   52.1
+
+[37m2026-06-26 09:12:39.413[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/scier/meta-llama_llama-3_3-70b-instruct__vocab__train__wanshi-vs-kggen.json
+[kggen-crossre] 80 samples, 80 already cached -> data/scier/compare-train/kggen.jsonl
+[kggen-crossre] model=openrouter/meta-llama/llama-3.3-70b-instruct temp=0.0
+[kggen-crossre] DONE ok=0 fail=0 total_cached=80
+[37m2026-06-26 09:13:50.860[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:323[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 80 samples (wanshi ok=80, kggen cached=80)
+scier two-way  model=meta-llama/llama-3.3-70b-instruct  mode=vocab  N=80  thr=0.8  prompt=v5
+HEADLINE = node entity-capture (semantic): did the tool recover the gold entities (any node).
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.260   0.754   0.157   0.273   0.224   0.037   13.7   15.3
+kggen      0.453   0.545   0.387   0.405   0.093   0.015   36.0   52.1
+[37m2026-06-26 09:14:56.271[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/scier/meta-llama_llama-3_3-70b-instruct__vocab__train__wanshi-vs-kggen.json
+########## code [results/code/meta-llama_llama-3_3-70b-instruct__vocab__requests__wanshi-vs-kggen.json] 12:14:56 ##########
+end-* = entity/relation/triple over relation ENDPOINTS; rel/tri understate (abstract gold predicates).
+
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+----------------------------------------------------------------------
+wanshi     0.165   0.404   0.103   0.166   0.188   0.057    7.6    9.4
+kggen      0.347   0.320   0.380   0.349   0.005   0.005   40.8   43.8
+
+[37m2026-06-26 09:15:02.857[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/code/meta-llama_llama-3_3-70b-instruct__vocab__requests__wanshi-vs-kggen.json
+[kggen-crossre] model=openrouter/meta-llama/llama-3.3-70b-instruct temp=0.0
+[kggen-crossre] 10/10 (ok=10 fail=0)
+[kggen-crossre] DONE ok=10 fail=0 total_cached=15
+[37m2026-06-26 09:22:02.941[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:323[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 15 samples (wanshi ok=15, kggen cached=15)
+code two-way  model=meta-llama/llama-3.3-70b-instruct  mode=vocab  N=15  thr=0.8  prompt=v5
+HEADLINE = node entity-capture (semantic): did the tool recover the gold entities (any node).
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.307   0.505   0.220   0.309   0.260   0.015   18.7   19.9
+kggen      0.326   0.284   0.384   0.324   0.001   0.001   54.9   61.8
+[37m2026-06-26 09:22:13.469[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/code/meta-llama_llama-3_3-70b-instruct__vocab__requests__wanshi-vs-kggen.json
+########## code [results/code/meta-llama_llama-3_3-70b-instruct__vocab__click__wanshi-vs-kggen.json] 12:22:13 ##########
+
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+----------------------------------------------------------------------
+wanshi     0.255   0.604   0.162   0.247   0.191   0.013   17.6   18.8
+
+NOTE: KGGen cache empty — run scripts/kggen-crossre.py --samples data/code/click/compare/samples.jsonl --out data/code/click/compare/kggen.jsonl then re-run for the two-way table.
+
+[37m2026-06-26 09:26:48.024[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/code/meta-llama_llama-3_3-70b-instruct__vocab__click__wanshi-vs-kggen.json
+[kggen-crossre] 10/15 (ok=10 fail=0)
+[kggen-crossre] 15/15 (ok=15 fail=0)
+[kggen-crossre] DONE ok=15 fail=0 total_cached=15
+[37m2026-06-26 09:45:06.382[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:323[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 15 samples (wanshi ok=15, kggen cached=15)
+code two-way  model=meta-llama/llama-3.3-70b-instruct  mode=vocab  N=15  thr=0.8  prompt=v5
+HEADLINE = node entity-capture (semantic): did the tool recover the gold entities (any node).
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.255   0.604   0.162   0.247   0.191   0.013   17.6   18.8
+kggen      0.357   0.429   0.306   0.318   0.000   0.000   39.9   47.9
+[37m2026-06-26 09:45:16.597[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/code/meta-llama_llama-3_3-70b-instruct__vocab__click__wanshi-vs-kggen.json
+===================== PHASE B COMPLETE 2026-06-26 12:45:16 =====================

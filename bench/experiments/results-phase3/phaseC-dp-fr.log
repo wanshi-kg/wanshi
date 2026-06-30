@@ -1,0 +1,29 @@
+[budget] remaining $3.3724 (floor $1.20) 16:10:59
+########## drugprot N=40 [results/drugprot/deepseek-v4-pro__vocab__N40__wanshi-vs-kggen.json] 16:10:59 ##########
+NOTE: KGGen cache empty — run scripts/kggen-crossre.py --samples data/drugprot/compare-deepseek/samples.jsonl --out data/drugprot/compare-deepseek/kggen.jsonl then re-run for the two-way table.
+
+[37m2026-06-26 14:15:11.112[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/drugprot/deepseek-v4-pro__vocab__N40__wanshi-vs-kggen.json
+[kggen-crossre] 40/40 (ok=40 fail=0)
+[kggen-crossre] DONE ok=40 fail=0 total_cached=40
+[37m2026-06-26 16:18:00.057[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:323[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 40 samples (wanshi ok=40, kggen cached=40)
+drugprot two-way  model=deepseek/deepseek-v4-pro  mode=vocab  N=40  thr=0.8  prompt=v5
+HEADLINE = node entity-capture (semantic): did the tool recover the gold entities (any node).
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.472   0.422   0.536   0.485   0.226   0.091    9.3    9.6
+kggen      0.376   0.247   0.791   0.393   0.049   0.026   28.4   24.2
+[37m2026-06-26 16:18:31.538[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/drugprot/deepseek-v4-pro__vocab__N40__wanshi-vs-kggen.json
+[budget] remaining $1.9145 (floor $1.20) 19:18:31
+########## finred N=40 [results/finred/deepseek-v4-pro__vocab__N40__wanshi-vs-kggen.json] 19:18:31 ##########
+NOTE: KGGen cache empty — run scripts/kggen-crossre.py --samples data/finred/compare-deepseek/samples.jsonl --out data/finred/compare-deepseek/kggen.jsonl then re-run for the two-way table.
+
+[37m2026-06-26 16:46:16.682[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/finred/deepseek-v4-pro__vocab__N40__wanshi-vs-kggen.json
+[kggen-crossre] 40/40 (ok=40 fail=0)
+[kggen-crossre] DONE ok=40 fail=0 total_cached=40
+[37m2026-06-26 17:36:35.247[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:323[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Scoring 40 samples (wanshi ok=40, kggen cached=40)
+finred two-way  model=deepseek/deepseek-v4-pro  mode=vocab  N=40  thr=0.8  prompt=v5
+HEADLINE = node entity-capture (semantic): did the tool recover the gold entities (any node).
+tool      nodeF1   nodeP   nodeR  endEnt  endRel  endTri  tri/s  ent/s
+wanshi     0.409   0.314   0.585   0.396   0.028   0.014    2.4    3.8
+kggen      0.346   0.235   0.659   0.358   0.009   0.000    4.0    5.8
+[37m2026-06-26 17:36:49.368[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/finred/deepseek-v4-pro__vocab__N40__wanshi-vs-kggen.json
+===================== PHASE C dp+fr (deepseek) COMPLETE 2026-06-26 20:36:49 =====================

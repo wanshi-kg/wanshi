@@ -1,0 +1,12 @@
+[phaseC] waiting for Phase B (temp/phaseB.sh) … 13:33:31
+[phaseC] Phase B done — starting deepseek matrix 13:33:31
+########## biored [results/biored/deepseek-v4-pro__vocab__wanshi-vs-kggen.json] 13:33:31 ##########
+----------------------------------------------------------------------
+wanshi     0.477   0.455   0.501   0.459   0.241   0.048    8.5    9.2
+
+NOTE: KGGen cache empty — run scripts/kggen-crossre.py --samples data/biored/compare-deepseek/samples.jsonl --out data/biored/compare-deepseek/kggen.jsonl then re-run for the two-way table.
+
+[37m2026-06-26 11:09:27.271[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/biored/deepseek-v4-pro__vocab__wanshi-vs-kggen.json
+[kggen-crossre] 100 samples, 0 already cached -> data/biored/compare-deepseek/kggen.jsonl
+[kggen-crossre] model=openrouter/deepseek/deepseek-v4-pro temp=0.0
+[kggen-crossre] 10/100 (ok=10 fail=0)

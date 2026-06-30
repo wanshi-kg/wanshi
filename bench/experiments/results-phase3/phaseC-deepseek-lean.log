@@ -1,0 +1,9 @@
+[budget] remaining $4.1731 (floor $1.20) 14:38:04
+########## biored N<=200 [results/biored/deepseek-v4-pro__vocab__wanshi-vs-kggen.json] 14:38:04 ##########
+wanshi     0.403   0.376   0.432   0.413   0.243   0.049    8.4    8.5
+kggen      0.289   0.176   0.811   0.295   0.000   0.000   35.9   34.1
+
+[37m2026-06-26 11:38:14.259[39m[0m[0m	[34m[1mINFO[22m[39m[0m[0m	[37m/scripts/gold-compare.ts:411[39m[0m[0m[1m[37m	wanshi[39m[22m[0m[0m	Saved two-way report -> results/biored/deepseek-v4-pro__vocab__wanshi-vs-kggen.json
+[kggen-crossre] 10/90 (ok=10 fail=0)
+[kggen-crossre] 20/90 (ok=20 fail=0)
+[kggen-crossre] 30/90 (ok=30 fail=0)
